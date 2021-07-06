@@ -4,8 +4,10 @@
 {% block content %}
 <h1>Hi, {{ username }}!</h1>
 <div>
+    {% for post in posts %}
     <p>
-        Hello world!
+        {{ post.author }} says: {{ post.body }}
     </p>
+    {% endfor %}
 </div>
 {% endblock %}

@@ -7,4 +7,6 @@ from app import app
 def index():
     """This function implements the view logic for the index page."""
 
-    return render_template('index.html', title='Home')
+    username = 'baiber'
+
+    return render_template('index.html', title='Home', username=username)

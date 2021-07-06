@@ -1,0 +1,19 @@
+<html>
+    <head>
+        <title>
+            {% if title %}
+            {{ title }} - Investment Research
+            {% else %}
+            Welcome to Investment Research!
+            {% endif %}
+        </title>
+    </head>
+    <body>
+        <div>
+            Investment Research:
+            <a href="{{ url_for('index') }}">Home</a>
+        </div>
+        <hr>
+        {% block content %}{% endblock %}
+    </body>
+</html>

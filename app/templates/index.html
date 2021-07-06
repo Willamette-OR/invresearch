@@ -1,15 +1,11 @@
-<title>
-    {% if title %}
-    {{ title }} - Investment Research
-    {% else %}
-    Investment Research
-    {% endif %}
-</title>
-<body>
-    <h2>Home</h2>
-    <div>
-        <p>
-            Hello world!
-        </p>
-    </div>
-</body>
+{% extends 'base.html' %}
+
+
+{% block content %}
+<h1>Hi, {{ username }}!</h1>
+<div>
+    <p>
+        Hello world!
+    </p>
+</div>
+{% endblock %}

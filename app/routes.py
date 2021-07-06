@@ -1,3 +1,4 @@
+from flask import render_template
 from app import app
 
 
@@ -6,4 +7,4 @@ from app import app
 def index():
     """This function implements the view logic for the index page."""
 
-    return "Hello world!"
+    return render_template('index.html', title='Home')

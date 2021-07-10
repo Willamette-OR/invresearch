@@ -1,4 +1,5 @@
 from datetime import datetime
+from werkzeug.security import generate_password_hash, check_password_hash
 from app import db 
 
 
@@ -18,6 +19,18 @@ class User(db.Model):
         """This function defines the string repr of user objects."""
 
         return "<User: {}>".format(self.username)
+
+    def set_password(self, password):
+        """
+        This function hashes the input password and saves the hash with the user.
+        """
+
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        """This function checks the input password and returns True or False."""
+
+        return check_password_hash(self.password_hash, password)
 
 
 class Post(db.Model):

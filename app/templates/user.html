@@ -18,4 +18,8 @@
             </td>
         </tr>
     </table>
+    <hr>
+    {% for post in user.posts %}
+        {% include '_post.html' %}
+    {% endfor %}
 {% endblock %}

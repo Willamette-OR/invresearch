@@ -43,7 +43,7 @@ class User(UserMixin, db.Model):
         """
 
         digest = md5(self.email.lower().encode('utf-8')).hexdigest()
-        return 'https://www.gravatar.com/avatar/{}?d=identicon&?s={}'.format(
+        return 'https://www.gravatar.com/avatar/{}?d=identicon&s={}'.format(
                 digest, size)
 
 

@@ -1,9 +1,22 @@
 from flask import render_template, flash, redirect, url_for, request
 from flask_login import login_required, current_user, login_user, logout_user
 from werkzeug.urls import url_parse
+from datetime import datetime
 from app import app, db
 from app.forms import LoginForm, RegistrationForm
 from app.models import User
+
+
+@app.before_request
+def before_request():
+    """
+    This function handles operations to perform before each request, 
+    registered with the app.
+    """
+
+    if current_user.is_authenticated:
+        current_user.last_seen = datetime.utcnow()
+        db.session.commit()
 
 
 @app.route('/')
@@ -70,3 +83,13 @@ def register():
         return redirect(url_for('login'))
 
     return render_template('register.html', title='Register', form=form)
+
+
+@app.route('/user/<username>')
+@login_required
+def user(username):
+    """This view function implements the logic to display user profiles."""
+
+    user = User.query.filter_by(username=username).first_or_404()
+    
+    return render_template('user.html', title='User Profile', user=user)

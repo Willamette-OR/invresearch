@@ -3,7 +3,8 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager
 import logging
-from logging.handlers import SMTPHandler
+from logging.handlers import SMTPHandler, RotatingFileHandler
+import os
 from config import Config
 
 
@@ -36,5 +37,20 @@ if not app.debug:
         ))
         app.logger.addHandler(mail_handler)
 
+    # log more running info to files
+    if not os.path.exists('logs'):
+        os.mkdir('logs')
+    file_handler = RotatingFileHandler('logs/invresearch.log', maxBytes=10240,
+                                       backupCount=10)
+    file_handler.setLevel(logging.INFO)
+    file_handler.setFormatter(logging.Formatter(
+        '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
+    ))
+    app.logger.addHandler(file_handler)
+
+    # configure app logger
+    app.logger.setLevel(logging.INFO)
+    app.logger.info('Invresearch startup')
+    
 
 from app import routes, models, errors

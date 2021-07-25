@@ -78,6 +78,18 @@ class User(UserMixin, db.Model):
         if self.is_following(user):
             self.followed.remove(user)
 
+    def followed_posts(self):
+        """
+        This method queries the object's own posts and all followed users' 
+        posts.
+        """
+
+        followed = Post.query.join(
+            followers, (Post.user_id==followers.c.followed_id)).filter(
+            self.id==followers.c.follower_id)
+        own = Post.query.filter_by(user_id=self.id)
+        return followed.union(own).order_by(Post.timestamp.desc())
+
 
 @login.user_loader
 def load_user(id):

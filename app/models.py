@@ -5,6 +5,13 @@ from hashlib import md5
 from app import db, login 
 
 
+followers = db.Table(
+    'followers',
+    db.Column('follower_id', db.Integer, db.ForeignKey('user.id')),
+    db.Column('followed_id', db.Integer, db.ForeignKey('user.id'))
+    )
+
+
 class User(UserMixin, db.Model):
     """
     This class implements a table for storing data related to app users, 
@@ -18,6 +25,11 @@ class User(UserMixin, db.Model):
     posts = db.relationship('Post', backref='author', lazy='dynamic')
     about_me = db.Column(db.String(140))
     last_seen = db.Column(db.DateTime, default=datetime.utcnow)
+    followed = db.relationship('User', secondary=followers, 
+        primaryjoin=(id==followers.c.follower_id),
+        secondaryjoin=(followers.c.followed_id==id),
+        backref=db.backref('followers', lazy='dynamic'), lazy='dynamic'
+        )
 
     def __repr__(self):
         """This method defines the string repr of user objects."""
@@ -45,6 +57,26 @@ class User(UserMixin, db.Model):
         digest = md5(self.email.lower().encode('utf-8')).hexdigest()
         return 'https://www.gravatar.com/avatar/{}?d=identicon&s={}'.format(
                 digest, size)
+
+    def is_following(self, user):
+        """This method checks if the object is following a given user."""
+
+        return self.followed.filter(
+            followers.c.followed_id==user.id).count() > 0
+
+    def follow(self, user):
+        """This method adds the given user to the object's followed list."""
+
+        if not self.is_following(user):
+            self.followed.append(user)
+
+    def unfollow(self, user):
+        """
+        This method removes the given user from the object's followed list.
+        """
+
+        if self.is_following(user):
+            self.followed.remove(user)
 
 
 @login.user_loader

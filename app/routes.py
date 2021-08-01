@@ -3,8 +3,9 @@ from flask_login import login_required, current_user, login_user, logout_user
 from werkzeug.urls import url_parse
 from datetime import datetime
 from app import app, db
-from app.forms import EditProfileForm, LoginForm, RegistrationForm, EmptyForm
-from app.models import User
+from app.forms import EditProfileForm, LoginForm, RegistrationForm, EmptyForm, \
+    SubmitPostForm
+from app.models import User, Post
 
 
 @app.before_request
@@ -19,21 +20,23 @@ def before_request():
         db.session.commit()
 
 
-@app.route('/')
-@app.route('/index')
+@app.route('/', methods=['GET', 'POST'])
+@app.route('/index', methods=['GET', 'POST'])
 @login_required
 def index():
     """This function implements the view logic for the index page."""
 
-    username = 'baiber'
-    posts = [
-        {'body': 'This is the first post!',
-         'author': 'baiber'},
-        {'body': 'This web app is about investment research!',
-         'author': 'peipei'}
-    ]
+    posts = current_user.followed_posts().all()
+    form = SubmitPostForm()
+    if form.validate_on_submit():
+        post = Post(body=form.post.data, author=current_user)
+        db.session.add(post)
+        db.session.commit()
+        flash("Your new post is now live!")
+        return redirect(url_for('index'))
 
-    return render_template('index.html', title='Home', username=username, posts=posts)
+    return render_template('index.html', title='Home', 
+                           posts=posts, form=form)
 
 
 @app.route('/login', methods=['GET', 'POST'])

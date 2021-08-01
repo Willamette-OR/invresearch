@@ -52,3 +52,12 @@ class EditProfileForm(FlaskForm):
         user = User.query.filter_by(username=username.data).first()
         if user:
             raise ValidationError("Please use a different username.")
+
+
+class EmptyForm(FlaskForm):
+    """
+    This class defines an empty form for requests that need protection from 
+    CSRF, derived from FlaskForm.
+    """
+
+    submit = SubmitField('Submit')

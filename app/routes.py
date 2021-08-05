@@ -26,7 +26,14 @@ def before_request():
 def index():
     """This function implements the view logic for the index page."""
 
-    posts = current_user.followed_posts().all()
+    page = request.args.get('page', 1, type=int)
+    posts = current_user.followed_posts().paginate(
+        page, app.config['POSTS_PER_PAGE'], False)
+    next_url = url_for('index', page=posts.next_num) \
+        if posts.has_next else None
+    prev_url = url_for('index', page=posts.prev_num) \
+        if posts.has_prev else None
+
     form = SubmitPostForm()
     if form.validate_on_submit():
         post = Post(body=form.post.data, author=current_user)
@@ -35,8 +42,8 @@ def index():
         flash("Your new post is now live!")
         return redirect(url_for('index'))
 
-    return render_template('index.html', title='Home', 
-                           posts=posts, form=form)
+    return render_template('index.html', title='Home', posts=posts.items, 
+                           form=form, next_url=next_url, prev_url=prev_url)
 
 
 @app.route('/login', methods=['GET', 'POST'])

@@ -4,7 +4,7 @@ from werkzeug.urls import url_parse
 from datetime import datetime
 from app import app, db
 from app.forms import EditProfileForm, LoginForm, RegistrationForm, EmptyForm, \
-    SubmitPostForm, ResetPasswordRequestForm
+    SubmitPostForm, ResetPasswordRequestForm, ResetPasswordForm
 from app.models import User, Post
 from app.emails import send_password_reset_email
 
@@ -232,4 +232,12 @@ def reset_password(token):
     if not user:
         return redirect(url_for('index'))
 
-    return 'placeholder'
+    form = ResetPasswordForm()
+    if form.validate_on_submit():
+        user.set_password(form.password.data)
+        db.session.commit()
+        flash("Your password has been reset successfully!")
+        return redirect(url_for('login'))
+
+    return render_template('reset_password.html', title='Reset Password', 
+                           form=form)

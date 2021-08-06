@@ -72,3 +72,13 @@ class SubmitPostForm(FlaskForm):
     post = TextAreaField(
         'Say something', validators=[DataRequired(), Length(min=1, max=140)])
     submit = SubmitField('Submit')
+
+
+class ResetPasswordRequestForm(FlaskForm):
+    """
+    This class implements a form for users to request password reset emails, 
+    derived from FlaskForm
+    """
+
+    email = StringField('Email', validators=[DataRequired(), Email()])
+    submit = SubmitField('Submit')

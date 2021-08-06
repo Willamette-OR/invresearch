@@ -1,3 +1,4 @@
+from flask.app import Flask
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, BooleanField, SubmitField, \
     TextAreaField
@@ -71,4 +72,27 @@ class SubmitPostForm(FlaskForm):
 
     post = TextAreaField(
         'Say something', validators=[DataRequired(), Length(min=1, max=140)])
+    submit = SubmitField('Submit')
+
+
+class ResetPasswordRequestForm(FlaskForm):
+    """
+    This class implements a form for users to request password reset emails, 
+    derived from FlaskForm
+    """
+
+    email = StringField('Email', validators=[DataRequired(), Email()])
+    submit = SubmitField('Submit')
+
+
+class ResetPasswordForm(FlaskForm):
+    """
+    This class implements a form for users to reset passwords, derived from 
+    FlaskForm.
+    """
+
+    password = PasswordField('New Password', validators=[DataRequired()])
+    repeat_password = PasswordField('Repeat New Password', 
+                                    validators=[DataRequired(), 
+                                    EqualTo('password')])
     submit = SubmitField('Submit')

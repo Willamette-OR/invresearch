@@ -104,8 +104,16 @@ class UserTestCase(unittest.TestCase):
         self.assertEqual(f3, [p3, p4])
         self.assertEqual(f4, [p3, p4, p2])
         
+    def test_password_reset_token(self):
+        """This method test password reset token features."""
 
-
+        user = User(username='bob', email='bob@example.com')
+        db.session.add(user)
+        db.session.commit()
+        token = user.get_password_reset_token()
+        self.assertTrue(token is not None)
+        self.assertEqual(User.verify_password_reset_token(token), user)
+        self.assertTrue(User.verify_password_reset_token(token+'foo') is None)
 
 
 if __name__ == '__main__':

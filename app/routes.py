@@ -1,7 +1,8 @@
-from flask import render_template, flash, redirect, url_for, request
+from flask import render_template, flash, redirect, url_for, request, g
 from flask_login import login_required, current_user, login_user, logout_user
 from werkzeug.urls import url_parse
 from datetime import datetime
+from langdetect import detect, LangDetectException
 from app import app, db
 from app.forms import EditProfileForm, LoginForm, RegistrationForm, EmptyForm, \
     SubmitPostForm, ResetPasswordRequestForm, ResetPasswordForm
@@ -20,6 +21,9 @@ def before_request():
         current_user.last_seen = datetime.utcnow()
         db.session.commit()
 
+    # save the best supported language to g for post translation rendering
+    g.locale = request.accept_languages.best
+
 
 @app.route('/', methods=['GET', 'POST'])
 @app.route('/index', methods=['GET', 'POST'])
@@ -37,7 +41,12 @@ def index():
 
     form = SubmitPostForm()
     if form.validate_on_submit():
-        post = Post(body=form.post.data, author=current_user)
+        try:
+            language = detect(form.post.data)
+        except LangDetectException:
+            language = ''
+        post = Post(body=form.post.data, author=current_user, 
+                    language=language)
         db.session.add(post)
         db.session.commit()
         flash("Your new post is now live!")

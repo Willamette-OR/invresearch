@@ -24,6 +24,7 @@ idna=3.2=pyhd3eb1b0_0
 importlib-metadata=3.10.0=py39h06a4308_0
 itsdangerous=2.0.1=pyhd3eb1b0_0
 jinja2=3.0.1=pyhd3eb1b0_0
+langdetect=1.0.9=pyhd8ed1ab_0
 ld_impl_linux-64=2.35.1=h7274673_9
 libffi=3.3=he6710b0_2
 libgcc-ng=9.3.0=h5101ec6_17

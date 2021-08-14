@@ -1,4 +1,4 @@
-from flask import render_template, flash, redirect, url_for, request, g
+from flask import render_template, flash, redirect, url_for, request, g, jsonify
 from flask_login import login_required, current_user, login_user, logout_user
 from werkzeug.urls import url_parse
 from datetime import datetime
@@ -8,6 +8,7 @@ from app.forms import EditProfileForm, LoginForm, RegistrationForm, EmptyForm, \
     SubmitPostForm, ResetPasswordRequestForm, ResetPasswordForm
 from app.models import User, Post
 from app.emails import send_password_reset_email
+from app.translate import translate
 
 
 @app.before_request
@@ -250,3 +251,16 @@ def reset_password(token):
 
     return render_template('reset_password.html', title='Reset Password', 
                            form=form)
+
+
+@app.route('/translation', methods=['POST'])
+@login_required
+def translation():
+    """
+    This view function handles post requests only to translate user posts.
+    """
+
+    return jsonify(
+        {'text': translate(text=request.form['text'],
+                           source_language=request.form['source_language'],
+                           dest_language=request.form['dest_language'])})

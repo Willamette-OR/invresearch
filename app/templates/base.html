@@ -44,6 +44,26 @@
 {% block scripts %}
     {{ super() }}
     {{ moment.include_moment() }}
+
+    {# function to handle dynamic user post translations #}
+    <script>
+        function translate(source_lang, dest_lang, source_elem, dest_elem) {
+            $(dest_elem).html('<img src="{{ url_for('static', filename='loading.gif') }}">');
+            $.post('/translation', {
+                text: $(source_elem).text(),
+                source_language: source_lang,
+                dest_language: dest_lang
+            }).done(
+                function(response) {
+                    $(dest_elem).text(response.text);
+                }
+            ).fail(
+                function() {
+                    $(dest_elem).text('Error: unable to contact server.');
+                }
+            );
+        }
+    </script>
 {% endblock %}
 
 

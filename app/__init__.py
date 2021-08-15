@@ -16,7 +16,7 @@ app.config.from_object(Config)
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 login = LoginManager(app)
-login.login_view = 'login'
+login.login_view = 'auth.login'
 mail = Mail(app)
 bootstrap = Bootstrap(app)
 moment = Moment(app)
@@ -29,6 +29,10 @@ app.register_blueprint(auth_bp, url_prefix='/auth')
 # incorporate the errors blueprint
 from app.errors import bp as errors_bp
 app.register_blueprint(errors_bp)
+
+# incorporate the main blueprint
+from app.main import bp as main_bp
+app.register_blueprint(main_bp)
 
 
 if not app.debug:
@@ -68,4 +72,4 @@ if not app.debug:
     app.logger.info('Invresearch startup')
     
 
-from app import routes, models, errors
+from app import models

@@ -14,7 +14,7 @@ def login():
     """This function implements the view logic for the login page."""
 
     if current_user.is_authenticated:
-        return redirect(url_for('index'))
+        return redirect(url_for('main.index'))
 
     form = LoginForm()
     if form.validate_on_submit():
@@ -26,7 +26,7 @@ def login():
         flash("You have logged in successfully!")
         next_page = request.args.get('next')
         if not next_page or url_parse(next_page).netloc != '':
-            return redirect(url_for('index'))
+            return redirect(url_for('main.index'))
         return redirect(next_page)
         
     return render_template('auth/login.html', title='Login', form=form)
@@ -44,7 +44,7 @@ def register():
     """This function implements the view logic to register new users."""
 
     if current_user.is_authenticated:
-        return redirect(url_for('index'))
+        return redirect(url_for('main.index'))
 
     form = RegistrationForm()
     if form.validate_on_submit():
@@ -63,7 +63,7 @@ def reset_password_request():
     """This view function handles requests to request password reset emails."""
 
     if current_user.is_authenticated:
-        return redirect(url_for('index'))
+        return redirect(url_for('main.index'))
 
     form = ResetPasswordRequestForm()
     if form.validate_on_submit():
@@ -84,7 +84,7 @@ def reset_password(token):
 
     user = User.verify_password_reset_token(token)
     if not user:
-        return redirect(url_for('index'))
+        return redirect(url_for('main.index'))
 
     form = ResetPasswordForm()
     if form.validate_on_submit():

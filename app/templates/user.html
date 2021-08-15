@@ -18,18 +18,18 @@
                 <p>{{ user.followers.count() }} followers, following {{ user.followed.count() }} others</p>
                 {% if user == current_user %}
                     <p>
-                        <a href="{{ url_for('edit_profile') }}">
+                        <a href="{{ url_for('main.edit_profile') }}">
                             Edit Profile
                         </a>
                     </p>
                 {% elif not current_user.is_following(user) %}
-                    <form action="{{ url_for('follow', username=user.username) }}" 
+                    <form action="{{ url_for('main.follow', username=user.username) }}" 
                         method="POST">
                         {{ form.hidden_tag() }}
                         {{ form.submit(value='Follow') }}
                     </form>
                 {% else %}
-                    <form action="{{ url_for('unfollow', username=user.username) }}"
+                    <form action="{{ url_for('main.unfollow', username=user.username) }}"
                         method="POST">
                         {{ form.hidden_tag() }}
                         {{ form.submit(value='Unfollow') }}

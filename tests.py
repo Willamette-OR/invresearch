@@ -1,8 +1,18 @@
-from os import times
 import unittest
 from datetime import datetime, timedelta
-from app import app, db
+from config import Config
+from app import create_app, db
 from app.models import User, Post
+
+
+class TestingConfig(Config):
+    """
+    This class implements a testing configuration class, derived from the 
+    parent class Config.
+    """
+
+    TESTING = True
+    SQLALCHEMY_DATABASE_URI = 'sqlite://'
 
 
 class UserTestCase(unittest.TestCase):
@@ -14,7 +24,9 @@ class UserTestCase(unittest.TestCase):
     def setUp(self):
         """This method defines instructions to be executed before each test."""
 
-        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite://'
+        self.app = create_app(TestingConfig)
+        self.app_context = self.app.app_context()
+        self.app_context.push()
         db.create_all()
 
     def tearDown(self):
@@ -22,6 +34,7 @@ class UserTestCase(unittest.TestCase):
 
         db.session.remove()
         db.drop_all()
+        self.app_context.pop()
 
     def test_password(self):
         """This method tests the password feature."""

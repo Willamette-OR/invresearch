@@ -1,4 +1,3 @@
-from os import times
 import unittest
 from datetime import datetime, timedelta
 from app import app, db

@@ -22,6 +22,11 @@ bootstrap = Bootstrap(app)
 moment = Moment(app)
 
 
+# incorporate blueprints
+from app.auth import bp as auth_bp
+app.register_blueprint(auth_bp, url_prefix='/auth')
+
+
 if not app.debug:
     # only enable error reports via email when MAIL_SERVER is configured.
     if app.config['MAIL_SERVER']:

@@ -1,43 +1,7 @@
-from flask.app import Flask
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, BooleanField, SubmitField, \
-    TextAreaField
-from wtforms.validators import DataRequired, Email, EqualTo, ValidationError, \
-    Length
+from wtforms import StringField, SubmitField, TextAreaField
+from wtforms.validators import DataRequired, ValidationError, Length
 from app.models import User
-
-
-class LoginForm(FlaskForm):
-    """This class is a child class of FlaskForm, which defines the login form for the app."""
-
-    username = StringField('Username', validators=[DataRequired()])
-    password = PasswordField('Password', validators=[DataRequired()])
-    remember_me = BooleanField('Remember Me')
-    submit = SubmitField('Login')
-
-
-class RegistrationForm(FlaskForm):
-    """This class defines the user registration form, derived from FlaskForm."""
-
-    username = StringField('Username', validators=[DataRequired()])
-    email = StringField('Email', validators=[DataRequired(), Email()])
-    password = PasswordField('Password', validators=[DataRequired()])
-    repeat_password = PasswordField('Repeat Password', validators=[DataRequired(), EqualTo('password')])
-    submit = SubmitField('Register')
-
-    def validate_username(self, username):
-        """This method validates if the username already exists."""
-
-        user = User.query.filter_by(username=username.data).first()
-        if user:
-            raise ValidationError("Please use a different username.")
-
-    def validate_email(self, email):
-        """This method validates if the email address has already been registered."""
-
-        user = User.query.filter_by(email=email.data).first()
-        if user:
-            raise ValidationError("Please use a different email address.")
 
 
 class EditProfileForm(FlaskForm):
@@ -72,27 +36,4 @@ class SubmitPostForm(FlaskForm):
 
     post = TextAreaField(
         'Say something', validators=[DataRequired(), Length(min=1, max=140)])
-    submit = SubmitField('Submit')
-
-
-class ResetPasswordRequestForm(FlaskForm):
-    """
-    This class implements a form for users to request password reset emails, 
-    derived from FlaskForm
-    """
-
-    email = StringField('Email', validators=[DataRequired(), Email()])
-    submit = SubmitField('Submit')
-
-
-class ResetPasswordForm(FlaskForm):
-    """
-    This class implements a form for users to reset passwords, derived from 
-    FlaskForm.
-    """
-
-    password = PasswordField('New Password', validators=[DataRequired()])
-    repeat_password = PasswordField('Repeat New Password', 
-                                    validators=[DataRequired(), 
-                                    EqualTo('password')])
     submit = SubmitField('Submit')

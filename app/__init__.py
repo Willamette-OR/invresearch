@@ -22,9 +22,13 @@ bootstrap = Bootstrap(app)
 moment = Moment(app)
 
 
-# incorporate blueprints
+# incorporate the auth blueprint
 from app.auth import bp as auth_bp
 app.register_blueprint(auth_bp, url_prefix='/auth')
+
+# incorporate the errors blueprint
+from app.errors import bp as errors_bp
+app.register_blueprint(errors_bp)
 
 
 if not app.debug:

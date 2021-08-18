@@ -6,6 +6,72 @@ from hashlib import md5
 from time import time
 import jwt
 from app import db, login 
+from app.search import query_index, add_to_index, remove_from_index
+
+
+class SearchableMixin(object):
+    """This class implements search related methods for data models."""
+
+    @classmethod
+    def search(cls, expression, page, per_page):
+        """This class method does the search through the current data model."""
+
+        ids, total = query_index(cls.__tablename__, expression, page, per_page)
+        
+        # return a null table if nothing was found through the search
+        if total == 0:
+            return cls.query.filter_by(id=0), total
+
+        when = []
+        for i in range(len(ids)):
+            when.append((ids[i], i))
+
+        return cls.query.filter(cls.id.in_(ids)).order_by(
+            db.case(when, value=cls.id)), total
+
+    @classmethod
+    def before_commit(cls, session):
+        """
+        This class method saves the session info for updating the search index 
+        later.
+        """
+
+        session._changes = {
+            'add': list(session.new),
+            'update': list(session.dirty),
+            'delete': list(session.deleted)
+            }
+
+    @classmethod
+    def after_commit(cls, session):
+        """
+        This class method updates the search index with session changes just committed.
+        """
+
+        for obj in session._changes['add']:
+            if isinstance(obj, SearchableMixin):
+                add_to_index(obj.__tablename__, obj)
+        for obj in session._changes['update']:
+            if isinstance(obj, SearchableMixin):
+                add_to_index(obj.__tablename__, obj)
+        for obj in session._changes['delete']:
+            if isinstance(obj, SearchableMixin):
+                remove_from_index(obj.__tablename__, obj)
+
+        # reset the attribute after updating the search index
+        session._changes = None
+
+    @classmethod
+    def reindex(cls):
+        """This method reindexes all instances of the data model."""
+
+        for obj in cls.query:
+            add_to_index(cls.__tablename__, obj)
+
+
+# register SearchableMixin methods with the database session
+db.event.listen(db.session, 'before_commit', SearchableMixin.before_commit)
+db.event.listen(db.session, 'after_commit', SearchableMixin.after_commit)
 
 
 followers = db.Table(
@@ -124,7 +190,7 @@ def load_user(id):
     return User.query.get(int(id))
 
 
-class Post(db.Model):
+class Post(SearchableMixin, db.Model):
     """
     This class implements a table for storing post data for app users,
     derived from SQLAlchemy's Model class.

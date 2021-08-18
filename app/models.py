@@ -136,6 +136,9 @@ class Post(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     language = db.Column(db.String(5))
 
+    # fields available for search
+    __searchable__ = ['body']
+
     def __repr__(self):
         """This function defines the string repr of post objects."""
 

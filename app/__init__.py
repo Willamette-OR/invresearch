@@ -6,6 +6,7 @@ from flask_mail import Mail
 from flask_bootstrap import Bootstrap
 from flask_moment import Moment
 from logging.handlers import SMTPHandler, RotatingFileHandler
+from elasticsearch import Elasticsearch
 import logging
 import os
 from config import Config
@@ -35,6 +36,10 @@ def create_app(config=Config):
     mail.init_app(app)
     bootstrap.init_app(app)
     moment.init_app(app)
+
+    # initialize elasticsearch
+    app.elasticsearch = Elasticsearch(app.config['ELASTICSEARCH_URL']) \
+        if app.config['ELASTICSEARCH_URL'] else None
 
     # incorporate the auth blueprint
     from app.auth import bp as auth_bp

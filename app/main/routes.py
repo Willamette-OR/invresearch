@@ -7,7 +7,8 @@ from app import db
 from app.models import User, Post
 from app.translate import translate
 from app.main import bp
-from app.main.forms import EditProfileForm, EmptyForm, SubmitPostForm
+from app.main.forms import EditProfileForm, EmptyForm, SubmitPostForm, \
+    SearchForm
 
 
 @bp.before_request
@@ -20,6 +21,7 @@ def before_request():
     if current_user.is_authenticated:
         current_user.last_seen = datetime.utcnow()
         db.session.commit()
+        g.search_form = SearchForm()
 
     # save the best supported language to g for post translation rendering
     g.locale = request.accept_languages.best
@@ -175,3 +177,15 @@ def translation():
         {'text': translate(text=request.form['text'],
                            source_language=request.form['source_language'],
                            dest_language=request.form['dest_language'])})
+
+
+@bp.route('/search')
+def search():
+    """
+    This view function handles requests to search user posts and display 
+    search results.
+    """
+
+    # temp code for debugging
+    flash('Search text submitted - {}'.format(request.args.get('q')))
+    return redirect(url_for('main.index'))

@@ -1,3 +1,4 @@
+from flask import request
 from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField, TextAreaField
 from wtforms.validators import DataRequired, ValidationError, Length
@@ -37,3 +38,21 @@ class SubmitPostForm(FlaskForm):
     post = TextAreaField(
         'Say something', validators=[DataRequired(), Length(min=1, max=140)])
     submit = SubmitField('Submit')
+
+
+class SearchForm(FlaskForm):
+    """This class implements a form for searching user posts."""
+
+    q = StringField('Search', validators=[DataRequired()])
+
+    def __init__(self, *args, **kwargs):
+        """
+        This constructor method changes the default values of a couple of args 
+        needed for the search form.
+        """
+
+        if 'formdata' not in kwargs:
+            kwargs['formdata'] = request.args
+        if 'csrf_enabled' not in kwargs:
+            kwargs['csrf_enabled'] = False
+        super().__init__(*args, **kwargs)

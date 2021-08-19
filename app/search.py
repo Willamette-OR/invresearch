@@ -36,7 +36,7 @@ def query_index(index, query, page, per_page):
     # perform search via elasticsearch
     search = current_app.elasticsearch.search(index=index, 
         body={'query': {'multi_match': {'query': query, 'fields': ['*']}}, 
-              'from': (page - 1), 'size': per_page})
+              'from': (page - 1) * per_page, 'size': per_page})
 
     total = search['hits']['total']['value']
     ids = [int(hit['_id']) for hit in search['hits']['hits']]

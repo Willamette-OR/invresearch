@@ -180,12 +180,32 @@ def translation():
 
 
 @bp.route('/search')
+@login_required
 def search():
     """
     This view function handles requests to search user posts and display 
     search results.
     """
 
-    # temp code for debugging
-    flash('Search text submitted - {}'.format(request.args.get('q')))
-    return redirect(url_for('main.index'))
+    # currently if the search is empty just redirect to explore
+    # notice that the form method used here is NOT "validate_on_submit",
+    # but instead "validate".
+    # the reason is "validate_on_submit" is for POST methods only,
+    # while the search form uses GET.
+    if not g.search_form.validate():
+        return redirect(url_for('main.explore'))
+
+    # grab parameters from the request and perform user post search
+    page = request.args.get('page', 1, type=int)
+    query = g.search_form.q.data
+    posts, total = Post.search(expression=query, page=page, 
+                               per_page=current_app.config['POSTS_PER_PAGE'])
+
+    # generate urls for pagination
+    next_url = url_for('main.search', q=query, page=(page + 1)) \
+        if page * current_app.config['POSTS_PER_PAGE'] < total else None
+    prev_url = url_for('main.search', q=query, page=(page - 1)) \
+        if page > 1 else None
+
+    return render_template('search.html', title='Search Results', posts=posts, 
+                           next_url=next_url, prev_url=prev_url)

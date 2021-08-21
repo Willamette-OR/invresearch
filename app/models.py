@@ -1,4 +1,5 @@
 from datetime import datetime
+from sqlalchemy.orm import backref
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask import current_app
 from flask_login import UserMixin
@@ -99,6 +100,13 @@ class User(UserMixin, db.Model):
         secondaryjoin=(followers.c.followed_id==id),
         backref=db.backref('followers', lazy='dynamic'), lazy='dynamic'
         )
+    sent_messages = db.relationship('Message', 
+                                    foreign_keys='Message.sender_id', 
+                                    backref='author', lazy='dynamic')
+    received_messages = db.relationship('Message', 
+                                        foreign_keys='Message.recipient_id', 
+                                        backref='recipient', lazy='dynamic')
+    last_message_read_time = db.Column(db.DateTime)
 
     def __repr__(self):
         """This method defines the string repr of user objects."""
@@ -184,6 +192,13 @@ class User(UserMixin, db.Model):
         else:
             return User.query.get(id)
 
+    def new_messages(self):
+        """This method returns the number of new messages."""
+
+        last_read_time = self.last_message_read_time or datetime(1900, 1, 1)
+        return Message.query.filter_by(recipient=self).filter(
+            Message.timestamp > last_read_time).count()
+
 
 @login.user_loader
 def load_user(id):
@@ -209,3 +224,19 @@ class Post(SearchableMixin, db.Model):
         """This function defines the string repr of post objects."""
 
         return "<Post: {}>".format(self.body)
+
+
+class Message(db.Model):
+    """
+    This class implements a data model for storing user messages, drived from 
+    the parent class db.Model.
+    """
+
+    id = db.Column(db.Integer, primary_key=True)
+    sender_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    recipient_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
+    body = db.Column(db.String(140))
+
+    def __repr__(self):
+        return "<Message: {}>".format(self.body)

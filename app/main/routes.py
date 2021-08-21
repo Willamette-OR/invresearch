@@ -2,6 +2,7 @@ from flask import render_template, flash, redirect, url_for, request, g, \
     jsonify, current_app
 from flask_login import login_required, current_user
 from datetime import datetime
+from flask_login.utils import login_user
 from langdetect import detect, LangDetectException
 from app import db
 from app.models import User, Post
@@ -209,3 +210,14 @@ def search():
 
     return render_template('search.html', title='Search Results', posts=posts, 
                            next_url=next_url, prev_url=prev_url)
+
+
+@bp.route('/user/<username>/popup')
+@login_required
+def user_popup(username):
+    """This view function handles Ajax requests to display user information."""
+
+    user = User.query.filter_by(username=username).first_or_404()
+    form = EmptyForm()
+    
+    return render_template('user_popup.html', user=user, form=form)

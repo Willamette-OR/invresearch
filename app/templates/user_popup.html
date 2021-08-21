@@ -1,0 +1,43 @@
+<table class="table">
+    <tr>
+        <td width="64px" style="border: 0px;">
+            <img src="{{ user.avatar(size=64) }}">
+        </td>
+        <td style="border: 0px;">
+            <small>
+                <p>
+                    <a href="{{ url_for('main.user', username=user.username) }}">
+                        {{ user.username }}
+                    </a>
+                </p>
+                {% if user.about_me %}
+                    <p>{{ user.about_me }}</p>
+                {% endif %}
+                {% if user.last_seen %}
+                    <p>{{ user.last_seen }}</p>
+                {% endif %}
+                <p>
+                    {{ user.followers.count() }} followers, 
+                    {{ user.followed.count() }} following
+                </p>
+                {% if current_user != user %}
+                    {% if current_user.is_following(user) %}
+                        <form action="{{ url_for('main.unfollow', username=user.username) }}" method="POST">
+                            {{ form.hidden_tag() }}
+                            <p>
+                                {{ form.submit(value='Unfollow', class='btn btn-default btn-sm') }}
+                            </p>
+                        </form>
+                    {% else %}
+                        <form action="{{ url_for('main.follow', username=user.username) }}" method="POST">
+                            {{ form.hidden_tag() }}
+                            <p>
+                                {{ form.submit(value='Follow', class='btn btn-default btn-sm') }}
+                            </p>
+                        </form>
+                    {% endif %}
+                {% endif %}
+            </small>
+        </td>
+    </tr>
+</table>

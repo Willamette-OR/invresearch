@@ -71,6 +71,62 @@
             );
         }
     </script>
+
+    {# script to enable user popup information for all user links on the page #}
+    <script>
+        $(function() {
+            var timer = null;
+            var xhr = null;
+
+            // attach a user popup hover event to user links using jQuery
+            $('.user_popup').hover(
+                function(event) {
+                    // mouse in event handler
+                    var elem = $(event.currentTarget);
+                    timer = setTimeout(
+                        function() {
+                            timer = null;
+                            // popup logic
+                            xhr = $.ajax(
+                                '/user/' + elem.first().text().trim() + '/popup').done(
+                                    function(data) {
+                                        xhr = null;
+                                        // popup creation
+                                        elem.popover({
+                                            trigger: 'manual',
+                                            html: true,
+                                            animation: false,
+                                            container: elem,
+                                            content: data
+                                        }).popover('show');
+                                        flask_moment_render_all();
+                                    }
+                                );
+                        }, 1000
+                    );
+                },
+                function(event) {
+                    // mouse out event handler
+                    var elem = $(event.currentTarget);
+
+                    // reset the timer if there still is one
+                    if (timer) {
+                        clearTimeout(timer);
+                        timer = null;
+                    }
+                    // abort the Ajax request if still loading
+                    else if (xhr) {
+                        xhr.abort();
+                        xhr = null;
+                    }
+                    // destroy popup here
+                    else {
+                        elem.popover('destroy');
+                    };
+                }
+            );
+        });
+    </script>
 {% endblock %}
 
 

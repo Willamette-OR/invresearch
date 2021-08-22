@@ -5,11 +5,11 @@ from datetime import datetime
 from flask_login.utils import login_user
 from langdetect import detect, LangDetectException
 from app import db
-from app.models import User, Post
+from app.models import User, Post, Message
 from app.translate import translate
 from app.main import bp
 from app.main.forms import EditProfileForm, EmptyForm, SubmitPostForm, \
-    SearchForm
+    SearchForm, MessageForm
 
 
 @bp.before_request
@@ -221,3 +221,22 @@ def user_popup(username):
     form = EmptyForm()
     
     return render_template('user_popup.html', user=user, form=form)
+
+
+@bp.route('/send_message/<recipient>', methods=['GET', 'POST'])
+@login_required
+def send_message(recipient):
+    """This view function handles requests to message users."""
+
+    user = User.query.filter_by(username=recipient).first_or_404()
+    form = MessageForm()
+
+    if form.validate_on_submit():
+        msg = Message(body=form.body.data, author=current_user, recipient=user)
+        db.session.add(msg)
+        db.session.commit()
+        flash('Your message to {} has been sent.'.format(recipient))
+        return redirect(url_for('main.user', username=recipient))
+
+    return render_template('send_message.html', title='Send Message', 
+                           recipient=recipient, form=form)

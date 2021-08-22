@@ -22,18 +22,24 @@
                             Edit Profile
                         </a>
                     </p>
-                {% elif not current_user.is_following(user) %}
-                    <form action="{{ url_for('main.follow', username=user.username) }}" 
-                        method="POST">
-                        {{ form.hidden_tag() }}
-                        {{ form.submit(value='Follow') }}
-                    </form>
                 {% else %}
-                    <form action="{{ url_for('main.unfollow', username=user.username) }}"
-                        method="POST">
-                        {{ form.hidden_tag() }}
-                        {{ form.submit(value='Unfollow') }}
-                    </form>
+                    {% if not current_user.is_following(user) %}
+                        <form action="{{ url_for('main.follow', username=user.username) }}" 
+                            method="POST">
+                            {{ form.hidden_tag() }}
+                            {{ form.submit(value='Follow') }}
+                        </form>
+                    {% else %}
+                        <form action="{{ url_for('main.unfollow', username=user.username) }}"
+                            method="POST">
+                            {{ form.hidden_tag() }}
+                            {{ form.submit(value='Unfollow') }}
+                        </form>
+                    {% endif %}
+                    <br><br>
+                    <a href="{{ url_for('main.send_message', recipient=user.username) }}">
+                        Send private message
+                    </a>
                 {% endif %}
             </td>
         </tr>

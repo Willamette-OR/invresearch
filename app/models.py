@@ -6,6 +6,7 @@ from flask_login import UserMixin
 from hashlib import md5
 from time import time
 import jwt
+import json
 from app import db, login 
 from app.search import query_index, add_to_index, remove_from_index
 
@@ -107,6 +108,8 @@ class User(UserMixin, db.Model):
                                         foreign_keys='Message.recipient_id', 
                                         backref='recipient', lazy='dynamic')
     last_message_read_time = db.Column(db.DateTime)
+    notifications = db.relationship('Notification', backref='user', 
+                                    lazy='dynamic')
 
     def __repr__(self):
         """This method defines the string repr of user objects."""
@@ -199,6 +202,20 @@ class User(UserMixin, db.Model):
         return Message.query.filter_by(recipient=self).filter(
             Message.timestamp > last_read_time).count()
 
+    def add_notifiations(self, name, data):
+        """
+        This method updates user notifications with a given name for the 
+        notification, as well as the data included for the notification.
+        """
+
+        # first delete notifications of the same name if any
+        self.notifications.filter_by(name=name).delete()
+
+        n = Notification(name=name, user=self, payload_json=json.dumps(data))
+        db.session.add(n)
+
+        return n
+
 
 @login.user_loader
 def load_user(id):
@@ -240,3 +257,24 @@ class Message(db.Model):
 
     def __repr__(self):
         return "<Message: {}>".format(self.body)
+
+
+class Notification(db.Model):
+    """
+    This class implements a data model for storing user notifications, derived 
+    from the parent class db.Model.
+    """
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    name = db.Column(db.String(128), index=True)
+    timestamp = db.Column(db.Float, index=True, default=time)
+    payload_json = db.Column(db.Text)
+
+    def get_data(self):
+        """
+        This method deserializes data stored in the payload column and returns 
+        it as a string.
+        """
+
+        return json.loads(str(self.payload_json))

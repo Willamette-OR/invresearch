@@ -150,6 +150,25 @@ class UserTestCase(unittest.TestCase):
         u2.last_message_read_time = now + timedelta(seconds=10)
         self.assertEqual(u2.new_messages(), 0)
 
+    def test_user_notifications(self):
+        """This method test data modeling & methods related to notifications"""
+
+        u = User(username='alice')
+        db.session.add(u)
+        db.session.commit()
+
+        # add a first notification
+        u.add_notifiations(name='message_count', data={'count': 3})
+        db.session.commit()
+        self.assertEqual(u.notifications.count(), 1)
+        self.assertEqual(int(u.notifications.first().get_data()['count']), 3)
+
+        # updates the first notification
+        u.add_notifiations(name='message_count', data={'count': 5})
+        db.session.commit()
+        self.assertEqual(u.notifications.count(), 1)
+        self.assertEqual(int(u.notifications.first().get_data()['count']), 5)
+        
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

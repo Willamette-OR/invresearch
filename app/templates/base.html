@@ -42,9 +42,11 @@
                             <a href="{{ url_for('main.messages') }}">
                                 Messages
                                 {% set new_messages = current_user.new_messages() %}
-                                {% if new_messages %}
-                                    <span class="badge">{{ new_messages }}</span>
-                                {% endif %}
+                                <span id="message_count" class="badge" 
+                                    style="visibility: {% if new_messages %}visible
+                                                       {% else %}hidden{% endif %};">
+                                    {{ new_messages }}
+                                </span>
                             </a>
                         </li>
                         <li><a href="{{ url_for('main.user', username=current_user.username) }}">Profile</a></li>
@@ -134,6 +136,20 @@
                     };
                 }
             );
+        });
+    </script>
+
+    {# script to dynamically badge message count #}
+    <script>
+        // helper function to set message count for the designated DOM element
+        function set_message_count(n) {
+            $('#message_count').text(n);
+            $('#message_count').css('visibility', n ? 'visible' : 'hidden');
+        }
+
+        // DEBUG: testing the helper function above
+        $(function() {
+            set_message_count(5);
         });
     </script>
 {% endblock %}

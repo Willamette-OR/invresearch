@@ -202,7 +202,7 @@ class User(UserMixin, db.Model):
         return Message.query.filter_by(recipient=self).filter(
             Message.timestamp > last_read_time).count()
 
-    def add_notifiations(self, name, data):
+    def add_notifications(self, name, data):
         """
         This method updates user notifications with a given name for the 
         notification, as well as the data included for the notification.

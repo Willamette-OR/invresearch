@@ -5,7 +5,7 @@ from datetime import datetime
 from flask_login.utils import login_user
 from langdetect import detect, LangDetectException
 from app import db
-from app.models import User, Post, Message
+from app.models import Notification, User, Post, Message
 from app.translate import translate
 from app.main import bp
 from app.main.forms import EditProfileForm, EmptyForm, SubmitPostForm, \
@@ -234,6 +234,8 @@ def send_message(recipient):
     if form.validate_on_submit():
         msg = Message(body=form.body.data, author=current_user, recipient=user)
         db.session.add(msg)
+        user.add_notifications(name='unread_message_count', 
+                               data=user.new_messages())
         db.session.commit()
         flash('Your message to {} has been sent.'.format(recipient))
         return redirect(url_for('main.user', username=recipient))
@@ -248,6 +250,7 @@ def messages():
     """This view function handles requests to view received messages."""
 
     current_user.last_message_read_time = datetime.utcnow()
+    current_user.add_notifications(name='unread_message_count', data=0)
     db.session.commit()
 
     page = request.args.get('page', 1, type=int)
@@ -262,3 +265,26 @@ def messages():
     return render_template('messages.html', title='Messages', 
                            messages=messages.items, next_url=next_url, 
                            prev_url=prev_url)
+
+
+@bp.route('/notifications')
+@login_required
+def notifications():
+    """
+    This view function handles requests to return notifications added/updated 
+    since a given point in time.
+
+    The time value of the given point in time is stored in the url argument 
+    'since'.
+    """
+
+    since = request.args.get('since', 0.0, type=float)
+
+    notifications = current_user.notifications.filter(
+        Notification.timestamp > since).order_by(Notification.timestamp.asc())
+
+    return jsonify([{
+        'name': n.name,
+        'data': n.get_data(),
+        'timestamp': n.timestamp
+    } for n in notifications])

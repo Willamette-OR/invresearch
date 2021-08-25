@@ -1,10 +1,12 @@
 from datetime import datetime
+from sqlalchemy.orm import backref
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask import current_app
 from flask_login import UserMixin
 from hashlib import md5
 from time import time
 import jwt
+import json
 from app import db, login 
 from app.search import query_index, add_to_index, remove_from_index
 
@@ -99,6 +101,15 @@ class User(UserMixin, db.Model):
         secondaryjoin=(followers.c.followed_id==id),
         backref=db.backref('followers', lazy='dynamic'), lazy='dynamic'
         )
+    sent_messages = db.relationship('Message', 
+                                    foreign_keys='Message.sender_id', 
+                                    backref='author', lazy='dynamic')
+    received_messages = db.relationship('Message', 
+                                        foreign_keys='Message.recipient_id', 
+                                        backref='recipient', lazy='dynamic')
+    last_message_read_time = db.Column(db.DateTime)
+    notifications = db.relationship('Notification', backref='user', 
+                                    lazy='dynamic')
 
     def __repr__(self):
         """This method defines the string repr of user objects."""
@@ -184,6 +195,27 @@ class User(UserMixin, db.Model):
         else:
             return User.query.get(id)
 
+    def new_messages(self):
+        """This method returns the number of new messages."""
+
+        last_read_time = self.last_message_read_time or datetime(1900, 1, 1)
+        return Message.query.filter_by(recipient=self).filter(
+            Message.timestamp > last_read_time).count()
+
+    def add_notifications(self, name, data):
+        """
+        This method updates user notifications with a given name for the 
+        notification, as well as the data included for the notification.
+        """
+
+        # first delete notifications of the same name if any
+        self.notifications.filter_by(name=name).delete()
+
+        n = Notification(name=name, user=self, payload_json=json.dumps(data))
+        db.session.add(n)
+
+        return n
+
 
 @login.user_loader
 def load_user(id):
@@ -209,3 +241,40 @@ class Post(SearchableMixin, db.Model):
         """This function defines the string repr of post objects."""
 
         return "<Post: {}>".format(self.body)
+
+
+class Message(db.Model):
+    """
+    This class implements a data model for storing user messages, drived from 
+    the parent class db.Model.
+    """
+
+    id = db.Column(db.Integer, primary_key=True)
+    sender_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    recipient_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
+    body = db.Column(db.String(140))
+
+    def __repr__(self):
+        return "<Message: {}>".format(self.body)
+
+
+class Notification(db.Model):
+    """
+    This class implements a data model for storing user notifications, derived 
+    from the parent class db.Model.
+    """
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    name = db.Column(db.String(128), index=True)
+    timestamp = db.Column(db.Float, index=True, default=time)
+    payload_json = db.Column(db.Text)
+
+    def get_data(self):
+        """
+        This method deserializes data stored in the payload column and returns 
+        it as a string.
+        """
+
+        return json.loads(str(self.payload_json))

@@ -2,7 +2,7 @@ import unittest
 from datetime import datetime, timedelta
 from config import Config
 from app import create_app, db
-from app.models import User, Post
+from app.models import User, Post, Message
 
 
 class TestingConfig(Config):
@@ -128,6 +128,47 @@ class UserTestCase(unittest.TestCase):
         self.assertEqual(User.verify_password_reset_token(token), user)
         self.assertTrue(User.verify_password_reset_token(token+'foo') is None)
 
+    def test_user_messages(self):
+        u1 = User(username='alice')
+        u2 = User(username='bob')
+        db.session.add_all([u1, u2])
+        db.session.commit()
+
+        now = datetime.utcnow()
+        m1 = Message(body='alice to bob', author=u1, recipient=u2, 
+                     timestamp=now + timedelta(seconds=1))
+        m2 = Message(body='bob to alice', author=u2, recipient=u1, 
+                     timestamp=now + timedelta(seconds=4))
+        m3 = Message(body='bob to alice again', author=u1, recipient=u2, 
+                     timestamp=now + timedelta(seconds=2))             
+        db.session.add_all([m1, m2, m3])
+        db.session.commit()
+
+        self.assertEqual(str(m1), "<Message: alice to bob>")
+        self.assertEqual(u1.new_messages(), 1)
+        self.assertEqual(u2.new_messages(), 2)
+        u2.last_message_read_time = now + timedelta(seconds=10)
+        self.assertEqual(u2.new_messages(), 0)
+
+    def test_user_notifications(self):
+        """This method test data modeling & methods related to notifications"""
+
+        u = User(username='alice')
+        db.session.add(u)
+        db.session.commit()
+
+        # add a first notification
+        u.add_notifiations(name='message_count', data={'count': 3})
+        db.session.commit()
+        self.assertEqual(u.notifications.count(), 1)
+        self.assertEqual(int(u.notifications.first().get_data()['count']), 3)
+
+        # updates the first notification
+        u.add_notifiations(name='message_count', data={'count': 5})
+        db.session.commit()
+        self.assertEqual(u.notifications.count(), 1)
+        self.assertEqual(int(u.notifications.first().get_data()['count']), 5)
+        
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

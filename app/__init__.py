@@ -7,8 +7,10 @@ from flask_bootstrap import Bootstrap
 from flask_moment import Moment
 from logging.handlers import SMTPHandler, RotatingFileHandler
 from elasticsearch import Elasticsearch
+from redis import Redis, connection
 import logging
 import os
+import rq
 from config import Config
 
 
@@ -40,6 +42,10 @@ def create_app(config=Config):
     # initialize elasticsearch
     app.elasticsearch = Elasticsearch(app.config['ELASTICSEARCH_URL']) \
         if app.config['ELASTICSEARCH_URL'] else None
+
+    # initialize redis rq
+    app.redis = Redis.from_url(app.config['REDIS_URL'])
+    app.task_queue = rq.Queue(name='invresearch-tasks', connection=app.redis)
 
     # incorporate the auth blueprint
     from app.auth import bp as auth_bp

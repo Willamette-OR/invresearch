@@ -2,14 +2,14 @@ from time import sleep
 from rq import get_current_job
 
 
-def example(seconds):
+def example(user_id, seconds):
     """
     This function implements a simple example for the purpose of testing Redis 
     RQ.
     """
 
     job = get_current_job()
-    print("Starting a new task...")
+    print("Starting a new task for user = {}".format(user_id))
 
     for i in range(seconds):
         job.meta['progress'] = i * 100.0 / seconds

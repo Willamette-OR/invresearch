@@ -7,6 +7,8 @@ from hashlib import md5
 from time import time
 import jwt
 import json
+import rq
+import redis
 from app import db, login 
 from app.search import query_index, add_to_index, remove_from_index
 
@@ -110,6 +112,7 @@ class User(UserMixin, db.Model):
     last_message_read_time = db.Column(db.DateTime)
     notifications = db.relationship('Notification', backref='user', 
                                     lazy='dynamic')
+    tasks = db.relationship('Task', backref='user', lazy='dynamic')
 
     def __repr__(self):
         """This method defines the string repr of user objects."""
@@ -278,3 +281,39 @@ class Notification(db.Model):
         """
 
         return json.loads(str(self.payload_json))
+
+
+class Task(db.Model):
+    """
+    This class implements a data model for storing user tasks, derived from 
+    the parent class db.Model.
+    """
+
+    id = db.Column(db.String(36), primary_key=True)
+    name = db.Column(db.String(128), index=True)
+    description = db.Column(db.String(128))
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    complete = db.Column(db.Boolean, default=False)
+
+    def get_rq_job(self):
+        """
+        This method retrieves the job associated with the current task.
+        If the Redis connection is unavailable or there is no such job sharing 
+        the given task id, return None.
+        """
+
+        try:
+            rq_job = rq.job.Job.fetch(self.id, connection=current_app.redis)
+        except (redis.exceptions.RedisError, rq.exceptions.NoSuchJobError):
+            return None
+        return rq_job
+
+
+    def get_progress(self):
+        """
+        This method retrieves the progress of the job associated with the 
+        current task.
+        """
+
+        job = self.get_rq_job()
+        return job.meta.get('progress', 0) if job is not None else 100

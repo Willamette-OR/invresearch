@@ -1,5 +1,6 @@
 import sys
 import json
+from flask import render_template
 from time import sleep
 from rq import get_current_job
 from app import db, create_app
@@ -81,7 +82,11 @@ def export_posts(user_id):
         # email posts as an attachment to the user
         send_email(subject="[Wei's Investment Research] Your posts", 
                    sender=app.config['ADMINS'][0], 
-                   recipients=[user.email], text_body='foo', html_body='foo', 
+                   recipients=[user.email], 
+                   text_body=render_template('email/export_posts.txt', 
+                                             user=user), 
+                   html_body=render_template('email/export_posts.html',
+                                             user=user), 
                    attachments=[('posts.json', 
                                  'application/json', 
                                  json.dumps({'posts': data}, indent=4))], 

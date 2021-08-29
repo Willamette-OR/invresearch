@@ -174,6 +174,17 @@
             {% endif %}
         {% endwith %}
 
+        {# display task progress #}
+        {% set tasks = current_user.get_tasks_in_progress() %}
+        {% if tasks %}
+            {% for task in tasks %}
+                <div class="alert alert-success" role="alert">
+                    {{ task.description }}
+                    {{ task.get_progress() }}%
+                </div>
+            {% endfor %}
+        {% endif %}
+
         {# application content needs to be provided in the app_content block #}
         {% block app_content %}{% endblock %}
     </div>

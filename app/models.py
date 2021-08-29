@@ -229,11 +229,21 @@ class User(UserMixin, db.Model):
         task = Task(id=rq_job.get_id(), name=name, description=description, 
                     user=self)
         db.session.add(task)
-        # debug only
-        db.session.commit()
-        # end debug
 
         return task
+
+    def get_tasks_in_progress(self):
+        """This method returns all tasks in progress."""
+
+        return self.tasks.filter_by(complete=False).all()
+
+    def get_task_in_progress(self, name):
+        """
+        This method returns the task of the given name that is still in 
+        progress.
+        """
+
+        return self.tasks.filter_by(name=name, complete=False).first()
 
 
 @login.user_loader

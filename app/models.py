@@ -1,5 +1,4 @@
 from datetime import datetime
-from sqlalchemy.orm import backref
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask import current_app
 from flask_login import UserMixin
@@ -205,7 +204,7 @@ class User(UserMixin, db.Model):
         return Message.query.filter_by(recipient=self).filter(
             Message.timestamp > last_read_time).count()
 
-    def add_notifications(self, name, data):
+    def add_notification(self, name, data):
         """
         This method updates user notifications with a given name for the 
         notification, as well as the data included for the notification.
@@ -230,6 +229,9 @@ class User(UserMixin, db.Model):
         task = Task(id=rq_job.get_id(), name=name, description=description, 
                     user=self)
         db.session.add(task)
+        # debug only
+        db.session.commit()
+        # end debug
 
         return task
 

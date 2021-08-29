@@ -234,8 +234,8 @@ def send_message(recipient):
     if form.validate_on_submit():
         msg = Message(body=form.body.data, author=current_user, recipient=user)
         db.session.add(msg)
-        user.add_notifications(name='unread_message_count', 
-                               data=user.new_messages())
+        user.add_notification(name='unread_message_count', 
+                              data=user.new_messages())
         db.session.commit()
         flash('Your message to {} has been sent.'.format(recipient))
         return redirect(url_for('main.user', username=recipient))
@@ -250,7 +250,7 @@ def messages():
     """This view function handles requests to view received messages."""
 
     current_user.last_message_read_time = datetime.utcnow()
-    current_user.add_notifications(name='unread_message_count', data=0)
+    current_user.add_notification(name='unread_message_count', data=0)
     db.session.commit()
 
     page = request.args.get('page', 1, type=int)

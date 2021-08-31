@@ -234,8 +234,8 @@ def send_message(recipient):
     if form.validate_on_submit():
         msg = Message(body=form.body.data, author=current_user, recipient=user)
         db.session.add(msg)
-        user.add_notifications(name='unread_message_count', 
-                               data=user.new_messages())
+        user.add_notification(name='unread_message_count', 
+                              data=user.new_messages())
         db.session.commit()
         flash('Your message to {} has been sent.'.format(recipient))
         return redirect(url_for('main.user', username=recipient))
@@ -250,7 +250,7 @@ def messages():
     """This view function handles requests to view received messages."""
 
     current_user.last_message_read_time = datetime.utcnow()
-    current_user.add_notifications(name='unread_message_count', data=0)
+    current_user.add_notification(name='unread_message_count', data=0)
     db.session.commit()
 
     page = request.args.get('page', 1, type=int)
@@ -288,3 +288,19 @@ def notifications():
         'data': n.get_data(),
         'timestamp': n.timestamp
     } for n in notifications])
+
+
+@bp.route('/export_posts')
+@login_required
+def export_posts():
+    """
+    This view function handles requests to export the current user's posts.
+    """
+
+    if current_user.get_task_in_progress('export_posts'):
+        flash('A user post exporting task is currently in progress.')
+    else:
+        current_user.launch_task('export_posts', 'Exporting posts...')
+        db.session.commit()
+
+    return redirect(url_for('main.user', username=current_user.username))

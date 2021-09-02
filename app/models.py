@@ -77,11 +77,34 @@ db.event.listen(db.session, 'before_commit', SearchableMixin.before_commit)
 db.event.listen(db.session, 'after_commit', SearchableMixin.after_commit)
 
 
+# auxiliary table for the many-to-many relationship for user following
 followers = db.Table(
     'followers',
     db.Column('follower_id', db.Integer, db.ForeignKey('user.id')),
     db.Column('followed_id', db.Integer, db.ForeignKey('user.id'))
     )
+
+
+# auxiliary table for the many-to-many relationship for stock watching
+watchers = db.Table(
+    'watchers',
+    db.Column('watcher_id', db.Integer, db.ForeignKey('user.id')),
+    db.Column('watched_id', db.Integer, db.ForeignKey('stock.id'))
+)
+
+
+class Stock(db.Model):
+    """
+    This class implements a data model for storing & operating on asset data, 
+    derived from the parent class of db.Model.
+    """
+
+    id = db.Column(db.Integer, primary_key=True)
+    symbol = db.Column(db.String(16), unique=True, index=True)
+    timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
+
+    def __repr__(self):
+        return "<Stock: {}>".format(self.symbol)
 
 
 class User(UserMixin, db.Model):
@@ -112,6 +135,11 @@ class User(UserMixin, db.Model):
     notifications = db.relationship('Notification', backref='user', 
                                     lazy='dynamic')
     tasks = db.relationship('Task', backref='user', lazy='dynamic')
+    watched = db.relationship('Stock', secondary=watchers, 
+                              primaryjoin=(id==watchers.c.watcher_id),
+                              secondaryjoin=(Stock.id==watchers.c.watched_id),
+                              backref=db.backref('watchers', lazy='dynamic'),
+                              lazy='dynamic')
 
     def __repr__(self):
         """This method defines the string repr of user objects."""
@@ -245,6 +273,30 @@ class User(UserMixin, db.Model):
 
         return self.tasks.filter_by(name=name, complete=False).first()
 
+    def is_watching(self, stock):
+        """
+        This method checks if the current user is already watching the given stock.
+        """
+
+        return self.watched.filter(watchers.c.watched_id==stock.id).count() > 0
+
+    def watch(self, stock):
+        """
+        This method gets the current user to watch the given stock, if the 
+        current user is not already watching the stock.
+        """
+
+        if not self.is_watching(stock):
+            self.watched.append(stock)
+
+    def unwatch(self, stock):
+        """
+        This method gets the current user to unwatch the given stock, if the 
+        current user is already watching the stock.
+        """
+
+        if self.is_watching(stock):
+            self.watched.remove(stock)
 
 @login.user_loader
 def load_user(id):

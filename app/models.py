@@ -10,6 +10,7 @@ import rq
 import redis
 from app import db, login 
 from app.search import query_index, add_to_index, remove_from_index
+from stocks import quote
 
 
 class SearchableMixin(object):
@@ -102,9 +103,16 @@ class Stock(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     symbol = db.Column(db.String(16), unique=True, index=True)
     timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
+    name = db.Column(db.String(128))
+    quote_payload = db.Column(db.Text)
 
     def __repr__(self):
         return "<Stock: {}>".format(self.symbol)
+
+    def update_quote(self):
+        """This method gets the latest quote for the current stock."""
+
+        self.quote_payload = json.dumps(quote(self.symbol))
 
 
 class User(UserMixin, db.Model):

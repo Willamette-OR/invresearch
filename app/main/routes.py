@@ -4,12 +4,14 @@ from flask_login import login_required, current_user
 from datetime import datetime
 from flask_login.utils import login_user
 from langdetect import detect, LangDetectException
+import json
 from app import db
-from app.models import Notification, User, Post, Message
+from app.models import Notification, User, Post, Message, Stock
 from app.translate import translate
 from app.main import bp
 from app.main.forms import EditProfileForm, EmptyForm, SubmitPostForm, \
     SearchForm, MessageForm
+from stocks import company_profile
 
 
 @bp.before_request
@@ -304,3 +306,35 @@ def export_posts():
         db.session.commit()
 
     return redirect(url_for('main.user', username=current_user.username))
+
+
+@bp.route('/stock/<symbol>')
+@login_required
+def stock(symbol):
+    """
+    This view function handles requests to view the stock profile of a given symbol.
+    """
+
+    # look up the symbol in the app database
+    symbol_upper = symbol.upper()
+    stock = Stock.query.filter_by(symbol=symbol_upper).first()
+
+    # fetch the stock info and add it to the app database if it has not been 
+    # added
+    if not stock:
+        profile_data = company_profile(symbol_upper)
+        if not profile_data:
+            flash("The stock symbol {} does not exist..." 
+                  "Please double check.".format(symbol_upper))
+            return redirect(url_for('main.index'))
+        else:
+            stock = Stock(symbol=symbol_upper, name=profile_data['name'])
+            db.session.add(stock)
+            db.session.commit()
+
+    # update the quote
+    stock.update_quote()
+    
+    # TODO - returning raw outputs for debugging
+    return {'symbol': stock.symbol, 'name': stock.name, 
+            'quote': json.loads(stock.quote_payload)}

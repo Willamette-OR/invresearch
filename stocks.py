@@ -1,9 +1,30 @@
 from flask import current_app
 
 
+def company_profile(symbol):
+    """
+    This function get company info for a given symbol.
+    It returns None if the symbol does not exist.
+
+    It currently uses the company_profile2 API from Finnhub.
+    """
+
+    # fetch company profile from Finnhub
+    response = current_app.finnhub_client.company_profile2(symbol=symbol)
+    if len(response) == 0:
+        return None
+
+    # prepare the company profile payload
+    profile_payload = {}
+    profile_payload['name'] = response['name']
+
+    return profile_payload
+
+
 def quote(symbol):
     """
-    This function gets quote from a 3rd party API for a given symbol.
+    This function gets quote for a given symbol.
+    It returns None if the symbol does not exist.
     
     It currently uses the quote API from Finnhub.
     """
@@ -11,9 +32,10 @@ def quote(symbol):
     # fetch quote from Finnhub
     response = current_app.finnhub_client.quote(symbol)
     
-    quote_data = {}
-    quote_data['current_price'] = response['c']
-    if quote_data['current_price'] == 0:
+    # prepare the quote payload
+    quote_payload = {}
+    quote_payload['current_price'] = response['c']
+    if quote_payload['current_price'] == 0:
         return None
 
-    return quote_data
+    return quote_payload

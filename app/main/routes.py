@@ -409,3 +409,16 @@ def unwatch(symbol):
 
     # redirect to the stock profile page regardless
     return redirect(url_for('main.stock', symbol=symbol))
+
+
+@bp.route('/watchlist')
+@login_required
+def watchlist():
+    """
+    This view function handles requests to view stocks in the user's watchlist.
+    """
+
+    stocks = current_user.watched.order_by(Stock.symbol.asc()).all()
+
+    return render_template('watchlist.html', title='Watchlist', 
+                           user=current_user, stocks=stocks)

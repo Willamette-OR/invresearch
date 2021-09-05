@@ -335,6 +335,77 @@ def stock(symbol):
     # update the quote
     stock.update_quote()
     
-    # TODO - returning raw outputs for debugging
-    return {'symbol': stock.symbol, 'name': stock.name, 
-            'quote': json.loads(stock.quote_payload)}
+    # define an empty Flask form to validate post requests for 
+    # watching/unwatching stocks
+    form = EmptyForm()
+
+    return render_template(
+        'stock.html', title="Stock - {}".format(stock.symbol), stock=stock, 
+        quote=json.loads(stock.quote_payload), form=form)
+    
+
+@bp.route('/watch/<symbol>', methods=['POST'])
+@login_required
+def watch(symbol):
+    """
+    This view function handles POST requests to watch the stock given 
+    a specified symbol.
+    """
+
+    # use an empty form to validate the request to watch
+    form = EmptyForm()
+
+    if form.validate_on_submit():
+        # query the stock object, and return a 404 if it does not exit
+        stock = Stock.query.filter_by(symbol=symbol).first()
+        if not stock:
+            flash("The stock you want to watch is not currently in our "
+                  "database.")
+            flash("Attempting to fetch the stock from the internet...")
+            return redirect(url_for('main.stock', symbol=symbol))
+        
+        # watch the stock and update the database
+        if current_user.is_watching(stock):
+            flash("You are already following this stock!")
+        else:
+            current_user.watch(stock)
+            db.session.commit()
+            flash("You are now watching {} ({})!".format(stock.name, 
+                                                         stock.symbol))
+        
+    # redirect to the stock's profile page regardless
+    return redirect(url_for('main.stock', symbol=symbol))
+
+
+@bp.route('/unwatch/<symbol>', methods=['POST'])
+@login_required
+def unwatch(symbol):
+    """
+    This view function handles requests to unfollow the stock given 
+    a specified symbol.
+    """
+
+    # use an empty Flask form to validate the request to unwatch
+    form = EmptyForm()
+
+    # perform operations to unwatch the stock if the request is validated
+    if form.validate_on_submit():
+        # fetch the data object of the stock to unwatch
+        stock = Stock.query.filter_by(symbol=symbol).first()
+        if not stock:
+            flash("The stock you want to watch is not currently in our "
+                  "database.")
+            flash("Attempting to fetch the stock from the internet...")
+            return redirect(url_for('main.stock', symbol=symbol))
+
+        # unwatch the stock if the user is currently watching it
+        if current_user.is_watching(stock):
+            current_user.unwatch(stock)
+            db.session.commit()
+            flash("You are no longer watching {} ({})!".format(stock.name, 
+                                                                stock.symbol))
+        else:
+            flash("You cannot unwatch a stock you did not watch.")
+
+    # redirect to the stock profile page regardless
+    return redirect(url_for('main.stock', symbol=symbol))

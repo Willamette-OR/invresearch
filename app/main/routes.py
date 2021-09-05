@@ -11,7 +11,7 @@ from app.translate import translate
 from app.main import bp
 from app.main.forms import EditProfileForm, EmptyForm, SubmitPostForm, \
     SearchForm, MessageForm
-from stocks import company_profile
+from app.stocks import company_profile
 
 
 @bp.before_request

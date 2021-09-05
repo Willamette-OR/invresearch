@@ -9,6 +9,10 @@ def company_profile(symbol):
     It currently uses the company_profile2 API from Finnhub.
     """
 
+    # check if the api client has been configured
+    if not current_app.finnhub_client:
+        return None
+
     # fetch company profile from Finnhub
     response = current_app.finnhub_client.company_profile2(symbol=symbol)
     if len(response) == 0:
@@ -28,6 +32,10 @@ def quote(symbol):
     
     It currently uses the quote API from Finnhub.
     """
+
+    # check if the api client has been configured
+    if not current_app.finnhub_client:
+        return None
 
     # fetch quote from Finnhub
     response = current_app.finnhub_client.quote(symbol)

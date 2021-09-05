@@ -49,7 +49,8 @@ def create_app(config=Config):
     app.task_queue = rq.Queue(name='invresearch-tasks', connection=app.redis)
 
     # initialize the Finnhub API client
-    app.finnhub_client = finnhub.Client(app.config['FINNHUB_API_KEY'])
+    app.finnhub_client = finnhub.Client(app.config['FINNHUB_API_KEY']) \
+        if app.config['FINNHUB_API_KEY'] else None
 
     # incorporate the auth blueprint
     from app.auth import bp as auth_bp

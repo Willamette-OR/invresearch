@@ -16,7 +16,7 @@ def symbol_search(query, page, stocks_per_page):
 
     # check if the api client has been configured
     if not current_app.finnhub_client:
-        return None, 0
+        return [], 0
 
     # perform the search via an API
     response = current_app.finnhub_client.symbol_lookup(query)
@@ -29,7 +29,7 @@ def symbol_search(query, page, stocks_per_page):
         matched_symbols = response['result'][
             ((page - 1) * stocks_per_page):min(page * stocks_per_page, total)]
     else:
-        matched_symbols = None
+        matched_symbols = []
         
     return matched_symbols, total
 

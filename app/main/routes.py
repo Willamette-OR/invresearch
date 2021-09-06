@@ -441,6 +441,10 @@ def search_stocks():
     stocks, total = symbol_search(g.search_form.q.data, page, 
                                   current_app.config['POSTS_PER_PAGE'])
 
+    # output a message if no stocks are returned
+    if total == 0:
+        flash("No stocks can be found for '{}'.".format(g.search_form.q.data))
+
     # prep for pagination
     next_url = url_for(
         'main.search_stocks', q=g.search_form.q.data, page=(page+1)) \

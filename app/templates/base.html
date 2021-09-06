@@ -29,9 +29,9 @@
                     <li><a href="{{ url_for('main.watchlist') }}">Watchlist</a></li>
                 </ul>
                 {% if g.search_form %}
-                    <form class="navbar-form navbar-left" action="{{ url_for('main.search') }}" method="GET">
+                    <form class="navbar-form navbar-left" action="{{ url_for('main.search_stocks') }}" method="GET">
                         <div class="form-group">
-                            {{ g.search_form.q(size=20, class='form-control', placeholder=g.search_form.q.label.text) }}
+                            {{ g.search_form.q(size=20, class='form-control', placeholder='Search Stocks') }}
                         </div>
                     </form>
                 {% endif %}

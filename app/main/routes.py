@@ -11,7 +11,7 @@ from app.translate import translate
 from app.main import bp
 from app.main.forms import EditProfileForm, EmptyForm, SubmitPostForm, \
     SearchForm, MessageForm
-from app.stocks import company_profile
+from app.stocks import company_profile, symbol_search
 
 
 @bp.before_request
@@ -422,3 +422,32 @@ def watchlist():
 
     return render_template('watchlist.html', title='Watchlist', 
                            user=current_user, stocks=stocks)
+
+
+@bp.route('/search_stocks')
+@login_required
+def search_stocks():
+    """
+    This view function handles requests to search for stocks and display 
+    search results.
+    """
+
+    # redirect to the "explore" page if the GET-search form was empty
+    if not g.search_form.validate():
+        return redirect(url_for('main.explore'))
+
+    # get search results for the requested page number
+    page = request.args.get('page', 1, type=int)
+    stocks, total = symbol_search(g.search_form.q.data, page, 
+                                  current_app.config['POSTS_PER_PAGE'])
+
+    # prep for pagination
+    next_url = url_for(
+        'main.search_stocks', q=g.search_form.q.data, page=(page+1)) \
+            if page * current_app.config['POSTS_PER_PAGE'] < total else None
+    prev_url = url_for(
+        'main.search_stocks', q=g.search_form.q.data, page=(page-1)) \
+            if page > 1 else None
+
+    return render_template('search_stocks.html', title='Search Results',
+                           stocks=stocks, next_url=next_url, prev_url=prev_url)

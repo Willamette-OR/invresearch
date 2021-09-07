@@ -26,6 +26,14 @@
         </tr>
     </table>
     <h1>
-        {{ quote.c }}
+        {{ quote.c }} 
+        <small>
+            <span style="color: {% if quote.d > 0 %}green{% elif quote.d < 0 %}red{% else %}black{% endif %};">
+                {{ quote.d }} ({{ '{:5.2f}'.format(quote.dp) }}%)
+            </span>
+        </small>
     </h1>
+    <p>
+        Market Time: {{ stock.quote_market_timestamp }}
+    </p>
 {% endblock %}

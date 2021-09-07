@@ -102,9 +102,10 @@ class Stock(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     symbol = db.Column(db.String(16), unique=True, index=True)
-    timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
     name = db.Column(db.String(128))
+    last_quote_update = db.Column(db.Float, index=True, default=None)
     quote_payload = db.Column(db.Text)
+    quote_market_timestamp = db.Column(db.DateTime, index=True)
 
     def __repr__(self):
         return "<Stock: {}>".format(self.symbol)
@@ -112,8 +113,19 @@ class Stock(db.Model):
     def update_quote(self):
         """This method gets the latest quote for the current stock."""
 
-        self.quote_payload = json.dumps(quote(self.symbol))
-
+        # only update the quote if it's been more than 60 seconds since the 
+        # last update
+        now = time()
+        if not self.last_quote_update or (now - self.last_quote_update) > 60:
+            try:
+                data = quote(self.symbol)
+            except:
+                raise Exception(
+                    'Unable to fetch quote for symbol {}.'.format(self.symbol))
+            finally:
+                self.quote_payload = json.dumps(data)
+                self.quote_market_timestamp = datetime.fromtimestamp(data['t'])
+            
 
 class User(UserMixin, db.Model):
     """

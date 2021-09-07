@@ -70,13 +70,5 @@ def quote(symbol):
     if not current_app.finnhub_client:
         return None
 
-    # fetch quote from Finnhub
-    response = current_app.finnhub_client.quote(symbol)
-    
-    # prepare the quote payload
-    quote_payload = {}
-    quote_payload['current_price'] = response['c']
-    if quote_payload['current_price'] == 0:
-        return None
-
-    return quote_payload
+    # fetch and return quote from Finnhub
+    return current_app.finnhub_client.quote(symbol)

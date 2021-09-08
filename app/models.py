@@ -110,13 +110,21 @@ class Stock(db.Model):
     def __repr__(self):
         return "<Stock: {}>".format(self.symbol)
 
-    def update_quote(self):
-        """This method gets the latest quote for the current stock."""
+    def update_quote(self, delay=60):
+        """
+        This method gets the latest quote for the current stock.
 
-        # only update the quote if it's been more than 60 seconds since the 
-        # last update
+        Input:
+            - delay: number of seconds within which the quote will not be
+                     updated even when the method is called. The default
+                     value is 60.
+        """
+
+        # only update the quote if it's been more than the number of 'delay' 
+        # seconds since the last update
         now = time()
-        if not self.last_quote_update or (now - self.last_quote_update) > 60:
+        if not self.last_quote_update or \
+            (now - self.last_quote_update) > delay:
             try:
                 data = quote(self.symbol)
             except:

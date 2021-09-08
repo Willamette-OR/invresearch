@@ -26,7 +26,9 @@
         </tr>
     </table>
     <h1>
-        {{ '{:.2f}'.format(quote.c) }} 
+        <span id="quote-{{ stock.symbol }}-c">
+            {{ '{:.2f}'.format(quote.c) }}
+        </span>
         <small>
             <span style="color: {% if quote.d > 0 %}green{% elif quote.d < 0 %}red{% else %}black{% endif %};">
                 {{ '{:+.2f}'.format(quote.d) }} ({{ '{:+.2f}'.format(quote.dp) }}%)
@@ -34,6 +36,9 @@
         </small>
     </h1>
     <p>
-        Market Time: {{ stock.quote_market_timestamp }}
+        Market Time: 
+        <span id="quote-{{ stock.symbol }}-t">
+            {{ stock.quote_market_timestamp }}
+        </span>
     </p>
 {% endblock %}

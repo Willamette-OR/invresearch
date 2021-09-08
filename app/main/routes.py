@@ -4,12 +4,14 @@ from flask_login import login_required, current_user
 from datetime import datetime
 from flask_login.utils import login_user
 from langdetect import detect, LangDetectException
+import json
 from app import db
-from app.models import Notification, User, Post, Message
+from app.models import Notification, User, Post, Message, Stock
 from app.translate import translate
 from app.main import bp
 from app.main.forms import EditProfileForm, EmptyForm, SubmitPostForm, \
     SearchForm, MessageForm
+from app.stocks import company_profile, symbol_search
 
 
 @bp.before_request
@@ -304,3 +306,160 @@ def export_posts():
         db.session.commit()
 
     return redirect(url_for('main.user', username=current_user.username))
+
+
+@bp.route('/stock/<symbol>')
+@login_required
+def stock(symbol):
+    """
+    This view function handles requests to view the stock profile of a given symbol.
+    """
+
+    # look up the symbol in the app database
+    symbol_upper = symbol.upper()
+    stock = Stock.query.filter_by(symbol=symbol_upper).first()
+
+    # fetch the stock info and add it to the app database if it has not been 
+    # added
+    if not stock:
+        profile_data = company_profile(symbol_upper)
+        if not profile_data:
+            flash("The stock symbol {} does not exist..." 
+                  "Please double check.".format(symbol_upper))
+            return redirect(url_for('main.index'))
+        else:
+            stock = Stock(symbol=symbol_upper, name=profile_data['name'])
+            db.session.add(stock)
+            db.session.commit()
+
+    # update the quote
+    stock.update_quote()
+    
+    # define an empty Flask form to validate post requests for 
+    # watching/unwatching stocks
+    form = EmptyForm()
+
+    return render_template(
+        'stock.html', title="Stock - {}".format(stock.symbol), stock=stock, 
+        quote=json.loads(stock.quote_payload), form=form)
+    
+
+@bp.route('/watch/<symbol>', methods=['POST'])
+@login_required
+def watch(symbol):
+    """
+    This view function handles POST requests to watch the stock given 
+    a specified symbol.
+    """
+
+    # use an empty form to validate the request to watch
+    form = EmptyForm()
+
+    if form.validate_on_submit():
+        # query the stock object, and return a 404 if it does not exit
+        stock = Stock.query.filter_by(symbol=symbol).first()
+        if not stock:
+            flash("The stock you want to watch is not currently in our "
+                  "database.")
+            flash("Attempting to fetch the stock from the internet...")
+            return redirect(url_for('main.stock', symbol=symbol))
+        
+        # watch the stock and update the database
+        if current_user.is_watching(stock):
+            flash("You are already following this stock!")
+        else:
+            current_user.watch(stock)
+            db.session.commit()
+            flash("You are now watching {} ({})!".format(stock.name, 
+                                                         stock.symbol))
+        
+    # redirect to the stock's profile page regardless
+    return redirect(url_for('main.stock', symbol=symbol))
+
+
+@bp.route('/unwatch/<symbol>', methods=['POST'])
+@login_required
+def unwatch(symbol):
+    """
+    This view function handles requests to unfollow the stock given 
+    a specified symbol.
+    """
+
+    # use an empty Flask form to validate the request to unwatch
+    form = EmptyForm()
+
+    # perform operations to unwatch the stock if the request is validated
+    if form.validate_on_submit():
+        # fetch the data object of the stock to unwatch
+        stock = Stock.query.filter_by(symbol=symbol).first()
+        if not stock:
+            flash("The stock you want to watch is not currently in our "
+                  "database.")
+            flash("Attempting to fetch the stock from the internet...")
+            return redirect(url_for('main.stock', symbol=symbol))
+
+        # unwatch the stock if the user is currently watching it
+        if current_user.is_watching(stock):
+            current_user.unwatch(stock)
+            db.session.commit()
+            flash("You are no longer watching {} ({})!".format(stock.name, 
+                                                                stock.symbol))
+        else:
+            flash("You cannot unwatch a stock you did not watch.")
+
+    # redirect to the stock profile page regardless
+    return redirect(url_for('main.stock', symbol=symbol))
+
+
+@bp.route('/watchlist')
+@login_required
+def watchlist():
+    """
+    This view function handles requests to view stocks in the user's watchlist.
+    """
+
+    stocks = current_user.watched.order_by(Stock.symbol.asc()).all()
+
+    # only update quotes if the last quote was updated more than 
+    # 300 seconds ago
+    stock_quotes = []
+    for stock in stocks:
+        stock.update_quote(300)
+        stock_quotes.append({'stock': stock, 
+                             'quote': json.loads(stock.quote_payload)})
+
+    return render_template('watchlist.html', title='Watchlist', 
+                           user=current_user, stock_quotes=stock_quotes)
+
+
+@bp.route('/search_stocks')
+@login_required
+def search_stocks():
+    """
+    This view function handles requests to search for stocks and display 
+    search results.
+    """
+
+    # redirect to the "explore" page if the GET-search form was empty
+    if not g.search_form.validate():
+        return redirect(url_for('main.explore'))
+
+    # get search results for the requested page number
+    page = request.args.get('page', 1, type=int)
+    stocks, total = symbol_search(g.search_form.q.data, page, 
+                                  current_app.config['POSTS_PER_PAGE'])
+
+    # output a message if no stocks are returned
+    if total == 0:
+        flash("No stocks can be found for '{}'.".format(g.search_form.q.data))
+
+    # prep for pagination
+    next_url = url_for(
+        'main.search_stocks', q=g.search_form.q.data, page=(page+1)) \
+            if page * current_app.config['POSTS_PER_PAGE'] < total else None
+    prev_url = url_for(
+        'main.search_stocks', q=g.search_form.q.data, page=(page-1)) \
+            if page > 1 else None
+
+    return render_template('search_stocks.html', title='Search Results',
+                           stocks=stocks, next_url=next_url, prev_url=prev_url)

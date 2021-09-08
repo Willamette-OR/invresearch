@@ -2,7 +2,7 @@ import unittest
 from datetime import datetime, timedelta
 from config import Config
 from app import create_app, db
-from app.models import User, Post, Message
+from app.models import User, Post, Message, Stock
 
 
 class TestingConfig(Config):
@@ -158,16 +158,56 @@ class UserTestCase(unittest.TestCase):
         db.session.commit()
 
         # add a first notification
-        u.add_notifiations(name='message_count', data={'count': 3})
+        u.add_notification(name='message_count', data={'count': 3})
         db.session.commit()
         self.assertEqual(u.notifications.count(), 1)
         self.assertEqual(int(u.notifications.first().get_data()['count']), 3)
 
         # updates the first notification
-        u.add_notifiations(name='message_count', data={'count': 5})
+        u.add_notification(name='message_count', data={'count': 5})
         db.session.commit()
         self.assertEqual(u.notifications.count(), 1)
         self.assertEqual(int(u.notifications.first().get_data()['count']), 5)
+
+    def test_stock_watching(self):
+        """This method tests the stock watching database mechanics."""
+        u1 = User(username='alice')
+        u2 = User(username='bob')
+        s1 = Stock(symbol='AAPL')
+        s2 = Stock(symbol='GOOGL')
+        s3 = Stock(symbol='AMZN')
+        db.session.add_all([u1, u2, s1, s2, s3])
+        db.session.commit()
+
+        # before users start watching any stocks
+        self.assertEqual(str(s1), '<Stock: AAPL>')
+        self.assertFalse(u1.is_watching(s1))
+        self.assertFalse(u2.is_watching(s2))
+        self.assertFalse(u2.is_watching(s3))
+
+        # start several watchings
+        u1.watch(s2)
+        u1.watch(s3)
+        u2.watch(s1)
+        u2.watch(s3)
+        db.session.commit()
+
+        # re-check watching relationships
+        self.assertFalse(u1.is_watching(s1))
+        self.assertTrue(u1.is_watching(s2))
+        self.assertEqual(u1.watched.count(), 2)
+        self.assertFalse(u2.is_watching(s2))
+        self.assertTrue(u2.is_watching(s3))
+        self.assertEqual(u2.watched.count(), 2)
+        self.assertEqual(s3.watchers.count(), 2)
+
+        # check unwatching
+        u2.unwatch(s3)
+        db.session.commit()
+
+        self.assertFalse(u2.is_watching(s3))
+        self.assertEqual(u2.watched.count(), 1)
+        self.assertEqual(s3.watchers.count(), 1)
         
 
 if __name__ == '__main__':

@@ -7,10 +7,11 @@ from flask_bootstrap import Bootstrap
 from flask_moment import Moment
 from logging.handlers import SMTPHandler, RotatingFileHandler
 from elasticsearch import Elasticsearch
-from redis import Redis, connection
+from redis import Redis
 import logging
 import os
 import rq
+import finnhub
 from config import Config
 
 
@@ -46,6 +47,10 @@ def create_app(config=Config):
     # initialize redis rq
     app.redis = Redis.from_url(app.config['REDIS_URL'])
     app.task_queue = rq.Queue(name='invresearch-tasks', connection=app.redis)
+
+    # initialize the Finnhub API client
+    app.finnhub_client = finnhub.Client(app.config['FINNHUB_API_KEY']) \
+        if app.config['FINNHUB_API_KEY'] else None
 
     # incorporate the auth blueprint
     from app.auth import bp as auth_bp

@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+
+{% block app_content %}
+    <table class="table">
+        <tr>
+            <td width="256px" style="border: 0px;">
+                <h3>
+                    {{ stock.name }} ({{ stock.symbol }})
+                </h3>
+            </td>
+            <td style="border: 0px;">
+                <br>
+                {% if current_user.is_watching(stock) %}
+                    <form action="{{ url_for('main.unwatch', symbol=stock.symbol) }}" method="POST">
+                        {{ form.hidden_tag() }}
+                        {{ form.submit(value='Unwatch')}}
+                    </form>
+                {% else %}
+                    <form action="{{ url_for('main.watch', symbol=stock.symbol) }}" method="POST">
+                        {{ form.hidden_tag() }}
+                        {{ form.submit(value='Watch')}}
+                    </form>
+                {% endif %}
+            </td>
+        </tr>
+    </table>
+    <h1>
+        {{ '{:.2f}'.format(quote.c) }} 
+        <small>
+            <span style="color: {% if quote.d > 0 %}green{% elif quote.d < 0 %}red{% else %}black{% endif %};">
+                {{ '{:+.2f}'.format(quote.d) }} ({{ '{:+.2f}'.format(quote.dp) }}%)
+            </span>
+        </small>
+    </h1>
+    <p>
+        Market Time: {{ stock.quote_market_timestamp }}
+    </p>
+{% endblock %}

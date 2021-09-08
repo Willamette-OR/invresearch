@@ -70,5 +70,10 @@ def quote(symbol):
     if not current_app.finnhub_client:
         return None
 
-    # fetch and return quote from Finnhub
-    return current_app.finnhub_client.quote(symbol)
+    payload = current_app.finnhub_client.quote(symbol)
+
+    # default the currency into USD for now, since the Finnhub API 
+    # always defaults it to USD
+    payload['currency'] = 'USD'
+
+    return payload

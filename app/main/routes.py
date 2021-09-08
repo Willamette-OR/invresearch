@@ -420,8 +420,16 @@ def watchlist():
 
     stocks = current_user.watched.order_by(Stock.symbol.asc()).all()
 
+    # only update quotes if the last quote was updated more than 
+    # 300 seconds ago
+    stock_quotes = []
+    for stock in stocks:
+        stock.update_quote(300)
+        stock_quotes.append({'stock': stock, 
+                             'quote': json.loads(stock.quote_payload)})
+
     return render_template('watchlist.html', title='Watchlist', 
-                           user=current_user, stocks=stocks)
+                           user=current_user, stock_quotes=stock_quotes)
 
 
 @bp.route('/search_stocks')

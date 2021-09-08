@@ -463,3 +463,35 @@ def search_stocks():
 
     return render_template('search_stocks.html', title='Search Results',
                            stocks=stocks, next_url=next_url, prev_url=prev_url)
+
+
+@bp.route('/quote_polling')
+@login_required
+def quote_polling():
+    """
+    This view function handles Ajax requests to update and fetch the latest 
+    quotes of stocks.
+    
+    Stock symbols are expected to be passed to this function via request 
+    arguments.
+    """
+
+    # get arguments from the request
+    symbol = request.args.get('symbol', '', type=str)
+    delay = request.args.get('delay', 60, type=int)
+
+    # use the symbol to locate the stock from the database
+    stock = Stock.query.filter_by(symbol=symbol).first()
+    if not stock:
+        raise ValueError(
+            'Unable to locate {} in the stock database.'.format(symbol))
+
+    # update the quote for the located stock with a pre-specified delay 
+    # (in seconds)
+    stock.update_quote(delay=delay)
+    
+    return jsonify({
+        'quote': {'symbol': symbol,
+                  'quote_market_timestamp': stock.quote_market_timestamp,
+                  'quote_payload': json.loads(stock.quote_payload)}
+        })

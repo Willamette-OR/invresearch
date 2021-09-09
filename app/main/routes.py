@@ -492,6 +492,5 @@ def quote_polling():
     
     return jsonify({
         'quote': {'symbol': symbol,
-                  'quote_market_timestamp': stock.quote_market_timestamp,
                   'quote_payload': json.loads(stock.quote_payload)}
         })

@@ -1,5 +1,6 @@
 from datetime import datetime
 from flask import current_app
+import random
 
 
 def symbol_search(query, page, stocks_per_page):
@@ -81,5 +82,9 @@ def quote(symbol):
     # string, since the Finnhub API always defaults the market time to an 
     # epoch value in its response
     payload['t'] = str(datetime.fromtimestamp(int(payload['t'])))
+
+    # debug
+    payload['c'] = random.random()
+    # end debug
 
     return payload

@@ -177,15 +177,20 @@
 
     {# script to dynamically update stock quotes via straight polling #}
     <script>
-        function set_quote(symbol, current_price, market_timestamp) {
-            $('#quote-' + symbol + '-' + 'c').text(current_price);
-            $('#quote-' + symbol + '-' + 't').text(market_timestamp);
-        }
+        function set_quote(symbol, quote) {
+            $('#quote-' + symbol + '-' + 'c').text(quote.c);
+            $('#quote-' + symbol + '-' + 't').text(quote.t);
+        };
 
         $(
-            // Debug
-            set_quote('AAPL', 1000, 'Hello')
-            // End Debug
+            function() {
+                var symbol = $('.stock-symbol').text();
+                setInterval(function() {
+                    $.ajax('/quote_polling?symbol=' + symbol).done(function(payload) {
+                        set_quote(symbol, payload.quote.quote_payload)
+                    });
+                }, 5000);
+            }
         );
     </script>
 {% endblock %}

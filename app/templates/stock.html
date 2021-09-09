@@ -6,7 +6,7 @@
         <tr>
             <td width="256px" style="border: 0px;">
                 <h3>
-                    {{ stock.name }} ({{ stock.symbol }})
+                    {{ stock.name }} (<span class="stock-symbol">{{ stock.symbol }}</span>)
                 </h3>
             </td>
             <td style="border: 0px;">
@@ -30,8 +30,13 @@
             {{ '{:.2f}'.format(quote.c) }}
         </span>
         <small>
-            <span style="color: {% if quote.d > 0 %}green{% elif quote.d < 0 %}red{% else %}black{% endif %};">
-                {{ '{:+.2f}'.format(quote.d) }} ({{ '{:+.2f}'.format(quote.dp) }}%)
+            <span id="quote-{{ stock.symbol }}-d" 
+                  style="color: {% if quote.d > 0 %}green{% elif quote.d < 0 %}red{% else %}black{% endif %};">
+                {{ '{:+.2f}'.format(quote.d) }}
+            </span>
+            <span id="quote-{{ stock.symbol }}-dp" 
+                  style="color: {% if quote.d > 0 %}green{% elif quote.d < 0 %}red{% else %}black{% endif %};">
+                ({{ '{:+.2f}'.format(quote.dp) }}%)
             </span>
         </small>
     </h1>

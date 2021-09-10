@@ -1,6 +1,25 @@
 {% extends 'base.html' %}
 
 
+{% block scripts %}
+    {{ super() }}
+
+    <script>
+        // dynamically dupdate stock quote data on the page
+        $(
+            function() {
+                var symbol = $('.stock-symbol').text();
+                setInterval(function() {
+                    $.ajax('/quote_polling?symbol=' + symbol).done(function(payload) {
+                        set_quote(symbol, payload.quote.quote_payload)
+                    });
+                }, 5000);
+            }
+        );
+    </script>
+{% endblock %}
+
+
 {% block app_content %}
     <table class="table">
         <tr>
@@ -30,12 +49,10 @@
             {{ '{:.2f}'.format(quote.c) }}
         </span>
         <small>
-            <span id="quote-{{ stock.symbol }}-d" 
-                  style="color: {% if quote.d > 0 %}green{% elif quote.d < 0 %}red{% else %}black{% endif %};">
+            <span id="quote-{{ stock.symbol }}-d" style="color: {% if quote.d > 0 %}green{% elif quote.d < 0 %}red{% else %}black{% endif %};">
                 {{ '{:+.2f}'.format(quote.d) }}
             </span>
-            <span id="quote-{{ stock.symbol }}-dp" 
-                  style="color: {% if quote.d > 0 %}green{% elif quote.d < 0 %}red{% else %}black{% endif %};">
+            <span id="quote-{{ stock.symbol }}-dp" style="color: {% if quote.d > 0 %}green{% elif quote.d < 0 %}red{% else %}black{% endif %};">
                 ({{ '{:+.2f}'.format(quote.dp) }}%)
             </span>
         </small>

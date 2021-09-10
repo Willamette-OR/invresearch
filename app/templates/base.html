@@ -175,23 +175,16 @@
         });
     </script>
 
-    {# script to dynamically update stock quotes via straight polling #}
+    {# helper function to set stock quotes via straight polling #}
     <script>
         function set_quote(symbol, quote) {
-            $('#quote-' + symbol + '-' + 'c').text(quote.c);
-            $('#quote-' + symbol + '-' + 't').text(quote.t);
-        };
-
-        $(
-            function() {
-                var symbol = $('.stock-symbol').text();
-                setInterval(function() {
-                    $.ajax('/quote_polling?symbol=' + symbol).done(function(payload) {
-                        set_quote(symbol, payload.quote.quote_payload)
-                    });
-                }, 5000);
-            }
-        );
+            $('#quote-' + symbol + '-c').text(quote.c.toFixed(2));
+            $('#quote-' + symbol + '-d').text((quote.d<0 ? '' : '+') + quote.d.toFixed(2));
+            $('#quote-' + symbol + '-d').css('color', quote.d<0 ? 'red' : 'green')
+            $('#quote-' + symbol + '-dp').text('(' + (quote.dp<0 ? '' : '+') + quote.dp.toFixed(2) + '%)');
+            $('#quote-' + symbol + '-dp').css('color', quote.dp<0 ? 'red' : 'green')
+            $('#quote-' + symbol + '-t').text(quote.t)
+        }
     </script>
 {% endblock %}
 

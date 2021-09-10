@@ -83,8 +83,4 @@ def quote(symbol):
     # epoch value in its response
     payload['t'] = str(datetime.fromtimestamp(int(payload['t'])))
 
-    # debug
-    payload['c'] = random.random()
-    # end debug
-
     return payload

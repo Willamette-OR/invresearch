@@ -278,6 +278,9 @@ class User(UserMixin, db.Model):
         task = Task(id=rq_job.get_id(), name=name, description=description, 
                     user=self)
         db.session.add(task)
+        # TODO - delete debug code once done
+        db.session.commit()
+        # end debug
 
         return task
 

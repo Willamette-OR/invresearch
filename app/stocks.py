@@ -78,6 +78,13 @@ def quote(symbol):
     # always defaults it to USD in its response
     payload['currency'] = 'USD'
 
+    # debug 
+    payload['c'] = random.random()
+    payload['d'] = random.random() - 0.5
+    payload['dp'] = random.random() - 0.5
+    payload['t'] = random.randint(1, 23423223)
+    # end debug
+
     # also convert the epoch number of the time field to a python datetime 
     # string, since the Finnhub API always defaults the market time to an 
     # epoch value in its response

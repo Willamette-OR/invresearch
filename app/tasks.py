@@ -109,12 +109,12 @@ def _set_quote_data(symbol, quote_data):
         task = Task.query.get(job.get_id())
 
         # check if the client is actively requesting new quotes
+        now = time()
         last_ajax_timestamp = job.meta.get(
-            'task_{}_last_ajax_timestamp'.format(job.get_id()))
-        # TODO change the if condition below after debugging
-        # if last_ajax_timestamp - time() > 60:
-        if False:
+            'task_{}_last_ajax_timestamp'.format(job.get_id()), now)
+        if symbol is None or now - last_ajax_timestamp > 60:
             task.complete = True
+            db.session.commit()
             return True
 
         # add notifications for the updated quote
@@ -132,9 +132,24 @@ def refresh_quotes(user_id, symbols, seconds):
     """
 
     try:
+        # TODO - debug
+        start = time()
+        # end debug
         i = 0
         total = len(symbols)
         while True:
+            # TODO - debug
+            now = time()
+            job = get_current_job()
+            if now - start > 60:
+                job.meta['task_{}_last_ajax_timestamp'.format(job.get_id())] = now - 61
+            else:
+                job.meta['task_{}_last_ajax_timestamp'.format(job.get_id())] = now
+            job.save_meta()
+            print("now - start =", (now - start))
+            print("task_{}_last_ajax_timestamp = {}".format(job.get_id(), job.meta['task_{}_last_ajax_timestamp'.format(job.get_id())]))
+            # end debug
+
             quote_data = quote(symbols[i])
             end_task = _set_quote_data(symbols[i], quote_data)
             if end_task:
@@ -146,4 +161,4 @@ def refresh_quotes(user_id, symbols, seconds):
     except:
         app.logger.error('Unhandled exceptions', exc_info=sys.exc_info())
     finally:
-        pass
+        _set_quote_data(None, None)

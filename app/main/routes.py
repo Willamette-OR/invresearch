@@ -424,7 +424,7 @@ def watchlist():
     # 300 seconds ago
     stock_quotes = []
     for stock in stocks:
-        stock.update_quote(300)
+        stock.update_quote(delay=300)
         stock_quotes.append({'stock': stock, 
                              'quote': json.loads(stock.quote_payload)})
 

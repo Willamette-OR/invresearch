@@ -106,13 +106,26 @@ def _set_quote_data(symbol, quote_data):
     
     job = get_current_job()
     if job is not None:
+        job.refresh()
         task = Task.query.get(job.get_id())
 
         # check if the client is actively requesting new quotes
         now = time()
         last_ajax_timestamp = job.meta.get(
-            'task_{}_last_ajax_timestamp'.format(job.get_id()), now)
+            'last_ajax_timestamp_{}'.format(task.description), now)
+
+        # TODO - debug
+        print("[_set_quote_data] now =", now)
+        print("[_set_quote_data] task.description =", task.description)
+        print("[_set_quote_data] job.get_id() =", job.get_id())
+        print("[_set_quote_data] last_ajax_timestamp_{} = {}".format(task.description, last_ajax_timestamp))
+        print("[_set_quote_data] now - last_ajax_timestamp_{} > 60: {}".format(task.description, now - last_ajax_timestamp > 60))
+        # TODO - end debug
+
         if symbol is None or now - last_ajax_timestamp > 60:
+            # TODO - debug
+            print("[_set_quote_data] to return True...")
+            # TODO - end debug
             task.complete = True
             db.session.commit()
             return True
@@ -133,23 +146,16 @@ def refresh_quotes(user_id, symbols, seconds):
 
     try:
         # TODO - debug
-        start = time()
-        # end debug
+        print('[refresh_quotes] Starting task: symbols={}, seconds={}'.format(symbols, seconds))
+        # TODO - end debug
         i = 0
         total = len(symbols)
         while True:
             # TODO - debug
-            now = time()
-            job = get_current_job()
-            if now - start > 60:
-                job.meta['task_{}_last_ajax_timestamp'.format(job.get_id())] = now - 61
-            else:
-                job.meta['task_{}_last_ajax_timestamp'.format(job.get_id())] = now
-            job.save_meta()
-            print("now - start =", (now - start))
-            print("task_{}_last_ajax_timestamp = {}".format(job.get_id(), job.meta['task_{}_last_ajax_timestamp'.format(job.get_id())]))
-            # end debug
+            print("[refresh_quotes] Quote symbol:", symbols[i])
+            # TODO - end debug
 
+            sleep(seconds)
             quote_data = quote(symbols[i])
             end_task = _set_quote_data(symbols[i], quote_data)
             if end_task:
@@ -157,7 +163,6 @@ def refresh_quotes(user_id, symbols, seconds):
             i += 1
             if i > total - 1:
                 i = 0
-            sleep(seconds)
     except:
         app.logger.error('Unhandled exceptions', exc_info=sys.exc_info())
     finally:

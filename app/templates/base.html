@@ -140,39 +140,21 @@
         });
     </script>
 
-    {# script to dynamically badge message count & update task progress #}
+    {# helper function to set badge message count #}
     <script>
         // helper function to set message count for the designated DOM element
         function set_message_count(n) {
             $('#message_count').text(n);
             $('#message_count').css('visibility', n ? 'visible' : 'hidden');
         }
+    </script>
 
+    {# helper function to set task progress #} 
+    <script>
         // helper function to set task progress for the designated DOM element
         function set_task_progress(task_id, progress) {
             $('#' + task_id + '-progress').text(progress);
         }
-
-        // function to update the badge for unread messages via Ajax calls
-        $(function() {
-            var since = 0.0;
-            setInterval(function() {
-                $.ajax('/notifications?since=' + since).done(function(notifications) {
-                    for (var i=0; i < notifications.length; i++) {
-                        switch(notifications[i].name) {
-                            case 'unread_message_count':
-                                set_message_count(notifications[i].data);
-                                break;
-                            case 'task_progress':
-                                set_task_progress(notifications[i].data.task_id,
-                                                  notifications[i].data.progress);
-                                break;
-                        };
-                        since = notifications[i].timestamp;
-                    };
-                });
-            }, 5000);
-        });
     </script>
 
     {# helper function to set stock quotes via straight polling #}
@@ -185,6 +167,44 @@
             $('#quote-' + symbol + '-dp').css('color', quote.dp<0 ? 'red' : 'green')
             $('#quote-' + symbol + '-t').text(quote.t)
         }
+    </script>
+
+    {# script to fetch notifications and update various page elements #}
+    <script>
+        $(function() {
+            var since = 0.0;
+            var elem = null;
+            var quote_task_desc = null;
+            setInterval(function() {
+                // ajax request to fetch notifications and update corresponding page elements
+                $.ajax('/notifications?since=' + since).done(function(notifications) {
+                    for (var i=0; i < notifications.length; i++) {
+                        switch(notifications[i].name) {
+                            case 'unread_message_count':
+                                set_message_count(notifications[i].data);
+                                break;
+                            case 'task_progress':
+                                set_task_progress(notifications[i].data.task_id,
+                                                  notifications[i].data.progress);
+                                break;
+                            case 'refresh_quote':
+                                set_quote(notifications[i].data.symbol,
+                                          notifications[i].data.quote);
+                                break;
+                        };
+                        since = notifications[i].timestamp;
+                    };
+                });
+
+                // ajax request to tell server if the user is still active on certain pages
+                elem = $('.watchlist').text();
+                $('.wei-debug').text(elem);
+                if (elem) {
+                    quote_task_desc = 'watchlist';
+                    $.ajax('/refresh_quote_polling?task_desc=' + quote_task_desc);
+                };
+            }, 5000);
+        });
     </script>
 {% endblock %}
 
@@ -214,6 +234,12 @@
                 {% endfor %}
             {% endif %}
         {% endif %}
+
+        {# debug #}
+        <div class="wei-debug">
+            (Null)
+        </div>
+        {# end debug #}
 
         {# application content needs to be provided in the app_content block #}
         {% block app_content %}{% endblock %}

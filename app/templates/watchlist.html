@@ -3,7 +3,9 @@
 
 {% block app_content %}
 <h1>
-    {{ user.username }}'s Stock Watchlist:
+    <span class="watchlist">
+        {{ user.username }}'s Stock Watchlist:
+    </span>
 </h1>
 <br><br>
 <table class="table table-hover table-striped">
@@ -23,21 +25,31 @@
                         {{ stock_quote.stock.symbol }}
                     </a>
                 </th>
-                <td>{{ '{:.2f}'.format(stock_quote.quote.c) }}</td>
                 <td>
-                    <span style="color: {% if stock_quote.quote.d > 0 %}green
+                    <span id="quote-{{ stock_quote.stock.symbol }}-c">
+                        {{ '{:.2f}'.format(stock_quote.quote.c) }}
+                    </span>
+                </td>
+                <td>
+                    <span id="quote-{{ stock_quote.stock.symbol }}-d"
+                          style="color: {% if stock_quote.quote.d > 0 %}green
                                         {% elif stock_quote.quote.d < 0 %}red{% else %}black{% endif %};">
                         {{ '{:+.2f}'.format(stock_quote.quote.d) }}
                     </span>
                 </td>
                 <td>
-                    <span style="color: {% if stock_quote.quote.dp > 0 %}green
-                        {% elif stock_quote.quote.dp < 0 %}red{% else %}black{% endif %};">
+                    <span id="quote-{{ stock_quote.stock.symbol }}-dp"
+                          style="color: {% if stock_quote.quote.dp > 0 %}green
+                                        {% elif stock_quote.quote.dp < 0 %}red{% else %}black{% endif %};">
                         {{ '{:+.2f}'.format(stock_quote.quote.dp) }}%
                     </span>
                 </td>
                 <td>{{ stock_quote.quote.currency}}</td>
-                <td>{{ stock_quote.quote.t }}</td>
+                <td>
+                    <span id="quote-{{ stock_quote.stock.symbol }}-t">
+                        {{ stock_quote.quote.t }}
+                    </span>
+                </td>
             </tr>
         {% endfor %}
     </tbody>

@@ -3,7 +3,7 @@
 
 {% block app_content %}
 <h1>
-    <span class="watchlist">
+    <span class="page-flag-watchlist">
         {{ user.username }}'s Stock Watchlist:
     </span>
 </h1>
@@ -32,15 +32,17 @@
                 </td>
                 <td>
                     <span id="quote-{{ stock_quote.stock.symbol }}-d"
-                          style="color: {% if stock_quote.quote.d > 0 %}green
-                                        {% elif stock_quote.quote.d < 0 %}red{% else %}black{% endif %};">
+                          style="color: {% if stock_quote.quote.d >= 0 %}green
+                                        {% else %}red
+                                        {% endif %};">
                         {{ '{:+.2f}'.format(stock_quote.quote.d) }}
                     </span>
                 </td>
                 <td>
                     <span id="quote-{{ stock_quote.stock.symbol }}-dp"
-                          style="color: {% if stock_quote.quote.dp > 0 %}green
-                                        {% elif stock_quote.quote.dp < 0 %}red{% else %}black{% endif %};">
+                          style="color: {% if stock_quote.quote.dp >= 0 %}green
+                                        {% else %}red
+                                        {% endif %};">
                         {{ '{:+.2f}'.format(stock_quote.quote.dp) }}%
                     </span>
                 </td>

@@ -49,12 +49,20 @@
             {{ '{:.2f}'.format(quote.c) }}
         </span>
         <small>
-            <span id="quote-{{ stock.symbol }}-d" style="color: {% if quote.d > 0 %}green{% elif quote.d < 0 %}red{% else %}black{% endif %};">
+            <span id="quote-{{ stock.symbol }}-d" 
+                  style="color: {% if quote.d >= 0 %}green
+                                {% else %}red
+                                {% endif %};">
                 {{ '{:+.2f}'.format(quote.d) }}
             </span>
-            <span id="quote-{{ stock.symbol }}-dp" style="color: {% if quote.d > 0 %}green{% elif quote.d < 0 %}red{% else %}black{% endif %};">
-                ({{ '{:+.2f}'.format(quote.dp) }}%)
+            (
+            <span id="quote-{{ stock.symbol }}-dp" 
+                  style="color: {% if quote.d >= 0 %}green
+                                {% else %}red
+                                {% endif %};">
+                {{ '{:+.2f}'.format(quote.dp) }}%
             </span>
+            )
         </small>
     </h1>
     <p>

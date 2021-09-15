@@ -163,7 +163,7 @@
             $('#quote-' + symbol + '-c').text(quote.c.toFixed(2));
             $('#quote-' + symbol + '-d').text((quote.d<0 ? '' : '+') + quote.d.toFixed(2));
             $('#quote-' + symbol + '-d').css('color', quote.d<0 ? 'red' : 'green')
-            $('#quote-' + symbol + '-dp').text('(' + (quote.dp<0 ? '' : '+') + quote.dp.toFixed(2) + '%)');
+            $('#quote-' + symbol + '-dp').text((quote.dp<0 ? '' : '+') + quote.dp.toFixed(2) + '%');
             $('#quote-' + symbol + '-dp').css('color', quote.dp<0 ? 'red' : 'green')
             $('#quote-' + symbol + '-t').text(quote.t)
         }
@@ -197,9 +197,8 @@
                 });
 
                 // ajax request to tell server if the user is still active on certain pages
-                elem = $('.watchlist').text();
-                $('.wei-debug').text(elem);
-                if (elem) {
+                watchlist_flag = $('.page-flag-watchlist').text();
+                if (watchlist_flag) {
                     quote_task_desc = 'watchlist';
                     $.ajax('/refresh_quote_polling?task_desc=' + quote_task_desc);
                 };
@@ -224,22 +223,18 @@
             {% set tasks = current_user.get_tasks_in_progress() %}
             {% if tasks %}
                 {% for task in tasks %}
-                    <div class="alert alert-success" role="alert">
-                        {{ task.description }}
-                        <span id="{{ task.id }}-progress">
-                            {{ task.get_progress() }}
-                        </span>
-                        %
-                    </div>
+                    {% if task.name != 'refresh_quotes' %}
+                        <div class="alert alert-success" role="alert">
+                            {{ task.description }}
+                            <span id="{{ task.id }}-progress">
+                                {{ task.get_progress() }}
+                            </span>
+                            %
+                        </div>
+                    {% endif %}
                 {% endfor %}
             {% endif %}
         {% endif %}
-
-        {# debug #}
-        <div class="wei-debug">
-            (Null)
-        </div>
-        {# end debug #}
 
         {# application content needs to be provided in the app_content block #}
         {% block app_content %}{% endblock %}

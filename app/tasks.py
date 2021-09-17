@@ -1,11 +1,12 @@
 import sys
 import json
 from flask import render_template
-from time import sleep
+from time import sleep, time
 from rq import get_current_job
 from app import db, create_app
 from app.models import User, Post, Task
 from app.emails import send_email
+from app.stocks import quote
 
 
 # create an app for the task worker, which is running in a process different 
@@ -95,3 +96,58 @@ def export_posts(user_id):
         app.logger.error('Unhandled exceptions', exc_info=sys.exc_info())
     finally:
         _set_task_progress(100)
+
+
+def _set_quote_data(symbol, quote_data):
+    """
+    This helper function adds a user notification for the updated quote, and 
+    also returns a boolean value for whether to end the task.
+    """
+    
+    job = get_current_job()
+    if job is not None:
+        job.refresh()
+        task = Task.query.get(job.get_id())
+
+        # check if the client is actively requesting new quotes
+        now = time()
+        last_ajax_timestamp = job.meta.get(
+            'last_ajax_timestamp_{}'.format(task.description), now)
+
+        if symbol is None or now - last_ajax_timestamp > 60:
+            task.complete = True
+            db.session.commit()
+            return True
+
+        # add notifications for the updated quote
+        task.user.add_notification(
+            name='refresh_quote', data={'symbol': symbol, 'quote': quote_data})
+        db.session.commit()
+
+        return False
+
+
+def refresh_quotes(user_id, stocks, seconds):
+    """
+    This function fetches the latest stock quotes given the input symbols, and 
+    added the updated quote data to user notifications.
+    """
+
+    try:
+        i = 0
+        total = len(stocks)
+        while True:
+            sleep(seconds)
+            stocks[i].update_quote()
+            db.session.commit()
+            end_task = _set_quote_data(stocks[i].symbol, 
+                                       json.loads(stocks[i].quote_payload))
+            if end_task:
+                break
+            i += 1
+            if i > total - 1:
+                i = 0
+    except:
+        app.logger.error('Unhandled exceptions', exc_info=sys.exc_info())
+    finally:
+        _set_quote_data(None, None)

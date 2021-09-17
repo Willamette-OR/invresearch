@@ -1,12 +1,31 @@
 {% extends 'base.html' %}
 
 
+{% block scripts %}
+    {{ super() }}
+
+    <script>
+        // dynamically dupdate stock quote data on the page
+        $(
+            function() {
+                var symbol = $('.stock-symbol').text();
+                setInterval(function() {
+                    $.ajax('/quote_polling?symbol=' + symbol).done(function(payload) {
+                        set_quote(symbol, payload.quote.quote_payload)
+                    });
+                }, 5000);
+            }
+        );
+    </script>
+{% endblock %}
+
+
 {% block app_content %}
     <table class="table">
         <tr>
             <td width="256px" style="border: 0px;">
                 <h3>
-                    {{ stock.name }} ({{ stock.symbol }})
+                    {{ stock.name }} (<span class="stock-symbol">{{ stock.symbol }}</span>)
                 </h3>
             </td>
             <td style="border: 0px;">
@@ -26,14 +45,30 @@
         </tr>
     </table>
     <h1>
-        {{ '{:.2f}'.format(quote.c) }} 
+        <span id="quote-{{ stock.symbol }}-c">
+            {{ '{:.2f}'.format(quote.c) }}
+        </span>
         <small>
-            <span style="color: {% if quote.d > 0 %}green{% elif quote.d < 0 %}red{% else %}black{% endif %};">
-                {{ '{:+.2f}'.format(quote.d) }} ({{ '{:+.2f}'.format(quote.dp) }}%)
+            <span id="quote-{{ stock.symbol }}-d" 
+                  style="color: {% if quote.d >= 0 %}green
+                                {% else %}red
+                                {% endif %};">
+                {{ '{:+.2f}'.format(quote.d) }}
             </span>
+            (
+            <span id="quote-{{ stock.symbol }}-dp" 
+                  style="color: {% if quote.d >= 0 %}green
+                                {% else %}red
+                                {% endif %};">
+                {{ '{:+.2f}'.format(quote.dp) }}%
+            </span>
+            )
         </small>
     </h1>
     <p>
-        Market Time: {{ stock.quote_market_timestamp }}
+        Market Time: 
+        <span id="quote-{{ stock.symbol }}-t">
+            {{ quote.t }}
+        </span>
     </p>
 {% endblock %}

@@ -105,7 +105,6 @@ class Stock(db.Model):
     name = db.Column(db.String(128))
     last_quote_update = db.Column(db.Float, index=True, default=None)
     quote_payload = db.Column(db.Text)
-    quote_market_timestamp = db.Column(db.DateTime, index=True)
 
     def __repr__(self):
         return "<Stock: {}>".format(self.symbol)
@@ -125,14 +124,8 @@ class Stock(db.Model):
         now = time()
         if not self.last_quote_update or \
             (now - self.last_quote_update) > delay:
-            try:
-                data = quote(self.symbol)
-            except:
-                raise Exception(
-                    'Unable to fetch quote for symbol {}.'.format(self.symbol))
-            finally:
-                self.quote_payload = json.dumps(data)
-                self.quote_market_timestamp = datetime.fromtimestamp(data['t'])
+            self.quote_payload = json.dumps(quote(self.symbol))
+            self.last_quote_update = time()
             
 
 class User(UserMixin, db.Model):

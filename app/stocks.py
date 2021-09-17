@@ -1,4 +1,6 @@
+from datetime import datetime
 from flask import current_app
+import random
 
 
 def symbol_search(query, page, stocks_per_page):
@@ -72,8 +74,13 @@ def quote(symbol):
 
     payload = current_app.finnhub_client.quote(symbol)
 
-    # default the currency into USD for now, since the Finnhub API 
-    # always defaults it to USD
+    # set the currency to USD for all, since the Finnhub API 
+    # always defaults it to USD in its response
     payload['currency'] = 'USD'
+
+    # also convert the epoch number of the time field to a python datetime 
+    # string, since the Finnhub API always defaults the market time to an 
+    # epoch value in its response
+    payload['t'] = str(datetime.fromtimestamp(int(payload['t'])))
 
     return payload

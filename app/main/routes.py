@@ -2,7 +2,7 @@ from flask import render_template, flash, redirect, url_for, request, g, \
     jsonify, current_app
 from flask_login import login_required, current_user
 from datetime import datetime
-from flask_login.utils import login_user
+from time import time
 from langdetect import detect, LangDetectException
 import json
 from app import db
@@ -334,6 +334,7 @@ def stock(symbol):
 
     # update the quote
     stock.update_quote()
+    db.session.commit()
     
     # define an empty Flask form to validate post requests for 
     # watching/unwatching stocks
@@ -424,9 +425,24 @@ def watchlist():
     # 300 seconds ago
     stock_quotes = []
     for stock in stocks:
-        stock.update_quote(300)
+        stock.update_quote(delay=300)
+        db.session.commit()
         stock_quotes.append({'stock': stock, 
                              'quote': json.loads(stock.quote_payload)})
+
+    # kick off a background task for quote polling if the task doesn't exist
+    task_name = 'refresh_quotes'
+    task_description = 'watchlist'
+    task = current_user.tasks.filter_by(name=task_name, 
+                                        description=task_description, 
+                                        complete=False).first()
+    if not task:
+        current_user.launch_task(name=task_name, 
+                                 description=task_description, 
+                                 stocks=stocks,
+                                 seconds=10,
+                                 job_timeout=1200)
+        db.session.commit()
 
     return render_template('watchlist.html', title='Watchlist', 
                            user=current_user, stock_quotes=stock_quotes)
@@ -463,3 +479,65 @@ def search_stocks():
 
     return render_template('search_stocks.html', title='Search Results',
                            stocks=stocks, next_url=next_url, prev_url=prev_url)
+
+
+@bp.route('/quote_polling')
+@login_required
+def quote_polling():
+    """
+    This view function handles Ajax requests to update and fetch the latest 
+    quotes of stocks.
+    
+    Stock symbols are expected to be passed to this function via request 
+    arguments.
+    """
+
+    # get arguments from the request
+    symbol = request.args.get('symbol', '', type=str)
+    delay = request.args.get('delay', 60, type=int)
+
+    # use the symbol to locate the stock from the database
+    stock = Stock.query.filter_by(symbol=symbol).first()
+    if not stock:
+        raise ValueError(
+            'Unable to locate {} in the stock database.'.format(symbol))
+
+    # update the quote for the located stock with a pre-specified delay 
+    # (in seconds)
+    stock.update_quote(delay=delay)
+    db.session.commit()
+    
+    return jsonify({
+        'quote': {'symbol': symbol,
+                  'quote_payload': json.loads(stock.quote_payload)}
+        })
+
+
+@bp.route('/refresh_quote_polling')
+@login_required
+def refresh_quote_polling():
+    """
+    This view function handles client requests to tell the server that the 
+    client is still active on a page with stock quotes to be updated.
+
+    It takes an argument from the request to identify the quote refresh task 
+    type, fetch the task and the associated job, and put into the job meta 
+    data a timestamp for when the request is made.
+    """
+
+    task_desc = request.args.get('task_desc', None, type=str)
+    if not task_desc:
+        return
+
+    # fetch the corresponding quote polling task & job
+    task = current_user.tasks.filter_by(name='refresh_quotes', 
+                                        description=task_desc, 
+                                        complete=False).first()
+    job = task.get_rq_job()
+
+    # update the last ajax timestamp in the job metadata
+    job.meta['last_ajax_timestamp_{}'.format(task_desc)] = time()
+    job.save_meta()
+
+    # return an "empty" response for the request
+    return ('', 204)

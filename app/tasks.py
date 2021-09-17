@@ -138,7 +138,7 @@ def _set_quote_data(symbol, quote_data):
         return False
 
 
-def refresh_quotes(user_id, symbols, seconds):
+def refresh_quotes(user_id, stocks, seconds):
     """
     This function fetches the latest stock quotes given the input symbols, and 
     added the updated quote data to user notifications.
@@ -146,18 +146,20 @@ def refresh_quotes(user_id, symbols, seconds):
 
     try:
         # TODO - debug
-        print('[refresh_quotes] Starting task: symbols={}, seconds={}'.format(symbols, seconds))
+        print('[refresh_quotes] Starting task: seconds={}'.format(seconds))
         # TODO - end debug
         i = 0
-        total = len(symbols)
+        total = len(stocks)
         while True:
             # TODO - debug
-            print("[refresh_quotes] Quote symbol:", symbols[i])
+            print("[refresh_quotes] Quote symbol:", stocks[i].symbol)
             # TODO - end debug
 
             sleep(seconds)
-            quote_data = quote(symbols[i])
-            end_task = _set_quote_data(symbols[i], quote_data)
+            stocks[i].update_quote()
+            db.session.commit()
+            end_task = _set_quote_data(stocks[i].symbol, 
+                                       json.loads(stocks[i].quote_payload))
             if end_task:
                 break
             i += 1

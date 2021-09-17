@@ -334,6 +334,7 @@ def stock(symbol):
 
     # update the quote
     stock.update_quote()
+    db.session.commit()
     
     # define an empty Flask form to validate post requests for 
     # watching/unwatching stocks
@@ -422,11 +423,10 @@ def watchlist():
 
     # only update quotes if the last quote was updated more than 
     # 300 seconds ago
-    symbols = []
     stock_quotes = []
     for stock in stocks:
         stock.update_quote(delay=300)
-        symbols.append(stock.symbol)
+        db.session.commit()
         stock_quotes.append({'stock': stock, 
                              'quote': json.loads(stock.quote_payload)})
 
@@ -439,7 +439,7 @@ def watchlist():
     if not task:
         current_user.launch_task(name=task_name, 
                                  description=task_description, 
-                                 symbols=symbols,
+                                 stocks=stocks,
                                  seconds=10,
                                  job_timeout=1200)
         db.session.commit()
@@ -505,6 +505,7 @@ def quote_polling():
     # update the quote for the located stock with a pre-specified delay 
     # (in seconds)
     stock.update_quote(delay=delay)
+    db.session.commit()
     
     return jsonify({
         'quote': {'symbol': symbol,

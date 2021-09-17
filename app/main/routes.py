@@ -539,9 +539,5 @@ def refresh_quote_polling():
     job.meta['last_ajax_timestamp_{}'.format(task_desc)] = time()
     job.save_meta()
 
-    # TODO - debug
-    return {'job.get_id()': job.get_id(), 
-            'job.meta.last_ajax_timestamp_watchlist':job.meta.get('last_ajax_timestamp_{}'.format(task_desc), '(Null)')}
-    # TODO - end debug
-
-    #return
+    # return an "empty" response for the request
+    return ('', 204)

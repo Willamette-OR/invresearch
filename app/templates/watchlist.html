@@ -3,9 +3,14 @@
 
 {% block app_content %}
 <h1>
-    <span class="page-flag-watchlist">
-        {{ user.username }}'s Stock Watchlist:
-    </span>
+    {% if stock_quotes %}
+        <span class="page-flag-watchlist">
+            {{ user.username }}'s Stock Watchlist:
+        </span>
+    {% else %}
+        {{ user.username }}'s Stock Watchlist: (not watching any currently)
+    {% endif %}
+    
 </h1>
 <br><br>
 <table class="table table-hover table-striped">

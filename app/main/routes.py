@@ -430,19 +430,21 @@ def watchlist():
         stock_quotes.append({'stock': stock, 
                              'quote': json.loads(stock.quote_payload)})
 
-    # kick off a background task for quote polling if the task doesn't exist
-    task_name = 'refresh_quotes'
-    task_description = 'watchlist'
-    task = current_user.tasks.filter_by(name=task_name, 
-                                        description=task_description, 
-                                        complete=False).first()
-    if not task:
-        current_user.launch_task(name=task_name, 
-                                 description=task_description, 
-                                 stocks=stocks,
-                                 seconds=10,
-                                 job_timeout=1200)
-        db.session.commit()
+    # kick off a background task for quote polling if the task doesn't exist, 
+    # and the watchlist is not empty
+    if len(stocks) > 0:
+        task_name = 'refresh_quotes'
+        task_description = 'watchlist'
+        task = current_user.tasks.filter_by(name=task_name, 
+                                            description=task_description, 
+                                            complete=False).first()
+        if not task:
+            current_user.launch_task(name=task_name, 
+                                    description=task_description, 
+                                    stocks=stocks,
+                                    seconds=10,
+                                    job_timeout=1200)
+            db.session.commit()
 
     return render_template('watchlist.html', title='Watchlist', 
                            user=current_user, stock_quotes=stock_quotes)

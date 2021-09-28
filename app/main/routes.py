@@ -440,10 +440,10 @@ def watchlist():
                                             complete=False).first()
         if not task:
             current_user.launch_task(name=task_name, 
-                                    description=task_description, 
-                                    stocks=stocks,
-                                    seconds=10,
-                                    job_timeout=1200)
+                                     description=task_description, 
+                                     stocks=stocks,
+                                     seconds=10,
+                                     job_timeout=1200)
             db.session.commit()
 
     return render_template('watchlist.html', title='Watchlist', 

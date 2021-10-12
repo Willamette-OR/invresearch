@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask import current_app
 from flask_login import UserMixin
@@ -10,7 +10,7 @@ import rq
 import redis
 from app import db, login 
 from app.search import query_index, add_to_index, remove_from_index
-from app.stocks import quote
+from app.stocks import financials_history, quote
 
 
 class SearchableMixin(object):
@@ -105,6 +105,9 @@ class Stock(db.Model):
     name = db.Column(db.String(128))
     last_quote_update = db.Column(db.Float, index=True, default=None)
     quote_payload = db.Column(db.Text)
+    last_financials_history_update = db.Column(db.DateTime, index=True, 
+                                               default=None)
+    financials_history_payload = db.Column(db.Text)
 
     def __repr__(self):
         return "<Stock: {}>".format(self.symbol)
@@ -126,6 +129,33 @@ class Stock(db.Model):
             (now - self.last_quote_update) > delay:
             self.quote_payload = json.dumps(quote(self.symbol))
             self.last_quote_update = time()
+
+    def update_financials_history(self, update_interval_days=30):
+        """
+        This method updates the historical data of stock financials in the
+        app database, if the time lapse since the last update has already
+        exceeded the given update interval (in days).
+        """
+
+        # update the financials history payload column if the last update
+        # timestamp is None (never initialized/updated before), or if the time 
+        # lapse has exceeded the present update internal
+        last_update_time = self.last_financials_history_update or \
+            datetime(1900, 1, 1)
+        now = datetime.utcnow()
+        lapse_days = (now - last_update_time).days
+        if lapse_days > update_interval_days:
+            self.financials_history_payload = \
+                json.dumps(financials_history(self.symbol))
+            self.last_financials_history_update = now
+
+    def load_financials_history_data(self):
+        """
+        This method loads financials history data from the payload stored as 
+        text/str.
+        """
+
+        return json.loads(self.financials_history_payload)
             
 
 class User(UserMixin, db.Model):

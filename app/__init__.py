@@ -90,7 +90,7 @@ def create_app(config=Config):
         if not os.path.exists('logs'):
             os.mkdir('logs')
         file_handler = RotatingFileHandler('logs/invresearch.log', maxBytes=10240,
-                                        backupCount=10)
+                                           backupCount=10)
         file_handler.setLevel(logging.INFO)
         file_handler.setFormatter(logging.Formatter(
             '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'

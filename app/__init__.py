@@ -76,10 +76,10 @@ def create_app(config=Config):
             if app.config['MAIL_USE_TLS']:
                 secure = ()
             mail_handler = SMTPHandler(mailhost=host, 
-                                    fromaddr='no-reply@' + app.config['MAIL_SERVER'],
-                                    toaddrs=app.config['ADMINS'],
-                                    subject='InvResearch Failure',
-                                    credentials=auth, secure=secure)
+                                       fromaddr='no-reply@' + app.config['MAIL_SERVER'],
+                                       toaddrs=app.config['ADMINS'],
+                                       subject='InvResearch Failure',
+                                       credentials=auth, secure=secure)
             mail_handler.setLevel(logging.ERROR)
             mail_handler.setFormatter(logging.Formatter(
                 '[%(asctime)s] [%(levelname)s] in [%(module)s]: %(message)s'

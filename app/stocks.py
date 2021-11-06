@@ -1,6 +1,7 @@
 import requests
 from datetime import datetime
 from flask import current_app
+from yahoo_fin import stock_info
 
 
 def symbol_search(query, page, stocks_per_page):
@@ -122,3 +123,38 @@ def financials_history(symbol):
     """
 
     return get_guru_data(symbol, data_type='financials')
+
+
+def get_quote_history(symbol, start_date, end_date, interval='1mo', 
+                      header='close'):
+    """
+    This function pulls historical quote data, and returns the cleaned up data 
+    in a dictionary of "<timestamp>: <price>".
+
+    By default, it will return the "closing" prices for each interval.
+
+    Inputs:
+        'start_date': '%m/%d/%Y'
+        'end_date': '%m/%d/%Y
+
+    Note:
+        It currently uses the "yahoo_fin" library for scraping historical data 
+        from Yahoo Finance.
+        For more details, check out the author's documentation here:
+        https://theautomatic.net/yahoo_fin-documentation/ 
+    """
+
+    # get the quote history in Pandas dataframe via a web scraper
+    df_quote_history = stock_info.get_data(symbol, 
+                                           start_date=start_date, 
+                                           end_date=end_date, 
+                                           interval=interval)
+
+    # construct the output dictionary of "<timestamp>: <price>"
+    data = {}
+    df_selected_price = df_quote_history[header]
+    for timestamp in dict(df_selected_price):
+        data[timestamp.to_pydatetime()] = df_selected_price[timestamp]
+
+    return data
+

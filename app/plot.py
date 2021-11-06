@@ -1,6 +1,8 @@
+from bokeh.models.annotations import Tooltip
 from bokeh.plotting import figure
 from bokeh.embed import components
 from bokeh.resources import CDN
+from bokeh.models import HoverTool
 
 def example_plot():
     """
@@ -10,7 +12,11 @@ def example_plot():
     # create a simple Bokeh plot
     x = [1, 2, 3, 4, 5]
     y = [6, 7, 2, 4, 5]
-    p = figure(title="Stock Price", x_axis_label='Time', y_axis_label='Price')
+    p = figure(title="Stock Price", 
+               x_axis_label='Time', 
+               y_axis_label='Price',
+               tools=[HoverTool()],
+               tooltips="Data point @x has the value @y")
     p.line(x, y, legend_label='Price', line_width=2)
 
     payload = {}

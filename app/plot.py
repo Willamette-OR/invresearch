@@ -1,8 +1,7 @@
-from bokeh.models.annotations import Tooltip
 from bokeh.plotting import figure
 from bokeh.embed import components
 from bokeh.resources import CDN
-from bokeh.models import HoverTool, tools
+from bokeh.models import HoverTool, formatters
 
 def example_plot():
     """
@@ -38,13 +37,24 @@ def stock_valuation_plot(quote_history_data):
     a "price" vs "normal price" plot against timestamps.
     """
 
+    # set up tooltips & formats
+    hover_tool = HoverTool(
+        tooltips = [
+            ('Date',  '@x{%F}'),
+            ('Close', '$@y{%0.2f}')
+        ],
+        formatters = {
+            '@x' : 'datetime',
+            '@y' : 'printf'
+        }
+    )
+
     # initiate a Bokeh figure object
     p = figure(title="Price Correlated with Fundamentals",
                x_axis_type='datetime',
                x_axis_label='Time',
                y_axis_label='Price',
-               tools=[HoverTool()],
-               tooltips="@x: $@y")
+               tools=[hover_tool])
 
     # add a line for quote history
     p.line(list(quote_history_data.keys()),

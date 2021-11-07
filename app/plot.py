@@ -63,6 +63,12 @@ def stock_valuation_plot(quote_history_data):
            color='black',
            line_width=2)
 
+    # customizations
+    p.title.align = 'center'
+    p.title.text_color = 'orange'
+    p.title.text_font_size = '25px'
+    p.legend.location = 'top_left'
+
     # get the javascript for loading BokehJS remotely from a CDN
     payload = {}
     payload['resources'] = CDN.render()

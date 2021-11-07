@@ -11,8 +11,8 @@ from app.translate import translate
 from app.main import bp
 from app.main.forms import EditProfileForm, EmptyForm, SubmitPostForm, \
     SearchForm, MessageForm
-from app.stocks import company_profile, symbol_search
-from app.plot import example_plot
+from app.stocks import company_profile, quote, symbol_search
+from app.plot import stock_valuation_plot
 
 
 @bp.before_request
@@ -341,10 +341,15 @@ def stock(symbol):
     # watching/unwatching stocks
     form = EmptyForm()
 
-    # TODO - placeholder for plotting; using a simple function for testing 
-    # purposes for now
+    # set up for a stock valuation graph, with timestamps on the x axis and 
+    # quote history and "normal prices" on the y axis
+    # TODO - replace the hard coded start and end dates with a logic where the 
+    # date filters are affected by user inputs
+    quote_history_data = stock.get_quote_history_data(start_date='01-01-2002', 
+                                                      end_date='11-01-2021')
+
     # get the plot payload 
-    plot = example_plot()
+    plot = stock_valuation_plot(quote_history_data=quote_history_data)
 
     return render_template(
         'stock.html', title="Stock - {}".format(stock.symbol), stock=stock, 

@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask import current_app
 from flask_login import UserMixin
@@ -10,7 +10,7 @@ import rq
 import redis
 from app import db, login 
 from app.search import query_index, add_to_index, remove_from_index
-from app.stocks import financials_history, quote
+from app.stocks import financials_history, quote, get_quote_history
 
 
 class SearchableMixin(object):
@@ -108,6 +108,9 @@ class Stock(db.Model):
     last_financials_history_update = db.Column(db.DateTime, index=True, 
                                                default=None)
     financials_history_payload = db.Column(db.Text)
+    last_quote_history_update = db.Column(db.DateTime, index=True, 
+                                          default=None)
+    quote_history_payload = db.Column(db.Text)
 
     def __repr__(self):
         return "<Stock: {}>".format(self.symbol)
@@ -148,6 +151,7 @@ class Stock(db.Model):
             self.financials_history_payload = \
                 json.dumps(financials_history(self.symbol))
             self.last_financials_history_update = now
+            db.session.commit()
 
     def load_financials_history_data(self):
         """
@@ -157,6 +161,51 @@ class Stock(db.Model):
 
         return json.loads(self.financials_history_payload)
             
+    def get_quote_history_data(self, start_date, end_date, 
+                               interval='1mo', type='close', delay=24):
+        """
+        This method creates/refreshes the quote history payload if needed,
+        and returns the quote history data in a dictionary of:
+            "<timestamp>: <price>"
+
+        Inputs:
+            'start_date': '%m-%d-%Y'. 
+            'end_date': '%m-%d-%Y'. 
+            'type': the type of stock price. Default is 'close' (closing price)
+            'delay': the minimal number of hours allowed between two refreshes;
+                     Default is 24 hours.
+        """
+
+        # creates/refreshes the quote history and save it 
+        now = datetime.utcnow()
+        if not self.last_quote_history_update or \
+            (now - self.last_quote_history_update).seconds > (delay * 3600):
+
+            # download quote history from the web
+            raw_data = get_quote_history(symbol=self.symbol, 
+                                         interval=interval,
+                                         header=type)
+            
+            # convert all timestamp values to strings and save
+            raw_data_timestamp_to_str = {key.strftime('%m-%d-%Y %H:%M'): value \
+                                         for (key, value) in raw_data.items()}
+            self.quote_history_payload = json.dumps(raw_data_timestamp_to_str)
+
+            # update the saved timestamp for the last quote history update
+            self.last_quote_history_update = now
+
+            # commit database changes 
+            db.session.commit()
+
+        # load quote data from the saved quote history payload, with 
+        # pre-specified start and end dates
+        raw_data = {datetime.strptime(key, '%m-%d-%Y %H:%M'): value for \
+            (key, value) in json.loads(self.quote_history_payload).items()}
+        timestamp_start_date = datetime.strptime(start_date, '%m-%d-%Y')
+        timestamp_end_date = datetime.strptime(end_date, '%m-%d-%Y')
+        return {key: value for (key, value) in raw_data.items() \
+                if timestamp_start_date <= key <= timestamp_end_date}
+
 
 class User(UserMixin, db.Model):
     """

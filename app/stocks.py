@@ -125,13 +125,14 @@ def financials_history(symbol):
     return get_guru_data(symbol, data_type='financials')
 
 
-def get_quote_history(symbol, start_date, end_date, interval='1mo', 
+def get_quote_history(symbol, start_date=None, end_date=None, interval='1mo', 
                       header='close'):
     """
     This function pulls historical quote data, and returns the cleaned up data 
     in a dictionary of "<timestamp>: <price>".
 
-    By default, it will return the "closing" prices for each interval.
+    By default, it will return the "closing" prices for all available 
+    intervals.
 
     Inputs:
         'start_date': '%m/%d/%Y'

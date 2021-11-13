@@ -113,7 +113,7 @@ def get_guru_data(symbol, data_type):
         return r.json()
 
 
-def financials_history(symbol):
+def get_financials_history(symbol):
     """
     This function gets historical data for stock financials, and returns the 
     data in a json payload.

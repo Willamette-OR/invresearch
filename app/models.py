@@ -10,7 +10,7 @@ import rq
 import redis
 from app import db, login 
 from app.search import query_index, add_to_index, remove_from_index
-from app.stocks import financials_history, quote, get_quote_history
+from app.stocks import get_financials_history, quote, get_quote_history
 
 
 class SearchableMixin(object):
@@ -133,7 +133,7 @@ class Stock(db.Model):
             self.quote_payload = json.dumps(quote(self.symbol))
             self.last_quote_update = time()
 
-    def update_financials_history(self, update_interval_days=30):
+    def get_financials_history_data(self, update_interval_days=30):
         """
         This method updates the historical data of stock financials in the
         app database, if the time lapse since the last update has already
@@ -149,15 +149,9 @@ class Stock(db.Model):
         lapse_days = (now - last_update_time).days
         if lapse_days > update_interval_days:
             self.financials_history_payload = \
-                json.dumps(financials_history(self.symbol))
+                json.dumps(get_financials_history(self.symbol))
             self.last_financials_history_update = now
             db.session.commit()
-
-    def load_financials_history_data(self):
-        """
-        This method loads financials history data from the payload stored as 
-        text/str.
-        """
 
         return json.loads(self.financials_history_payload)
             

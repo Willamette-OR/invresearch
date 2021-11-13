@@ -10,7 +10,8 @@ import rq
 import redis
 from app import db, login 
 from app.search import query_index, add_to_index, remove_from_index
-from app.stocks import get_financials_history, quote, get_quote_history
+from app.stocks import quote, get_quote_history, get_financials_history, \
+    get_analyst_estimates
 
 
 class SearchableMixin(object):
@@ -110,6 +111,9 @@ class Stock(db.Model):
     financials_history_payload = db.Column(db.Text)
     last_quote_history_update = db.Column(db.DateTime, index=True, 
                                           default=None)
+    analyst_estimates_payload = db.Column(db.Text)
+    last_analyst_estimates_update = db.Column(db.DateTime, index=True, 
+                                              default=None)
     quote_history_payload = db.Column(db.Text)
 
     def __repr__(self):
@@ -135,9 +139,9 @@ class Stock(db.Model):
 
     def get_financials_history_data(self, update_interval_days=30):
         """
-        This method updates the historical data of stock financials in the
-        app database, if the time lapse since the last update has already
-        exceeded the given update interval (in days).
+        This method gets the historical data of stock financials in the app 
+        database, and fetches for newer data if the time lapse since the last 
+        update has already exceeded the given update interval (in days).
         """
 
         # update the financials history payload column if the last update
@@ -154,7 +158,27 @@ class Stock(db.Model):
             db.session.commit()
 
         return json.loads(self.financials_history_payload)
-            
+    
+    def get_analyst_estimates_data(self, update_interval_days=30):
+        """
+        This method returns the analyst estimates data in a dictionary.
+
+        Before that, it first fetches for and saves newer data if the # of 
+        days since the last update has exceeded a preset threshold 
+        (update_interval_days).
+        """
+
+        # fetches for newer data if update is needed
+        now = datetime.utcnow()
+        if not self.last_analyst_estimates_update or (now - \
+            self.last_analyst_estimates_update).days > update_interval_days:
+            self.analyst_estimates_payload = json.dumps(
+                get_analyst_estimates(self.symbol))
+            self.last_analyst_estimates_update = now
+            db.session.commit()
+
+        return json.loads(self.analyst_estimates_payload)
+
     def get_quote_history_data(self, start_date, end_date, 
                                interval='1mo', type='close', delay=24):
         """

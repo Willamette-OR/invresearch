@@ -125,6 +125,18 @@ def get_financials_history(symbol):
     return get_guru_data(symbol, data_type='financials')
 
 
+def get_analyst_estimates(symbol):
+    """
+    This function gets analyst estimates data, and returns the data in a json 
+    payload.
+
+    Note:
+        It currently use the GuruFocus API for data.
+    """
+
+    return get_guru_data(symbol, data_type='analyst_estimate')
+
+
 def get_quote_history(symbol, start_date=None, end_date=None, interval='1mo', 
                       header='close'):
     """

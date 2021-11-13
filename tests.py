@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from config import Config
 from app import create_app, db
 from app.models import User, Post, Message, Stock
+from app.metrics import Metric
 
 
 class TestingConfig(Config):
@@ -171,6 +172,7 @@ class UserTestCase(unittest.TestCase):
 
     def test_stock_watching(self):
         """This method tests the stock watching database mechanics."""
+
         u1 = User(username='alice')
         u2 = User(username='bob')
         s1 = Stock(symbol='AAPL')
@@ -208,6 +210,28 @@ class UserTestCase(unittest.TestCase):
         self.assertFalse(u2.is_watching(s3))
         self.assertEqual(u2.watched.count(), 1)
         self.assertEqual(s3.watchers.count(), 1)
+
+    def test_metric_manipulations(self):
+        """
+        This method tests manipulations of metrics from financial reports.
+        """
+
+        # mock up inputs
+        name = 'revenue'
+        timestamps = ['2018-01', '2019-01', '2020-01', 'TTM']
+        values = ['100', '200', '300', '350']
+        start_date = datetime(2018, 5, 1)
+
+        # initialize
+        revenue = Metric(name=name, timestamps=timestamps, values=values, 
+                         start_date=start_date)
+        self.assertEqual(revenue.name, name)
+        self.assertEqual(revenue.timestamps, (datetime(2019, 1, 1), 
+                                              datetime(2020, 1, 1)))
+        self.assertEqual(revenue.values, (200, 300))
+        self.assertEqual(revenue.TTM_value, 350)
+        self.assertEqual(revenue.data, {datetime(2019, 1, 1): 200,
+                                        datetime(2020, 1, 1): 300})
         
 
 if __name__ == '__main__':

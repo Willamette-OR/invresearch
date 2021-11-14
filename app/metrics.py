@@ -1,4 +1,5 @@
 from datetime import datetime
+import numpy as np
 
 
 class Metric(object):
@@ -54,3 +55,43 @@ class Metric(object):
         self.timestamps = tuple(self.data.keys())
         self.values = tuple(self.data.values())
 
+
+class TotalMetric(Metric):
+    """
+    This class implements "total" metrics such as "total revenues", "total net 
+    income", etc. from financial reports, derived from the parent class of 
+    Metric.
+
+    These metrics can have both "total" values and "per share" values.
+    """
+
+    @property
+    def num_of_shares(self):
+        """
+        This method is a getter method for the attribute num_of_shares.
+        """
+
+        return self._num_of_shares
+
+    @num_of_shares.setter
+    def num_of_shares(self, num_of_shares):
+        """
+        This method is a setter method for the attribute per_share_data.
+
+        Inputs:
+            'num_of_shares': a sequence of numbers representing the historical 
+                             values of "shares outstanding". Each value in the
+                             sequence should be associated with the same point
+                             in time as that of value in the same position 
+                             from the sequence of "self.values".
+        """
+
+        # check the input sequence and raise errors if needed
+        if len(num_of_shares) != len(self.values):
+            raise ValueError("The lengths of the input 'num_of_shares' and "
+                             "the object attribute 'values' must be equal.")
+
+        self._num_of_shares = num_of_shares
+        self.per_share_values = list(
+            np.array(self.values) / np.array(self._num_of_shares))
+        self.per_share_data = dict(zip(self.timestamps, self.per_share_values))

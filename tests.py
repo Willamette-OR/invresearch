@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from config import Config
 from app import create_app, db
 from app.models import User, Post, Message, Stock
-from app.metrics import Metric
+from app.metrics import Metric, TotalMetric
 
 
 class TestingConfig(Config):
@@ -222,7 +222,7 @@ class UserTestCase(unittest.TestCase):
         values = ['100', '200', '300', '350']
         start_date = datetime(2018, 5, 1)
 
-        # initialize
+        # test instance initialization
         revenue = Metric(name=name, timestamps=timestamps, values=values, 
                          start_date=start_date)
         self.assertEqual(revenue.name, name)
@@ -232,6 +232,16 @@ class UserTestCase(unittest.TestCase):
         self.assertEqual(revenue.TTM_value, 350)
         self.assertEqual(revenue.data, {datetime(2019, 1, 1): 200,
                                         datetime(2020, 1, 1): 300})
+        
+        # test per share operations
+        num_of_shares = [100, 150]
+        revenue = TotalMetric(name=name, timestamps=timestamps, values=values, 
+                              start_date=start_date)
+        revenue.num_of_shares = num_of_shares
+        self.assertEqual(revenue.num_of_shares, num_of_shares)
+        self.assertEqual(revenue.per_share_values, [2, 2])
+        self.assertEqual(revenue.per_share_data, {datetime(2019, 1, 1): 2,
+                                                  datetime(2020, 1, 1): 2})
         
 
 if __name__ == '__main__':

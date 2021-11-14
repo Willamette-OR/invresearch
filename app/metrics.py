@@ -8,19 +8,23 @@ class Metric(object):
     """
 
     def __init__(self, name, timestamps, values, start_date, 
-                 convert_to_numeric=True):
+                 input_timestamps_format='%Y-%m', convert_to_numeric=True):
         """
         Constructor.
         
         Input:
             - "name": name of the metric.
-            - "timestamps": a list (or list-like) of strings in the format of 
-                            "%Y-%m"
+            - "timestamps": a list (or list-like) of strings in the format 
+                            specified by the other input 
+                            'input_timestamps_format'
             - "values": a sequence of values (could be strings) of the metric,
                         with each value corresponding to the timestamp of the 
                         same position in the input sequence of timestamps
             - "start_date": only records after this date from the input data 
                             will be considered
+            - "input_timestamps_format": default "%Y-%m". Format used to 
+                                         convert string formatted input 
+                                         timestamps to Python datetime objects.
             - "convert_to_numeric": default to be True; if True the method 
                                     will attempt to convert all input values 
                                     to float values
@@ -44,7 +48,8 @@ class Metric(object):
         self.data = {}
         for i in range(len(timestamps)):
             if timestamps[i] != 'TTM':
-                timestamp = datetime.strptime(timestamps[i], '%Y-%m')
+                timestamp = datetime.strptime(timestamps[i], 
+                                              input_timestamps_format)
                 if timestamp > start_date:
                     self.data[timestamp] = _values[i]
             else:
@@ -87,11 +92,17 @@ class TotalMetric(Metric):
         """
 
         # check the input sequence and raise errors if needed
-        if len(num_of_shares) != len(self.values):
+        if len(num_of_shares) == 1:
+
+            # assuming the caller intends to use a constant value for all dates
+            self._num_of_shares = num_of_shares * len(self.values)
+
+        elif len(num_of_shares) != len(self.values):
             raise ValueError("The lengths of the input 'num_of_shares' and "
                              "the object attribute 'values' must be equal.")
+        else:
+            self._num_of_shares = num_of_shares
 
-        self._num_of_shares = num_of_shares
         self.per_share_values = list(
             np.array(self.values) / np.array(self._num_of_shares))
         self.per_share_data = dict(zip(self.timestamps, self.per_share_values))

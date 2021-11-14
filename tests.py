@@ -242,7 +242,23 @@ class UserTestCase(unittest.TestCase):
         self.assertEqual(revenue.per_share_values, [2, 2])
         self.assertEqual(revenue.per_share_data, {datetime(2019, 1, 1): 2,
                                                   datetime(2020, 1, 1): 2})
-        
+
+        # test operations on analyst estimated data
+        num_of_shares_estimated = [100]
+        timestamps_estimated = ['202112', '202212', '202312']
+        values_estimated = ['100', '200', '300']
+        revenue_estimated = TotalMetric(name=name, 
+                                        timestamps=timestamps_estimated, 
+                                        values=values_estimated, 
+                                        start_date=start_date,
+                                        input_timestamps_format='%Y%m')
+        revenue_estimated.num_of_shares = num_of_shares_estimated
+        self.assertEqual(revenue_estimated.num_of_shares, [100, 100, 100])
+        self.assertEqual(revenue_estimated.per_share_data, 
+                         {datetime(2021, 12, 1): 1,
+                          datetime(2022, 12, 1): 2,
+                          datetime(2023, 12, 1): 3})
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

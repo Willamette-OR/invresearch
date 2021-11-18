@@ -36,9 +36,12 @@ class Metric(object):
             raise ValueError("The lengths of input timestamps and values must" 
                              "be equal.")
 
-        # if requested, ensure all values are converted to numeric values (float)
+        # if requested, ensure all values are converted to numeric values 
+        # (float)
+        # TODO - occasionally a value could be None if the input values are 
+        # from analyst estimates (Guru). Defaulting those values to 0 for now.
         if convert_to_numeric:
-            _values = [float(value) for value in values]
+            _values = [float(value) if value else 0 for value in values]
         else:
             _values = values
 

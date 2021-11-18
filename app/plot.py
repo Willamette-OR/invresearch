@@ -1,7 +1,9 @@
+from datetime import datetime
 from bokeh.plotting import figure
 from bokeh.embed import components
 from bokeh.resources import CDN
-from bokeh.models import HoverTool, formatters
+from bokeh.models import HoverTool
+from app.metrics import Metric, TotalMetric
 
 def example_plot():
     """
@@ -31,7 +33,7 @@ def example_plot():
     return payload
 
 
-def _average_price_multiple(quote_history_data, metric_per_share_data):
+def _get_average_price_multiple(quote_history_data, metric_per_share_data):
     """
     This function calculates and returns the average price-to-metric ratio.
     
@@ -117,7 +119,90 @@ def _average_price_multiple(quote_history_data, metric_per_share_data):
     return sum(list_ratios) / len(list_ratios)
 
 
-def stock_valuation_plot(quote_history_data):
+def get_normal_price(metric_name, section_name, start_date, quote_history_data, 
+                     financials_history, analyst_estimates):
+    """
+    This function returns normal prices with respect to the pre-specified 
+    metric, based on the historical average price multiple of the same metric.
+    """
+
+    # convert the input start date to a datetime object
+    # TODO - generalize this code later
+    start_date_datetime_obj = datetime.strptime(start_date, '%m-%d-%Y')
+
+    # get the sequence of historical shares outstanding (diluted average)
+    num_of_shares = \
+        Metric(name='Shares Outstanding (Diluted Average)',
+               timestamps=financials_history['financials']['annuals']\
+                   ['Fiscal Year'],
+               values=financials_history['financials']['annuals']\
+                   ['income_statement']['Shares Outstanding (Diluted Average)'],
+               start_date=start_date_datetime_obj)
+
+    # get the sequence of historical values of the pre-specified metric, with
+    # number of shares set
+    metric = TotalMetric(name=metric_name, 
+                         timestamps=financials_history['financials']['annuals']\
+                             ['Fiscal Year'],
+                         values=financials_history['financials']['annuals']\
+                             [section_name][metric_name],
+                         start_date=start_date_datetime_obj)
+
+    metric.num_of_shares = num_of_shares.values
+
+    # calculate the historical average price multiple
+    average_price_multiple = \
+        _get_average_price_multiple(quote_history_data=quote_history_data,
+                                    metric_per_share_data=metric.per_share_data)
+
+    # get the per share data of analyst estimates
+    field_lookup = {
+        'EBIT': {
+            'field_name': 'ebit_estimate',
+            'per_share': False
+        },
+        'EBITDA': {
+            'field_name': 'ebitda_estimate',
+            'per_share': False
+        },
+        'Net Income': {
+            'field_name': 'per_share_eps_estimate',
+            'per_share': True
+        }
+    }
+
+    if field_lookup[metric_name]['per_share']:
+        metric_estimated = \
+            Metric(name=metric_name + ' (estimated)',
+                   timestamps=analyst_estimates['annual']['date'],
+                   values=analyst_estimates['annual'][\
+                        field_lookup[metric_name]['field_name']],
+                   start_date=start_date_datetime_obj,
+                   input_timestamps_format='%Y%m')
+        metric_estimated_per_share_data = metric_estimated.data
+    else:
+        metric_estimated = \
+            TotalMetric(name=metric_name + ' (estimated)',
+                        timestamps=analyst_estimates['annual']['date'],
+                        values=analyst_estimates['annual'][\
+                            field_lookup[metric_name]['field_name']],
+                        start_date=start_date_datetime_obj,
+                        input_timestamps_format='%Y%m')
+        metric_estimated.num_of_shares = [num_of_shares.TTM_value]
+        metric_estimated_per_share_data = metric_estimated.per_share_data
+
+    # calculate the normal prices with respect to historical values as well as 
+    # the analyst estimated values of the pre-specified metric
+    metric_combined_per_share_data = \
+        {**metric.per_share_data, **metric_estimated_per_share_data}
+
+    return average_price_multiple, {timestamp: max(0, average_price_multiple * \
+        metric_combined_per_share_data[timestamp]) for timestamp in \
+        metric_combined_per_share_data}
+
+
+def stock_valuation_plot(quote_history_data, normal_price_data, 
+                         average_price_multiple):
     """
     This function sets up the payload needed for BokehJS to render 
     a "price" vs "normal price" plot against timestamps.
@@ -148,6 +233,13 @@ def stock_valuation_plot(quote_history_data):
            legend_label='Stock Price',
            color='black',
            line_width=2)
+
+    # add a line for "normal prices" by year
+    p.line(list(normal_price_data.keys()),
+           list(normal_price_data.values()),
+           legend_label = 'Normal Price (Ratio {:5.2f})'.format(
+               average_price_multiple),
+           line_width = 2)
 
     # customizations
     p.title.align = 'center'

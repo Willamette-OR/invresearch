@@ -76,10 +76,10 @@ def create_app(config=Config):
             if app.config['MAIL_USE_TLS']:
                 secure = ()
             mail_handler = SMTPHandler(mailhost=host, 
-                                    fromaddr='no-reply@' + app.config['MAIL_SERVER'],
-                                    toaddrs=app.config['ADMINS'],
-                                    subject='InvResearch Failure',
-                                    credentials=auth, secure=secure)
+                                       fromaddr='no-reply@' + app.config['MAIL_SERVER'],
+                                       toaddrs=app.config['ADMINS'],
+                                       subject='InvResearch Failure',
+                                       credentials=auth, secure=secure)
             mail_handler.setLevel(logging.ERROR)
             mail_handler.setFormatter(logging.Formatter(
                 '[%(asctime)s] [%(levelname)s] in [%(module)s]: %(message)s'
@@ -90,7 +90,7 @@ def create_app(config=Config):
         if not os.path.exists('logs'):
             os.mkdir('logs')
         file_handler = RotatingFileHandler('logs/invresearch.log', maxBytes=10240,
-                                        backupCount=10)
+                                           backupCount=10)
         file_handler.setLevel(logging.INFO)
         file_handler.setFormatter(logging.Formatter(
             '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'

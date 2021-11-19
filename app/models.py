@@ -10,7 +10,8 @@ import rq
 import redis
 from app import db, login 
 from app.search import query_index, add_to_index, remove_from_index
-from app.stocks import quote
+from app.stocks import quote, get_quote_history, get_financials_history, \
+    get_analyst_estimates
 
 
 class SearchableMixin(object):
@@ -105,6 +106,15 @@ class Stock(db.Model):
     name = db.Column(db.String(128))
     last_quote_update = db.Column(db.Float, index=True, default=None)
     quote_payload = db.Column(db.Text)
+    last_financials_history_update = db.Column(db.DateTime, index=True, 
+                                               default=None)
+    financials_history_payload = db.Column(db.Text)
+    last_quote_history_update = db.Column(db.DateTime, index=True, 
+                                          default=None)
+    analyst_estimates_payload = db.Column(db.Text)
+    last_analyst_estimates_update = db.Column(db.DateTime, index=True, 
+                                              default=None)
+    quote_history_payload = db.Column(db.Text)
 
     def __repr__(self):
         return "<Stock: {}>".format(self.symbol)
@@ -126,7 +136,94 @@ class Stock(db.Model):
             (now - self.last_quote_update) > delay:
             self.quote_payload = json.dumps(quote(self.symbol))
             self.last_quote_update = time()
+
+    def get_financials_history_data(self, update_interval_days=30):
+        """
+        This method gets the historical data of stock financials in the app 
+        database, and fetches for newer data if the time lapse since the last 
+        update has already exceeded the given update interval (in days).
+        """
+
+        # update the financials history payload column if the last update
+        # timestamp is None (never initialized/updated before), or if the time 
+        # lapse has exceeded the present update internal
+        last_update_time = self.last_financials_history_update or \
+            datetime(1900, 1, 1)
+        now = datetime.utcnow()
+        lapse_days = (now - last_update_time).days
+        if lapse_days > update_interval_days:
+            self.financials_history_payload = \
+                json.dumps(get_financials_history(self.symbol))
+            self.last_financials_history_update = now
+            db.session.commit()
+
+        return json.loads(self.financials_history_payload)
+    
+    def get_analyst_estimates_data(self, update_interval_days=30):
+        """
+        This method returns the analyst estimates data in a dictionary.
+
+        Before that, it first fetches for and saves newer data if the # of 
+        days since the last update has exceeded a preset threshold 
+        (update_interval_days).
+        """
+
+        # fetches for newer data if update is needed
+        now = datetime.utcnow()
+        if not self.last_analyst_estimates_update or (now - \
+            self.last_analyst_estimates_update).days > update_interval_days:
+            self.analyst_estimates_payload = json.dumps(
+                get_analyst_estimates(self.symbol))
+            self.last_analyst_estimates_update = now
+            db.session.commit()
+
+        return json.loads(self.analyst_estimates_payload)
+
+    def get_quote_history_data(self, start_date, end_date, 
+                               interval='1mo', type='close', delay=24):
+        """
+        This method creates/refreshes the quote history payload if needed,
+        and returns the quote history data in a dictionary of:
+            "<timestamp>: <price>"
+
+        Inputs:
+            'start_date': '%m-%d-%Y'. 
+            'end_date': '%m-%d-%Y'. 
+            'type': the type of stock price. Default is 'close' (closing price)
+            'delay': the minimal number of hours allowed between two refreshes;
+                     Default is 24 hours.
+        """
+
+        # creates/refreshes the quote history and save it 
+        now = datetime.utcnow()
+        if not self.last_quote_history_update or \
+            (now - self.last_quote_history_update).seconds > (delay * 3600):
+
+            # download quote history from the web
+            raw_data = get_quote_history(symbol=self.symbol, 
+                                         interval=interval,
+                                         header=type)
             
+            # convert all timestamp values to strings and save
+            raw_data_timestamp_to_str = {key.strftime('%m-%d-%Y %H:%M'): value \
+                                         for (key, value) in raw_data.items()}
+            self.quote_history_payload = json.dumps(raw_data_timestamp_to_str)
+
+            # update the saved timestamp for the last quote history update
+            self.last_quote_history_update = now
+
+            # commit database changes 
+            db.session.commit()
+
+        # load quote data from the saved quote history payload, with 
+        # pre-specified start and end dates
+        raw_data = {datetime.strptime(key, '%m-%d-%Y %H:%M'): value for \
+            (key, value) in json.loads(self.quote_history_payload).items()}
+        timestamp_start_date = datetime.strptime(start_date, '%m-%d-%Y')
+        timestamp_end_date = datetime.strptime(end_date, '%m-%d-%Y')
+        return {key: value for (key, value) in raw_data.items() \
+                if timestamp_start_date <= key <= timestamp_end_date}
+
 
 class User(UserMixin, db.Model):
     """

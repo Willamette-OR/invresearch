@@ -1,6 +1,7 @@
+import requests
 from datetime import datetime
 from flask import current_app
-import random
+from yahoo_fin import stock_info
 
 
 def symbol_search(query, page, stocks_per_page):
@@ -84,3 +85,89 @@ def quote(symbol):
     payload['t'] = str(datetime.fromtimestamp(int(payload['t'])))
 
     return payload
+
+
+def get_guru_data(symbol, data_type):
+    """
+    This helper function pulls data via the GuruFocus API, for the given symbol
+    and data type.
+
+    Input:
+        symbol: stock ticker symbol
+        data_type: possible values include:
+            'financials'
+            'analyst_estimate'
+            ...
+            (for more choices, checkout the API documentation here:
+            https://www.gurufocus.com/api.php)
+    """
+
+    api_token = current_app.config['GURU_API_KEY']
+    base_url = 'https://api.gurufocus.com/public/user/' + api_token + '/stock/'
+    constructed_url = base_url + symbol + '/' + data_type
+    
+    r = requests.get(constructed_url)
+    if r.status_code != 200:
+        return "Error: the GuruFocus API service failed."
+    else:
+        return r.json()
+
+
+def get_financials_history(symbol):
+    """
+    This function gets historical data for stock financials, and returns the 
+    data in a json payload.
+
+    Note:
+        It currently uses the GuruFocus API for data.
+    """
+
+    return get_guru_data(symbol, data_type='financials')
+
+
+def get_analyst_estimates(symbol):
+    """
+    This function gets analyst estimates data, and returns the data in a json 
+    payload.
+
+    Note:
+        It currently use the GuruFocus API for data.
+    """
+
+    return get_guru_data(symbol, data_type='analyst_estimate')
+
+
+def get_quote_history(symbol, start_date=None, end_date=None, interval='1mo', 
+                      header='close'):
+    """
+    This function pulls historical quote data, and returns the cleaned up data 
+    in a dictionary of "<timestamp>: <price>".
+
+    By default, it will return the "closing" prices for all available 
+    intervals.
+
+    Inputs:
+        'start_date': '%m/%d/%Y'
+        'end_date': '%m/%d/%Y
+
+    Note:
+        It currently uses the "yahoo_fin" library for scraping historical data 
+        from Yahoo Finance.
+        For more details, check out the author's documentation here:
+        https://theautomatic.net/yahoo_fin-documentation/ 
+    """
+
+    # get the quote history in Pandas dataframe via a web scraper
+    df_quote_history = stock_info.get_data(symbol, 
+                                           start_date=start_date, 
+                                           end_date=end_date, 
+                                           interval=interval)
+
+    # construct the output dictionary of "<timestamp>: <price>"
+    data = {}
+    df_selected_price = df_quote_history[header]
+    for timestamp in dict(df_selected_price):
+        data[timestamp.to_pydatetime()] = df_selected_price[timestamp]
+
+    return data
+

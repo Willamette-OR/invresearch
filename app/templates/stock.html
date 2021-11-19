@@ -17,6 +17,10 @@
             }
         );
     </script>
+
+    {# scripts to load BokehJS and plot scripts #}
+    {{ plot.resources|safe }}
+    {{ plot.script|safe }}
 {% endblock %}
 
 
@@ -71,4 +75,6 @@
             {{ quote.t }}
         </span>
     </p>
+    <br><br>
+    {{ plot.div|safe }}
 {% endblock %}

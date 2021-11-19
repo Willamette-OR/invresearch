@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from config import Config
 from app import create_app, db
 from app.models import User, Post, Message, Stock
+from app.metrics import Metric, TotalMetric
 
 
 class TestingConfig(Config):
@@ -171,6 +172,7 @@ class UserTestCase(unittest.TestCase):
 
     def test_stock_watching(self):
         """This method tests the stock watching database mechanics."""
+
         u1 = User(username='alice')
         u2 = User(username='bob')
         s1 = Stock(symbol='AAPL')
@@ -208,7 +210,55 @@ class UserTestCase(unittest.TestCase):
         self.assertFalse(u2.is_watching(s3))
         self.assertEqual(u2.watched.count(), 1)
         self.assertEqual(s3.watchers.count(), 1)
+
+    def test_metric_manipulations(self):
+        """
+        This method tests manipulations of metrics from financial reports.
+        """
+
+        # mock up inputs
+        name = 'revenue'
+        timestamps = ['2018-01', '2019-01', '2020-01', 'TTM']
+        values = ['100', '200', '300', '350']
+        start_date = datetime(2018, 5, 1)
+
+        # test instance initialization
+        revenue = Metric(name=name, timestamps=timestamps, values=values, 
+                         start_date=start_date)
+        self.assertEqual(revenue.name, name)
+        self.assertEqual(revenue.timestamps, (datetime(2019, 1, 1), 
+                                              datetime(2020, 1, 1)))
+        self.assertEqual(revenue.values, (200, 300))
+        self.assertEqual(revenue.TTM_value, 350)
+        self.assertEqual(revenue.data, {datetime(2019, 1, 1): 200,
+                                        datetime(2020, 1, 1): 300})
         
+        # test per share operations
+        num_of_shares = [100, 150]
+        revenue = TotalMetric(name=name, timestamps=timestamps, values=values, 
+                              start_date=start_date)
+        revenue.num_of_shares = num_of_shares
+        self.assertEqual(revenue.num_of_shares, num_of_shares)
+        self.assertEqual(revenue.per_share_values, [2, 2])
+        self.assertEqual(revenue.per_share_data, {datetime(2019, 1, 1): 2,
+                                                  datetime(2020, 1, 1): 2})
+
+        # test operations on analyst estimated data
+        num_of_shares_estimated = [100]
+        timestamps_estimated = ['202112', '202212', '202312']
+        values_estimated = ['100', '200', '300']
+        revenue_estimated = TotalMetric(name=name, 
+                                        timestamps=timestamps_estimated, 
+                                        values=values_estimated, 
+                                        start_date=start_date,
+                                        input_timestamps_format='%Y%m')
+        revenue_estimated.num_of_shares = num_of_shares_estimated
+        self.assertEqual(revenue_estimated.num_of_shares, [100, 100, 100])
+        self.assertEqual(revenue_estimated.per_share_data, 
+                         {datetime(2021, 12, 1): 1,
+                          datetime(2022, 12, 1): 2,
+                          datetime(2023, 12, 1): 3})
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

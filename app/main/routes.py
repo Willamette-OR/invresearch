@@ -349,7 +349,7 @@ def stock(symbol):
     # get the quote history, the financials history, and the analyst estimates 
     # first
     start_date_quote_history, start_date_financials_history, end_date = \
-        get_valplot_dates(14)
+        get_valplot_dates()
     quote_history_data = \
         stock.get_quote_history_data(start_date=start_date_quote_history, 
                                      end_date=end_date)
@@ -577,3 +577,51 @@ def refresh_quote_polling():
 
     # return an "empty" response for the request
     return ('', 204)
+
+
+@bp.route('/update_valuation_plot')
+def update_valuation_plot():
+    """
+    This view function gets an updated stock valuation plot with pre-specified 
+    input parameters, and returns scripts needed for plot rendering in a json 
+    payload
+    """
+
+    # get input parameters from the request
+    symbol = request.args.get('symbol').upper()
+    num_of_years = request.args.get('num_of_years', 20, type=int)
+
+    # query the stock object
+    stock = Stock.query.filter_by(symbol=symbol).first_or_404()
+
+    # get dates needed for valuation plotting
+    start_date_quote_history, start_date_financials_history, end_date = \
+        get_valplot_dates(num_of_years=num_of_years)
+
+    # get stock data needed for valuation plotting
+    quote_history_data = \
+        stock.get_quote_history_data(start_date=start_date_quote_history, 
+                                     end_date=end_date)
+    financials_history = stock.get_financials_history_data()
+    analyst_estimates = stock.get_analyst_estimates_data()
+
+    # get the historical average price multiple with respect to the chosen 
+    # metric, and the associated normal prices
+    # TODO - replace the hard coded metric name with a logic where the metric 
+    # can be chosen by the users
+    average_price_multiple, normal_price_data = get_normal_price(
+        metric_name='EBITDA',
+        section_name='income_statement',
+        start_date=start_date_financials_history,
+        quote_history_data=quote_history_data,
+        financials_history=financials_history,
+        analyst_estimates=analyst_estimates
+    )
+
+    # get the plot payload 
+    plot = stock_valuation_plot(quote_history_data=quote_history_data,
+                                normal_price_data=normal_price_data,
+                                average_price_multiple=average_price_multiple)
+
+    # return a json payload for Ajax requests
+    return jsonify(plot)

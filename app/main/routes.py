@@ -11,8 +11,8 @@ from app.translate import translate
 from app.main import bp
 from app.main.forms import EditProfileForm, EmptyForm, SubmitPostForm, \
     SearchForm, MessageForm
-from app.stocks import company_profile, quote, symbol_search
-from app.plot import stock_valuation_plot, get_normal_price
+from app.stocks import company_profile, symbol_search
+from app.plot import stock_valuation_plot, get_normal_price, get_valplot_dates
 
 
 @bp.before_request
@@ -348,11 +348,11 @@ def stock(symbol):
 
     # get the quote history, the financials history, and the analyst estimates 
     # first
-    _start_date = '01-01-2007'
-    _end_date = '11-17-2021'
-    _start_date_normal_price = '01-01-2006'
-    quote_history_data = stock.get_quote_history_data(start_date=_start_date, 
-                                                      end_date=_end_date)
+    start_date_quote_history, start_date_financials_history, end_date = \
+        get_valplot_dates(14)
+    quote_history_data = \
+        stock.get_quote_history_data(start_date=start_date_quote_history, 
+                                     end_date=end_date)
     financials_history = stock.get_financials_history_data()
     analyst_estimates = stock.get_analyst_estimates_data()
 
@@ -363,7 +363,7 @@ def stock(symbol):
     average_price_multiple, normal_price_data = get_normal_price(
         metric_name='EBITDA',
         section_name='income_statement',
-        start_date=_start_date_normal_price,
+        start_date=start_date_financials_history,
         quote_history_data=quote_history_data,
         financials_history=financials_history,
         analyst_estimates=analyst_estimates

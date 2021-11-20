@@ -257,3 +257,30 @@ def stock_valuation_plot(quote_history_data, normal_price_data,
     payload['div'] = div
 
     return payload
+
+
+def get_valplot_dates(num_of_years=20):
+    """
+    This function calculates and returns dates needed to filter the quote 
+    history and the financials history for stock valuation plotting.
+
+    Inputs:
+        'num_of_years': # of years of quote history to be included in 
+                        valuation plotting
+    """
+
+    # set the end date to utcnow, in the format of '%m-%d-%Y'
+    now = datetime.utcnow()
+    end_date = now.strftime('%m-%d-%Y')
+
+    # set the start date of quote history 
+    start_year = now.year - num_of_years
+    start_date_quote_history = '01-01-{}'.format(start_year)
+
+    # set the start date of financials history to be a year ahead of that of 
+    # quote history;
+    # 1 more year of financials history is needed for earnings/cash flow 
+    # interpolations when computing average price multiples
+    start_date_financials_history = '01-01-{}'.format(start_year - 1)
+
+    return start_date_quote_history, start_date_financials_history, end_date

@@ -357,8 +357,9 @@ def stock(symbol):
     financials_history = stock.get_financials_history_data()
     analyst_estimates = stock.get_analyst_estimates_data()
 
-    # get acceptable durations for stock valuation plotting
-    durations = get_durations(financials_history=financials_history)
+    # get acceptable durations for stock valuation plotting;
+    durations = get_durations(quote_history=quote_history_data, 
+                              financials_history=financials_history)
 
     # get the historical average price multiple with respect to the chosen 
     # metric, and the associated normal prices
@@ -372,6 +373,13 @@ def stock(symbol):
         financials_history=financials_history,
         analyst_estimates=analyst_estimates
     )
+
+    # return if not enough data was available to calculate the average 
+    # historical price multiple
+    if not average_price_multiple:
+        return render_template(
+            'stock.html', title="Stock - {}".format(stock.symbol), stock=stock, 
+            quote=json.loads(stock.quote_payload), form=form)
 
     # get the plot payload 
     plot = stock_valuation_plot(quote_history_data=quote_history_data,

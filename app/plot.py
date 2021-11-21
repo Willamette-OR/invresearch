@@ -33,7 +33,8 @@ def example_plot():
     return payload
 
 
-def _get_average_price_multiple(quote_history_data, metric_per_share_data):
+def _get_average_price_multiple(quote_history_data, metric_per_share_data, \
+    min_num_of_ratios = 36):
     """
     This function calculates and returns the average price-to-metric ratio.
     
@@ -42,6 +43,9 @@ def _get_average_price_multiple(quote_history_data, metric_per_share_data):
         - "metric_per_share_data" - dictionary of "<timestamp>: <per share 
                                     metric value>", with only one record per 
                                     year
+        - 'min_num_of_ratios' - minimum number of ratios needed to calculate the
+                                average valuation ratios, before removing 
+                                outliers
     """
     
     # get the ending month of fiscal years, usually either Sep or Dec
@@ -111,6 +115,11 @@ def _get_average_price_multiple(quote_history_data, metric_per_share_data):
     list_ratios = [dict_timestamp_ratio[timestamp]['ratio'] for timestamp in \
         dict_timestamp_ratio]
 
+    # discard valualtion ratio calculations if the total number of valid \
+    # ratios is too little
+    if len(list_ratios) < min_num_of_ratios:
+        return None
+
     # remove 12 highest ratios (1 year), and 12 lowest ratios
     for _ in range(12):
         list_ratios.remove(min(list_ratios))
@@ -154,6 +163,10 @@ def get_normal_price(metric_name, section_name, start_date, quote_history_data,
     average_price_multiple = \
         _get_average_price_multiple(quote_history_data=quote_history_data,
                                     metric_per_share_data=metric.per_share_data)
+    # return special values if the average price multiple calculations did not 
+    # return valid values
+    if not average_price_multiple:
+        return None, {}
 
     # get the per share data of analyst estimates
     field_lookup = {
@@ -286,7 +299,7 @@ def get_valplot_dates(num_of_years=20):
     return start_date_quote_history, start_date_financials_history, end_date
 
 
-def get_durations(financials_history, min_years=3, max_years=20):
+def get_durations(quote_history, financials_history, min_years=3, max_years=20):
     """
     This function returns a list of acceptable durations for stock valuation 
     plotting.
@@ -306,11 +319,14 @@ def get_durations(financials_history, min_years=3, max_years=20):
                    ['income_statement']['Shares Outstanding (Diluted Average)'],
                start_date=datetime(1900, 1, 1))
 
+    max_years_quote_history = max(quote_history.keys()).year - \
+        min(quote_history.keys()).year + 1
     max_years_financials_history = len(_num_of_shares.timestamps)
 
     # get the maximum number of years acceptible for valuation plotting
     max_years_plotting_history = \
-        min(max_years_financials_history, max_years) - 1
+        min(max_years_quote_history, max_years_financials_history, max_years) \
+        - 1
 
     if max_years_plotting_history < min_years:
         return None

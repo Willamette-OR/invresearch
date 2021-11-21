@@ -104,9 +104,17 @@
     </p>
 
     {# scripts to load BokehJS and plot scripts #}
-    <span class="valuation-plot">
-        {{ plot.resources|safe }}
-        {{ plot.script|safe }}
-        {{ plot.div|safe }}
-    </span>
+    {% if plot %}
+        <span class="valuation-plot">
+            {{ plot.resources|safe }}
+            {{ plot.script|safe }}
+            {{ plot.div|safe }}
+        </span>
+    {% else %}
+        <h3>
+            <span style="color: red;">
+                (The stock valuation plot is not available for {{ stock.symbol }}, due to lack of historical data)
+            </span>
+        </h3>
+    {% endif %}
 {% endblock %}

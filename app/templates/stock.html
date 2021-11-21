@@ -10,7 +10,9 @@
             function() {
                 var symbol = $('.stock-symbol').text();
                 setInterval(function() {
-                    $.ajax('/quote_polling?symbol=' + symbol).done(function(payload) {
+                    $.ajax(
+                        '/quote_polling?symbol=' + symbol
+                    ).done(function(payload) {
                         set_quote(symbol, payload.quote.quote_payload)
                     });
                 }, 5000);
@@ -22,7 +24,8 @@
     <script>
         function plot_valuation(symbol, num_of_years, dest_elem) {
             $.ajax(
-                '/update_valuation_plot?symbol=' + symbol + '&num_of_years=' + num_of_years
+                '/update_valuation_plot?symbol=' + symbol + '&num_of_years=' + 
+                num_of_years
             ).done(function(plot) {
                 $(dest_elem).html(plot.resources)
                 $(dest_elem).html(plot.script)
@@ -89,24 +92,15 @@
     <br><br>
 
     <p>
-        <span id="valuation-duration0">
+        {% for num_of_years in durations %}
             <a href="javascript:plot_valuation(
                 '{{ stock.symbol }}',
-                '15',
+                '{{ num_of_years }}',
                 '.valuation-plot'
             )">
-                15
+                {{ num_of_years }}Y
             </a>
-        </span>
-        <span id="valuation-duration1">
-            <a href="javascript:plot_valuation(
-                '{{ stock.symbol }}',
-                '20',
-                '.valuation-plot'
-            )">
-                20
-            </a>
-        </span>
+        {% endfor %}
     </p>
 
     {# scripts to load BokehJS and plot scripts #}

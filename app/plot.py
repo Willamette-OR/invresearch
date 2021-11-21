@@ -284,3 +284,36 @@ def get_valplot_dates(num_of_years=20):
     start_date_financials_history = '01-01-{}'.format(start_year - 1)
 
     return start_date_quote_history, start_date_financials_history, end_date
+
+
+def get_durations(financials_history, min_years=3, max_years=20):
+    """
+    This function returns a list of acceptable durations for stock valuation 
+    plotting.
+
+    Each acceptable duration refers to a value for # of years of financials 
+    history to be used in calculating the historical average price multiple.
+    """
+
+    # get the maximum of number of years available in the financials history 
+    # payload
+    # Hardcoded for now assuming the payload is from GuruFocus API
+    _num_of_shares = \
+        Metric(name='Shares Outstanding (Diluted Average)',
+               timestamps=financials_history['financials']['annuals']\
+                   ['Fiscal Year'],
+               values=financials_history['financials']['annuals']\
+                   ['income_statement']['Shares Outstanding (Diluted Average)'],
+               start_date=datetime(1900, 1, 1))
+
+    max_years_financials_history = len(_num_of_shares.timestamps)
+
+    # get the maximum number of years acceptible for valuation plotting
+    max_years_plotting_history = \
+        min(max_years_financials_history, max_years) - 1
+
+    if max_years_plotting_history < min_years:
+        return None
+    else:
+        return [(value + 1) for value in \
+            range(max_years_plotting_history) if (value + 1) >= min_years]

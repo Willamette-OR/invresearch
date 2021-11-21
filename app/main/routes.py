@@ -12,7 +12,8 @@ from app.main import bp
 from app.main.forms import EditProfileForm, EmptyForm, SubmitPostForm, \
     SearchForm, MessageForm
 from app.stocks import company_profile, symbol_search
-from app.plot import stock_valuation_plot, get_normal_price, get_valplot_dates
+from app.plot import stock_valuation_plot, get_normal_price, \
+    get_valplot_dates, get_durations
 
 
 @bp.before_request
@@ -356,6 +357,9 @@ def stock(symbol):
     financials_history = stock.get_financials_history_data()
     analyst_estimates = stock.get_analyst_estimates_data()
 
+    # get acceptable durations for stock valuation plotting
+    durations = get_durations(financials_history=financials_history)
+
     # get the historical average price multiple with respect to the chosen 
     # metric, and the associated normal prices
     # TODO - replace the hard coded metric name with a logic where the metric 
@@ -376,7 +380,8 @@ def stock(symbol):
 
     return render_template(
         'stock.html', title="Stock - {}".format(stock.symbol), stock=stock, 
-        quote=json.loads(stock.quote_payload), form=form, plot=plot)
+        quote=json.loads(stock.quote_payload), form=form, plot=plot, 
+        durations=durations)
     
 
 @bp.route('/watch/<symbol>', methods=['POST'])

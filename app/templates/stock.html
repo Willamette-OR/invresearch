@@ -4,8 +4,8 @@
 {% block scripts %}
     {{ super() }}
 
+    {# script to dynamically update stock quote on the page #}
     <script>
-        // dynamically dupdate stock quote data on the page
         $(
             function() {
                 var symbol = $('.stock-symbol').text();
@@ -16,6 +16,21 @@
                 }, 5000);
             }
         );
+    </script>
+
+    {# script to update stock valuation graph on the page #}
+    <script>
+        function plot_valuation(symbol, num_of_years, dest_elem) {
+            $.ajax(
+                '/update_valuation_plot?symbol=' + symbol + '&num_of_years=' + num_of_years
+            ).done(function(plot) {
+                $(dest_elem).html(plot.resources)
+                $(dest_elem).html(plot.script)
+                $(dest_elem).html(plot.div)
+            }).fail(function() {
+                $(dest_elem).text('Error: unable to update plot.')
+            })   
+        };
     </script>
 {% endblock %}
 
@@ -72,8 +87,32 @@
         </span>
     </p>
     <br><br>
+
+    <p>
+        <span id="valuation-duration0">
+            <a href="javascript:plot_valuation(
+                '{{ stock.symbol }}',
+                '15',
+                '.valuation-plot'
+            )">
+                15
+            </a>
+        </span>
+        <span id="valuation-duration1">
+            <a href="javascript:plot_valuation(
+                '{{ stock.symbol }}',
+                '20',
+                '.valuation-plot'
+            )">
+                20
+            </a>
+        </span>
+    </p>
+
     {# scripts to load BokehJS and plot scripts #}
-    {{ plot.resources|safe }}
-    {{ plot.script|safe }}
-    {{ plot.div|safe }}
+    <span class="valuation-plot">
+        {{ plot.resources|safe }}
+        {{ plot.script|safe }}
+        {{ plot.div|safe }}
+    </span>
 {% endblock %}

@@ -91,20 +91,56 @@
     </p>
     <br><br>
 
-    <p>
-        {% for num_of_years in durations %}
-            <a href="javascript:plot_valuation(
-                '{{ stock.symbol }}',
-                '{{ num_of_years }}',
-                '.valuation-plot'
-            )">
-                {{ num_of_years }}Y
-            </a>
-        {% endfor %}
-    </p>
-
     {# scripts to load BokehJS and plot scripts #}
     {% if plot %}
+        {# display a dropdown of different metrics for price correlations #}
+        <div class="dropdown">
+            <button class="btn btn-primary dropdown-toggle" type="button" 
+                    data-toggle="dropdown">
+                Price Correlations
+                <span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu">
+                <li class="dropdown-header">
+                    Earnings Correlations
+                </li>
+                <li>
+                    <a href="#">
+                        Diluted Earnings (GAAP)
+                    </a>
+                </li>
+                <li class="divider"></li>
+                <li class="dropdown-header">
+                    Intrinsic Value Correlations
+                </li>
+                <li>
+                    <a href="#">
+                        EBITDA
+                    </a>
+                </li>
+                <li>
+                    <a href="#">
+                        EBIT
+                    </a>
+                </li>
+            </ul>
+        </div>
+        <hr>
+
+        {# display links of all acceptible durations for valuation plotting #}
+        <p>
+            {% for num_of_years in durations %}
+                <a href="javascript:plot_valuation(
+                    '{{ stock.symbol }}',
+                    '{{ num_of_years }}',
+                    '.valuation-plot'
+                )">
+                    {{ num_of_years }}Y
+                </a>
+            {% endfor %}
+        </p>
+        
+        {# render the plot #}
         <span class="valuation-plot">
             {{ plot.resources|safe }}
             {{ plot.script|safe }}
@@ -113,7 +149,8 @@
     {% else %}
         <h3>
             <span style="color: red;">
-                (The stock valuation plot is not available for {{ stock.symbol }}, due to lack of historical data)
+                (The stock valuation plot is not available for 
+                {{ stock.symbol }}, due to lack of historical data)
             </span>
         </h3>
     {% endif %}

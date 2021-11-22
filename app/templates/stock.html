@@ -22,17 +22,27 @@
 
     {# script to update stock valuation graph on the page #}
     <script>
-        function plot_valuation(symbol, num_of_years, dest_elem) {
+        function plot_valuation(symbol, num_of_years, metric, dest_elem,
+                                metric_elem='.current_valuation_metric') {
+            if (metric == null) {
+                current_metric = $(metric_elem).text().trim();
+            }
+            else {
+                current_metric = metric;
+            };
+
             $.ajax(
-                '/update_valuation_plot?symbol=' + symbol + '&num_of_years=' + 
-                num_of_years
+                '/update_valuation_plot?symbol=' + symbol + 
+                '&num_of_years=' + num_of_years + '&valuation_metric=' + 
+                current_metric
             ).done(function(plot) {
-                $(dest_elem).html(plot.resources)
-                $(dest_elem).html(plot.script)
-                $(dest_elem).html(plot.div)
+                $(dest_elem).html(plot.resources);
+                $(dest_elem).html(plot.script);
+                $(dest_elem).html(plot.div);
+                $(metric_elem).text(current_metric);
             }).fail(function() {
                 $(dest_elem).text('Error: unable to update plot.')
-            })   
+            });  
         };
     </script>
 {% endblock %}
@@ -105,7 +115,12 @@
                     Earnings Correlations
                 </li>
                 <li>
-                    <a href="#">
+                    <a href="javascript:plot_valuation(
+                        '{{ stock.symbol }}',
+                        null,
+                        'Net Income',
+                        '.valuation-plot'
+                    )">
                         Diluted Earnings (GAAP)
                     </a>
                 </li>
@@ -114,17 +129,33 @@
                     Intrinsic Value Correlations
                 </li>
                 <li>
-                    <a href="#">
+                    <a href="javascript:plot_valuation(
+                        '{{ stock.symbol }}',
+                        null,
+                        'EBITDA',
+                        '.valuation-plot'
+                    )">
                         EBITDA
                     </a>
                 </li>
                 <li>
-                    <a href="#">
+                    <a href="javascript:plot_valuation(
+                        '{{ stock.symbol }}',
+                        null,
+                        'EBIT',
+                        '.valuation-plot'
+                    )">
                         EBIT
                     </a>
                 </li>
             </ul>
         </div>
+        <p>
+            Current Valuation Metric: 
+            <span class="current_valuation_metric">
+                {{ valuation_metric }}
+            </span>
+        </p>
         <hr>
 
         {# display links of all acceptible durations for valuation plotting #}
@@ -133,6 +164,7 @@
                 <a href="javascript:plot_valuation(
                     '{{ stock.symbol }}',
                     '{{ num_of_years }}',
+                    null,
                     '.valuation-plot'
                 )">
                     {{ num_of_years }}Y

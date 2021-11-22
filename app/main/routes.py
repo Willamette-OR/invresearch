@@ -365,8 +365,9 @@ def stock(symbol):
     # metric, and the associated normal prices
     # TODO - replace the hard coded metric name with a logic where the metric 
     # can be chosen by the users
+    default_valuation_metric = 'EBITDA'
     average_price_multiple, normal_price_data = get_normal_price(
-        metric_name='EBITDA',
+        metric_name=default_valuation_metric,
         section_name='income_statement',
         start_date=start_date_financials_history,
         quote_history_data=quote_history_data,
@@ -389,7 +390,7 @@ def stock(symbol):
     return render_template(
         'stock.html', title="Stock - {}".format(stock.symbol), stock=stock, 
         quote=json.loads(stock.quote_payload), form=form, plot=plot, 
-        durations=durations)
+        durations=durations, valuation_metric=default_valuation_metric)
     
 
 @bp.route('/watch/<symbol>', methods=['POST'])
@@ -603,6 +604,7 @@ def update_valuation_plot():
     # get input parameters from the request
     symbol = request.args.get('symbol').upper()
     num_of_years = request.args.get('num_of_years', 20, type=int)
+    valuation_metric = request.args.get('valuation_metric', 'EBITDA', type=str)
 
     # query the stock object
     stock = Stock.query.filter_by(symbol=symbol).first_or_404()
@@ -618,13 +620,20 @@ def update_valuation_plot():
     financials_history = stock.get_financials_history_data()
     analyst_estimates = stock.get_analyst_estimates_data()
 
+    # get the section name needed by GuruFocus API
+    metric_section_lookup = {
+        'EBITDA': 'income_statement',
+        'EBIT': 'income_statement',
+        'Net Income': 'income_statement'
+    }
+
     # get the historical average price multiple with respect to the chosen 
     # metric, and the associated normal prices
     # TODO - replace the hard coded metric name with a logic where the metric 
     # can be chosen by the users
     average_price_multiple, normal_price_data = get_normal_price(
-        metric_name='EBITDA',
-        section_name='income_statement',
+        metric_name=valuation_metric,
+        section_name=metric_section_lookup[valuation_metric],
         start_date=start_date_financials_history,
         quote_history_data=quote_history_data,
         financials_history=financials_history,

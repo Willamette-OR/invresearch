@@ -225,7 +225,7 @@ def stock_valuation_plot(quote_history_data, normal_price_data,
     hover_tool = HoverTool(
         tooltips = [
             ('Date',  '@x{%F}'),
-            ('Close', '$@y{%0.2f}')
+            ('Price', '$@y{%0.2f}')
         ],
         formatters = {
             '@x' : 'datetime',

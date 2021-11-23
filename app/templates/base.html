@@ -26,10 +26,10 @@
                 <ul class="nav navbar-nav">
                     <li><a href="{{ url_for('main.index') }}">Home</a></li>
                     <li><a href="{{ url_for('main.explore') }}">Explore</a></li>
-                    <li><a href="{{ url_for('main.watchlist') }}">Watchlist</a></li>
+                    <li><a href="{{ url_for('stocks.watchlist') }}">Watchlist</a></li>
                 </ul>
                 {% if g.search_form %}
-                    <form class="navbar-form navbar-left" action="{{ url_for('main.search_stocks') }}" method="GET">
+                    <form class="navbar-form navbar-left" action="{{ url_for('stocks.search_stocks') }}" method="GET">
                         <div class="form-group">
                             {{ g.search_form.q(size=20, class='form-control', placeholder='Search Stocks') }}
                         </div>

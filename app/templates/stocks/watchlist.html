@@ -26,7 +26,7 @@
         {% for stock_quote in stock_quotes %}
             <tr>
                 <th scope="row">
-                    <a href="{{ url_for('main.stock', symbol=stock_quote.stock.symbol) }}">
+                    <a href="{{ url_for('stocks.stock', symbol=stock_quote.stock.symbol) }}">
                         {{ stock_quote.stock.symbol }}
                     </a>
                 </th>

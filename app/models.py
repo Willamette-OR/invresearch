@@ -10,8 +10,8 @@ import rq
 import redis
 from app import db, login 
 from app.search import query_index, add_to_index, remove_from_index
-from app.stocks import quote, get_quote_history, get_financials_history, \
-    get_analyst_estimates
+from app.stocksdata import quote, get_quote_history, \
+                           get_financials_history, get_analyst_estimates
 
 
 class SearchableMixin(object):

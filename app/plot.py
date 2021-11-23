@@ -2,7 +2,7 @@ from datetime import datetime
 from bokeh.plotting import figure
 from bokeh.embed import components
 from bokeh.resources import CDN
-from bokeh.models import HoverTool
+from bokeh.models import HoverTool, Band
 from app.metrics import Metric, TotalMetric
 
 def example_plot():
@@ -234,11 +234,15 @@ def stock_valuation_plot(quote_history_data, normal_price_data,
     )
 
     # initiate a Bokeh figure object
-    p = figure(title="Price Correlated with Fundamentals",
+    p = figure(width=650,
+               height=400,
                x_axis_type='datetime',
                x_axis_label='Time',
                y_axis_label='Price',
                tools=[hover_tool])
+
+    # deactivate the Bokeh toolbar
+    p.toolbar_location = None
 
     # add a line for quote history
     p.line(list(quote_history_data.keys()),
@@ -253,6 +257,19 @@ def stock_valuation_plot(quote_history_data, normal_price_data,
            legend_label = 'Normal Price (Ratio {:5.2f})'.format(
                average_price_multiple),
            line_width = 2)
+
+    # add markers on top of the line for "normal prices"
+    p.dot(list(normal_price_data.keys()),
+          list(normal_price_data.values()),
+          size=25)
+    
+    # shade the area under the line for "normal prices"
+    p.varea(
+        x=list(normal_price_data.keys()),
+        y1=0,
+        y2=list(normal_price_data.values()),
+        alpha=0.2
+    )
 
     # customizations
     p.title.align = 'center'

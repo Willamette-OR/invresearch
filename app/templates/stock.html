@@ -24,6 +24,8 @@
     <script>
         function plot_valuation(symbol, num_of_years, metric, dest_elem,
                                 metric_elem='.current_valuation_metric') {
+            // if the input parameter of 'metric' is undefined, get the value 
+            // of the metric used by the current page
             if (metric == null) {
                 current_metric = $(metric_elem).text().trim();
             }
@@ -99,7 +101,17 @@
             {{ quote.t }}
         </span>
     </p>
-    <br><br>
+    <hr>
+
+    <h3 style="color:orangered">
+        Price Correlated w/ Fundamentals:  
+        <mark>
+            <span class="current_valuation_metric">
+                {{ valuation_metric }}
+            </span>
+        </mark>
+    </h3>
+    <br>
 
     {# scripts to load BokehJS and plot scripts #}
     {% if plot %}
@@ -150,27 +162,23 @@
                 </li>
             </ul>
         </div>
-        <p>
-            Current Valuation Metric: 
-            <span class="current_valuation_metric">
-                {{ valuation_metric }}
-            </span>
-        </p>
-        <hr>
+        <br>
 
         {# display links of all acceptible durations for valuation plotting #}
-        <p>
+        <div class="btn-group btn-group-sm">
             {% for num_of_years in durations %}
                 <a href="javascript:plot_valuation(
                     '{{ stock.symbol }}',
                     '{{ num_of_years }}',
                     null,
                     '.valuation-plot'
-                )">
+                )" class="btn btn-default">
                     {{ num_of_years }}Y
                 </a>
             {% endfor %}
-        </p>
+        </div>
+        <br>
+        <br>
         
         {# render the plot #}
         <span class="valuation-plot">

@@ -2,7 +2,7 @@ from datetime import datetime
 from bokeh.plotting import figure
 from bokeh.embed import components
 from bokeh.resources import CDN
-from bokeh.models import HoverTool
+from bokeh.models import HoverTool, Band
 from app.metrics import Metric, TotalMetric
 
 def example_plot():
@@ -33,7 +33,8 @@ def example_plot():
     return payload
 
 
-def _get_average_price_multiple(quote_history_data, metric_per_share_data):
+def _get_average_price_multiple(quote_history_data, metric_per_share_data, \
+    min_num_of_ratios = 36):
     """
     This function calculates and returns the average price-to-metric ratio.
     
@@ -42,6 +43,9 @@ def _get_average_price_multiple(quote_history_data, metric_per_share_data):
         - "metric_per_share_data" - dictionary of "<timestamp>: <per share 
                                     metric value>", with only one record per 
                                     year
+        - 'min_num_of_ratios' - minimum number of ratios needed to calculate the
+                                average valuation ratios, before removing 
+                                outliers
     """
     
     # get the ending month of fiscal years, usually either Sep or Dec
@@ -111,6 +115,11 @@ def _get_average_price_multiple(quote_history_data, metric_per_share_data):
     list_ratios = [dict_timestamp_ratio[timestamp]['ratio'] for timestamp in \
         dict_timestamp_ratio]
 
+    # discard valualtion ratio calculations if the total number of valid \
+    # ratios is too little
+    if len(list_ratios) < min_num_of_ratios:
+        return None
+
     # remove 12 highest ratios (1 year), and 12 lowest ratios
     for _ in range(12):
         list_ratios.remove(min(list_ratios))
@@ -154,6 +163,10 @@ def get_normal_price(metric_name, section_name, start_date, quote_history_data,
     average_price_multiple = \
         _get_average_price_multiple(quote_history_data=quote_history_data,
                                     metric_per_share_data=metric.per_share_data)
+    # return special values if the average price multiple calculations did not 
+    # return valid values
+    if not average_price_multiple:
+        return None, {}
 
     # get the per share data of analyst estimates
     field_lookup = {
@@ -212,7 +225,7 @@ def stock_valuation_plot(quote_history_data, normal_price_data,
     hover_tool = HoverTool(
         tooltips = [
             ('Date',  '@x{%F}'),
-            ('Close', '$@y{%0.2f}')
+            ('Price', '$@y{%0.2f}')
         ],
         formatters = {
             '@x' : 'datetime',
@@ -221,11 +234,15 @@ def stock_valuation_plot(quote_history_data, normal_price_data,
     )
 
     # initiate a Bokeh figure object
-    p = figure(title="Price Correlated with Fundamentals",
+    p = figure(width=650,
+               height=400,
                x_axis_type='datetime',
                x_axis_label='Time',
                y_axis_label='Price',
                tools=[hover_tool])
+
+    # deactivate the Bokeh toolbar
+    p.toolbar_location = None
 
     # add a line for quote history
     p.line(list(quote_history_data.keys()),
@@ -240,6 +257,19 @@ def stock_valuation_plot(quote_history_data, normal_price_data,
            legend_label = 'Normal Price (Ratio {:5.2f})'.format(
                average_price_multiple),
            line_width = 2)
+
+    # add markers on top of the line for "normal prices"
+    p.dot(list(normal_price_data.keys()),
+          list(normal_price_data.values()),
+          size=25)
+    
+    # shade the area under the line for "normal prices"
+    p.varea(
+        x=list(normal_price_data.keys()),
+        y1=0,
+        y2=list(normal_price_data.values()),
+        alpha=0.2
+    )
 
     # customizations
     p.title.align = 'center'
@@ -257,3 +287,66 @@ def stock_valuation_plot(quote_history_data, normal_price_data,
     payload['div'] = div
 
     return payload
+
+
+def get_valplot_dates(num_of_years=20):
+    """
+    This function calculates and returns dates needed to filter the quote 
+    history and the financials history for stock valuation plotting.
+
+    Inputs:
+        'num_of_years': # of years of quote history to be included in 
+                        valuation plotting
+    """
+
+    # set the end date to utcnow, in the format of '%m-%d-%Y'
+    now = datetime.utcnow()
+    end_date = now.strftime('%m-%d-%Y')
+
+    # set the start date of quote history 
+    start_year = now.year - num_of_years
+    start_date_quote_history = '01-01-{}'.format(start_year)
+
+    # set the start date of financials history to be a year ahead of that of 
+    # quote history;
+    # 1 more year of financials history is needed for earnings/cash flow 
+    # interpolations when computing average price multiples
+    start_date_financials_history = '01-01-{}'.format(start_year - 1)
+
+    return start_date_quote_history, start_date_financials_history, end_date
+
+
+def get_durations(quote_history, financials_history, min_years=3, max_years=20):
+    """
+    This function returns a list of acceptable durations for stock valuation 
+    plotting.
+
+    Each acceptable duration refers to a value for # of years of financials 
+    history to be used in calculating the historical average price multiple.
+    """
+
+    # get the maximum of number of years available in the financials history 
+    # payload
+    # Hardcoded for now assuming the payload is from GuruFocus API
+    _num_of_shares = \
+        Metric(name='Shares Outstanding (Diluted Average)',
+               timestamps=financials_history['financials']['annuals']\
+                   ['Fiscal Year'],
+               values=financials_history['financials']['annuals']\
+                   ['income_statement']['Shares Outstanding (Diluted Average)'],
+               start_date=datetime(1900, 1, 1))
+
+    max_years_quote_history = max(quote_history.keys()).year - \
+        min(quote_history.keys()).year + 1
+    max_years_financials_history = len(_num_of_shares.timestamps)
+
+    # get the maximum number of years acceptible for valuation plotting
+    max_years_plotting_history = \
+        min(max_years_quote_history, max_years_financials_history, max_years) \
+        - 1
+
+    if max_years_plotting_history < min_years:
+        return None
+    else:
+        return [(value + 1) for value in \
+            range(max_years_plotting_history) if (value + 1) >= min_years]

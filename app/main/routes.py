@@ -11,8 +11,9 @@ from app.translate import translate
 from app.main import bp
 from app.main.forms import EditProfileForm, EmptyForm, SubmitPostForm, \
     SearchForm, MessageForm
-from app.stocks import company_profile, quote, symbol_search
-from app.plot import stock_valuation_plot, get_normal_price
+from app.stocks import company_profile, symbol_search
+from app.plot import stock_valuation_plot, get_normal_price, \
+    get_valplot_dates, get_durations
 
 
 @bp.before_request
@@ -348,26 +349,38 @@ def stock(symbol):
 
     # get the quote history, the financials history, and the analyst estimates 
     # first
-    _start_date = '01-01-2007'
-    _end_date = '11-17-2021'
-    _start_date_normal_price = '01-01-2006'
-    quote_history_data = stock.get_quote_history_data(start_date=_start_date, 
-                                                      end_date=_end_date)
+    start_date_quote_history, start_date_financials_history, end_date = \
+        get_valplot_dates()
+    quote_history_data = \
+        stock.get_quote_history_data(start_date=start_date_quote_history, 
+                                     end_date=end_date)
     financials_history = stock.get_financials_history_data()
     analyst_estimates = stock.get_analyst_estimates_data()
+
+    # get acceptable durations for stock valuation plotting;
+    durations = get_durations(quote_history=quote_history_data, 
+                              financials_history=financials_history)
 
     # get the historical average price multiple with respect to the chosen 
     # metric, and the associated normal prices
     # TODO - replace the hard coded metric name with a logic where the metric 
     # can be chosen by the users
+    default_valuation_metric = 'EBITDA'
     average_price_multiple, normal_price_data = get_normal_price(
-        metric_name='EBITDA',
+        metric_name=default_valuation_metric,
         section_name='income_statement',
-        start_date=_start_date_normal_price,
+        start_date=start_date_financials_history,
         quote_history_data=quote_history_data,
         financials_history=financials_history,
         analyst_estimates=analyst_estimates
     )
+
+    # return if not enough data was available to calculate the average 
+    # historical price multiple
+    if not average_price_multiple:
+        return render_template(
+            'stock.html', title="Stock - {}".format(stock.symbol), stock=stock, 
+            quote=json.loads(stock.quote_payload), form=form)
 
     # get the plot payload 
     plot = stock_valuation_plot(quote_history_data=quote_history_data,
@@ -376,7 +389,8 @@ def stock(symbol):
 
     return render_template(
         'stock.html', title="Stock - {}".format(stock.symbol), stock=stock, 
-        quote=json.loads(stock.quote_payload), form=form, plot=plot)
+        quote=json.loads(stock.quote_payload), form=form, plot=plot, 
+        durations=durations, valuation_metric=default_valuation_metric)
     
 
 @bp.route('/watch/<symbol>', methods=['POST'])
@@ -577,3 +591,59 @@ def refresh_quote_polling():
 
     # return an "empty" response for the request
     return ('', 204)
+
+
+@bp.route('/update_valuation_plot')
+def update_valuation_plot():
+    """
+    This view function gets an updated stock valuation plot with pre-specified 
+    input parameters, and returns scripts needed for plot rendering in a json 
+    payload
+    """
+
+    # get input parameters from the request
+    symbol = request.args.get('symbol').upper()
+    num_of_years = request.args.get('num_of_years', 20, type=int)
+    valuation_metric = request.args.get('valuation_metric', 'EBITDA', type=str)
+
+    # query the stock object
+    stock = Stock.query.filter_by(symbol=symbol).first_or_404()
+
+    # get dates needed for valuation plotting
+    start_date_quote_history, start_date_financials_history, end_date = \
+        get_valplot_dates(num_of_years=num_of_years)
+
+    # get stock data needed for valuation plotting
+    quote_history_data = \
+        stock.get_quote_history_data(start_date=start_date_quote_history, 
+                                     end_date=end_date)
+    financials_history = stock.get_financials_history_data()
+    analyst_estimates = stock.get_analyst_estimates_data()
+
+    # get the section name needed by GuruFocus API
+    metric_section_lookup = {
+        'EBITDA': 'income_statement',
+        'EBIT': 'income_statement',
+        'Net Income': 'income_statement'
+    }
+
+    # get the historical average price multiple with respect to the chosen 
+    # metric, and the associated normal prices
+    # TODO - replace the hard coded metric name with a logic where the metric 
+    # can be chosen by the users
+    average_price_multiple, normal_price_data = get_normal_price(
+        metric_name=valuation_metric,
+        section_name=metric_section_lookup[valuation_metric],
+        start_date=start_date_financials_history,
+        quote_history_data=quote_history_data,
+        financials_history=financials_history,
+        analyst_estimates=analyst_estimates
+    )
+
+    # get the plot payload 
+    plot = stock_valuation_plot(quote_history_data=quote_history_data,
+                                normal_price_data=normal_price_data,
+                                average_price_multiple=average_price_multiple)
+
+    # return a json payload for Ajax requests
+    return jsonify(plot)

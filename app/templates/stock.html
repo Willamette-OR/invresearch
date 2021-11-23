@@ -4,13 +4,15 @@
 {% block scripts %}
     {{ super() }}
 
+    {# script to dynamically update stock quote on the page #}
     <script>
-        // dynamically dupdate stock quote data on the page
         $(
             function() {
                 var symbol = $('.stock-symbol').text();
                 setInterval(function() {
-                    $.ajax('/quote_polling?symbol=' + symbol).done(function(payload) {
+                    $.ajax(
+                        '/quote_polling?symbol=' + symbol
+                    ).done(function(payload) {
                         set_quote(symbol, payload.quote.quote_payload)
                     });
                 }, 5000);
@@ -18,9 +20,33 @@
         );
     </script>
 
-    {# scripts to load BokehJS and plot scripts #}
-    {{ plot.resources|safe }}
-    {{ plot.script|safe }}
+    {# script to update stock valuation graph on the page #}
+    <script>
+        function plot_valuation(symbol, num_of_years, metric, dest_elem,
+                                metric_elem='.current_valuation_metric') {
+            // if the input parameter of 'metric' is undefined, get the value 
+            // of the metric used by the current page
+            if (metric == null) {
+                current_metric = $(metric_elem).text().trim();
+            }
+            else {
+                current_metric = metric;
+            };
+
+            $.ajax(
+                '/update_valuation_plot?symbol=' + symbol + 
+                '&num_of_years=' + num_of_years + '&valuation_metric=' + 
+                current_metric
+            ).done(function(plot) {
+                $(dest_elem).html(plot.resources);
+                $(dest_elem).html(plot.script);
+                $(dest_elem).html(plot.div);
+                $(metric_elem).text(current_metric);
+            }).fail(function() {
+                $(dest_elem).text('Error: unable to update plot.')
+            });  
+        };
+    </script>
 {% endblock %}
 
 
@@ -75,6 +101,97 @@
             {{ quote.t }}
         </span>
     </p>
-    <br><br>
-    {{ plot.div|safe }}
+    <hr>
+
+    <h3 style="color:orangered">
+        Price Correlated w/ Fundamentals:  
+        <mark>
+            <span class="current_valuation_metric">
+                {{ valuation_metric }}
+            </span>
+        </mark>
+    </h3>
+    <br>
+
+    {# scripts to load BokehJS and plot scripts #}
+    {% if plot %}
+        {# display a dropdown of different metrics for price correlations #}
+        <div class="dropdown">
+            <button class="btn btn-primary dropdown-toggle" type="button" 
+                    data-toggle="dropdown">
+                Price Correlations
+                <span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu">
+                <li class="dropdown-header">
+                    Earnings Correlations
+                </li>
+                <li>
+                    <a href="javascript:plot_valuation(
+                        '{{ stock.symbol }}',
+                        null,
+                        'Net Income',
+                        '.valuation-plot'
+                    )">
+                        Diluted Earnings (GAAP)
+                    </a>
+                </li>
+                <li class="divider"></li>
+                <li class="dropdown-header">
+                    Intrinsic Value Correlations
+                </li>
+                <li>
+                    <a href="javascript:plot_valuation(
+                        '{{ stock.symbol }}',
+                        null,
+                        'EBITDA',
+                        '.valuation-plot'
+                    )">
+                        EBITDA
+                    </a>
+                </li>
+                <li>
+                    <a href="javascript:plot_valuation(
+                        '{{ stock.symbol }}',
+                        null,
+                        'EBIT',
+                        '.valuation-plot'
+                    )">
+                        EBIT
+                    </a>
+                </li>
+            </ul>
+        </div>
+        <br>
+
+        {# display links of all acceptible durations for valuation plotting #}
+        <div class="btn-group btn-group-sm">
+            {% for num_of_years in durations %}
+                <a href="javascript:plot_valuation(
+                    '{{ stock.symbol }}',
+                    '{{ num_of_years }}',
+                    null,
+                    '.valuation-plot'
+                )" class="btn btn-default">
+                    {{ num_of_years }}Y
+                </a>
+            {% endfor %}
+        </div>
+        <br>
+        <br>
+        
+        {# render the plot #}
+        <span class="valuation-plot">
+            {{ plot.resources|safe }}
+            {{ plot.script|safe }}
+            {{ plot.div|safe }}
+        </span>
+    {% else %}
+        <h3>
+            <span style="color: red;">
+                (The stock valuation plot is not available for 
+                {{ stock.symbol }}, due to lack of historical data)
+            </span>
+        </h3>
+    {% endif %}
 {% endblock %}

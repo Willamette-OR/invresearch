@@ -62,13 +62,7 @@ def stock(symbol):
     # watching/unwatching stocks
     form = EmptyForm()
 
-    # set up for a stock valuation graph, with timestamps on the x axis and 
-    # quote history and "normal prices" on the y axis
-    # TODO - replace the hard coded start and end dates with a logic where the 
-    # date filters are affected by user inputs
-
-    # get the quote history, the financials history, and the analyst estimates 
-    # first
+    # get the quote history, the financials history, and the analyst estimates
     start_date_quote_history, start_date_financials_history, end_date = \
         get_valplot_dates()
     quote_history_data = \
@@ -76,6 +70,12 @@ def stock(symbol):
                                      end_date=end_date)
     financials_history = stock.get_financials_history_data()
     analyst_estimates = stock.get_analyst_estimates_data()
+
+
+    #######################################
+    # Set up for stock valuation plotting #
+    #######################################
+
 
     # get acceptable durations for stock valuation plotting;
     durations = get_durations(quote_history=quote_history_data, 
@@ -99,13 +99,19 @@ def stock(symbol):
     # historical price multiple
     if not average_price_multiple:
         return render_template(
-            'stocks/stock.html', title="Stock - {}".format(stock.symbol), stock=stock, 
-            quote=json.loads(stock.quote_payload), form=form)
+            'stocks/stock.html', title="Stock - {}".format(stock.symbol), 
+            stock=stock, quote=json.loads(stock.quote_payload), form=form)
 
     # get the plot payload 
     plot = stock_valuation_plot(quote_history_data=quote_history_data,
                                 normal_price_data=normal_price_data,
                                 average_price_multiple=average_price_multiple)
+
+
+    ###################################
+    # End of Valuation Plotting Setup #
+    ###################################
+
 
     return render_template(
         'stocks/stock.html', title="Stock - {}".format(stock.symbol), 

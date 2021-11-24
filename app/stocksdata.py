@@ -113,6 +113,15 @@ def get_guru_data(symbol, data_type):
         return r.json()
 
 
+# a lookup to find section names specifically in the Guru financials payload by 
+# metric names
+section_lookup_by_metric = {
+        'EBITDA': 'income_statement',
+        'EBIT': 'income_statement',
+        'Net Income': 'income_statement'
+    }
+
+
 def get_financials_history(symbol):
     """
     This function gets historical data for stock financials, and returns the 

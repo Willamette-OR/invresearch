@@ -26,3 +26,4 @@ class Config:
     REDIS_URL = os.environ.get('REDIS_URL') or 'redis://'
     FINNHUB_API_KEY = os.environ.get('FINNHUB_API_KEY')
     GURU_API_KEY = os.environ.get('GURU_API_KEY')
+    STOCK_VALUATION_METRIC_DEFAULT = 'EBITDA'

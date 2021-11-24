@@ -7,7 +7,8 @@ from flask_login import login_required, current_user
 from app import db
 from app.models import Stock
 from app.main.forms import EmptyForm, SearchForm
-from app.stocksdata import get_company_profile, search_stocks_by_symbol
+from app.stocksdata import get_company_profile, search_stocks_by_symbol, \
+                           section_lookup_by_metric
 from app.stocks import bp
 from app.stocks.plot import get_valplot_dates, get_durations, \
                             get_normal_price, stock_valuation_plot
@@ -82,13 +83,13 @@ def stock(symbol):
                               financials_history=financials_history)
 
     # get the historical average price multiple with respect to the chosen 
-    # metric, and the associated normal prices
-    # TODO - replace the hard coded metric name with a logic where the metric 
-    # can be chosen by the users
-    default_valuation_metric = 'EBITDA'
+    # metric, and the associated normal prices;
+    # the default metric to be used for valuation plotting can be changed in 
+    # the app config file
+    _valuation_metric = current_app.config['STOCK_VALUATION_METRIC_DEFAULT']
     average_price_multiple, normal_price_data = get_normal_price(
-        metric_name=default_valuation_metric,
-        section_name='income_statement',
+        metric_name=_valuation_metric,
+        section_name=section_lookup_by_metric[_valuation_metric],
         start_date=start_date_financials_history,
         quote_history_data=quote_history_data,
         financials_history=financials_history,
@@ -117,7 +118,7 @@ def stock(symbol):
         'stocks/stock.html', title="Stock - {}".format(stock.symbol), 
         stock=stock, quote=json.loads(stock.quote_payload), form=form, 
         plot=plot, durations=durations, 
-        valuation_metric=default_valuation_metric)
+        valuation_metric=_valuation_metric)
 
 
 @bp.route('/watch/<symbol>', methods=['POST'])
@@ -349,20 +350,11 @@ def update_valuation_plot():
     financials_history = stock.get_financials_history_data()
     analyst_estimates = stock.get_analyst_estimates_data()
 
-    # get the section name needed by GuruFocus API
-    metric_section_lookup = {
-        'EBITDA': 'income_statement',
-        'EBIT': 'income_statement',
-        'Net Income': 'income_statement'
-    }
-
     # get the historical average price multiple with respect to the chosen 
     # metric, and the associated normal prices
-    # TODO - replace the hard coded metric name with a logic where the metric 
-    # can be chosen by the users
     average_price_multiple, normal_price_data = get_normal_price(
         metric_name=valuation_metric,
-        section_name=metric_section_lookup[valuation_metric],
+        section_name=section_lookup_by_metric[valuation_metric],
         start_date=start_date_financials_history,
         quote_history_data=quote_history_data,
         financials_history=financials_history,

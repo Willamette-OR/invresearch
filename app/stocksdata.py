@@ -61,7 +61,7 @@ def get_company_profile(symbol):
     return profile_payload
 
 
-def quote(symbol):
+def get_quote(symbol):
     """
     This function gets quote for a given symbol.
     It returns None if the symbol does not exist.

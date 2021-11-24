@@ -9,7 +9,7 @@
     {% for stock in stocks %}
         <p>
             <h3>
-                <a href="{{ url_for('main.stock', symbol=stock.symbol) }}">{{ stock.symbol }}</a>
+                <a href="{{ url_for('stocks.stock', symbol=stock.symbol) }}">{{ stock.symbol }}</a>
             </h3>
             {{ stock.description }}<br>
             {{ stock.type }}

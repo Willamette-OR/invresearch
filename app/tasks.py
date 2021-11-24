@@ -6,7 +6,6 @@ from rq import get_current_job
 from app import db, create_app
 from app.models import User, Post, Task
 from app.emails import send_email
-from app.stocks import quote
 
 
 # create an app for the task worker, which is running in a process different 
@@ -114,7 +113,7 @@ def _set_quote_data(symbol, quote_data):
         last_ajax_timestamp = job.meta.get(
             'last_ajax_timestamp_{}'.format(task.description), now)
 
-        if symbol is None or now - last_ajax_timestamp > 60:
+        if symbol is None or (now - last_ajax_timestamp) > 60:
             task.complete = True
             db.session.commit()
             return True

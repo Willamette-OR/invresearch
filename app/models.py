@@ -10,8 +10,8 @@ import rq
 import redis
 from app import db, login 
 from app.search import query_index, add_to_index, remove_from_index
-from app.stocks import quote, get_quote_history, get_financials_history, \
-    get_analyst_estimates
+from app.stocksdata import get_quote, get_quote_history, \
+                           get_financials_history, get_analyst_estimates
 
 
 class SearchableMixin(object):
@@ -134,7 +134,7 @@ class Stock(db.Model):
         now = time()
         if not self.last_quote_update or \
             (now - self.last_quote_update) > delay:
-            self.quote_payload = json.dumps(quote(self.symbol))
+            self.quote_payload = json.dumps(get_quote(self.symbol))
             self.last_quote_update = time()
 
     def get_financials_history_data(self, update_interval_days=30):

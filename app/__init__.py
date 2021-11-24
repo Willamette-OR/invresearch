@@ -60,6 +60,10 @@ def create_app(config=Config):
     from app.errors import bp as errors_bp
     app.register_blueprint(errors_bp)
 
+    # incorporate the stocks blueprint
+    from app.stocks import bp as stocks_bp
+    app.register_blueprint(stocks_bp)
+
     # incorporate the main blueprint
     from app.main import bp as main_bp
     app.register_blueprint(main_bp)

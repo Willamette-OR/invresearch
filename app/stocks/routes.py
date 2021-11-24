@@ -7,7 +7,7 @@ from flask_login import login_required, current_user
 from app import db
 from app.models import Stock
 from app.main.forms import EmptyForm, SearchForm
-from app.stocksdata import company_profile, symbol_search
+from app.stocksdata import get_company_profile, search_stocks_by_symbol
 from app.stocks import bp
 from app.stocks.plot import get_valplot_dates, get_durations, \
                             get_normal_price, stock_valuation_plot
@@ -44,7 +44,7 @@ def stock(symbol):
     # fetch the stock info and add it to the app database if it has not been 
     # added
     if not stock:
-        profile_data = company_profile(symbol_upper)
+        profile_data = get_company_profile(symbol_upper)
         if not profile_data:
             flash("The stock symbol {} does not exist..." 
                   "Please double check.".format(symbol_upper))
@@ -233,8 +233,9 @@ def search_stocks():
 
     # get search results for the requested page number
     page = request.args.get('page', 1, type=int)
-    stocks, total = symbol_search(g.search_form.q.data, page, 
-                                  current_app.config['POSTS_PER_PAGE'])
+    stocks, total = \
+        search_stocks_by_symbol(g.search_form.q.data, page, 
+                                current_app.config['POSTS_PER_PAGE'])
 
     # output a message if no stocks are returned
     if total == 0:

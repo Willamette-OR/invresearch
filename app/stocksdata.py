@@ -4,7 +4,7 @@ from flask import current_app
 from yahoo_fin import stock_info
 
 
-def symbol_search(query, page, stocks_per_page):
+def search_stocks_by_symbol(query, page, stocks_per_page):
     """
     This function searches for matching stocks given the input query string.
 
@@ -37,7 +37,7 @@ def symbol_search(query, page, stocks_per_page):
     return matched_symbols, total
 
 
-def company_profile(symbol):
+def get_company_profile(symbol):
     """
     This function get company info for a given symbol.
     It returns None if the symbol does not exist.

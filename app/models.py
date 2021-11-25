@@ -200,7 +200,8 @@ class Stock(db.Model):
         # creates/refreshes the quote history and save it 
         now = datetime.utcnow()
         if not self.last_quote_history_update or \
-            (now - self.last_quote_history_update).seconds > (delay * 3600):
+            (now - self.last_quote_history_update).total_seconds() > \
+                (delay * 3600):
 
             # download quote history from the web
             raw_data = get_quote_history(symbol=self.symbol, 

@@ -200,14 +200,20 @@ def get_quote_details(symbol):
 
     try:
         # download data
-        data = stock_info.get_quote_table(symbol)
+        data_downloaded = stock_info.get_quote_table(symbol)
 
         # return the downloaded data if it's a dictionary, otherwise raise an
         # exception
-        if isinstance(data, dict):
-            # standardize some key names - this is API specific
-            data['Beta'] = data['Beta (5Y Monthly)']
-            data.pop('Beta (5Y Monthly)', None)
+        if isinstance(data_downloaded, dict):
+            # standardize the downloaded data - this is API specific
+            data = {}
+            data['Market Cap'] = data_downloaded['Market Cap']
+            data['Beta (5Y Monthly)'] = data_downloaded['Beta (5Y Monthly)']
+            data['52 Week Range'] = data_downloaded['52 Week Range']
+            data['Earnings Date'] = data_downloaded['Earnings Date']
+            data['Ex-Dividend Date'] = data_downloaded['Ex-Dividend Date']
+            data['Forward Dividend & Yield'] = \
+                data_downloaded['Forward Dividend & Yield']
 
             return data
         else:

@@ -63,7 +63,8 @@ def stock(symbol):
     # watching/unwatching stocks
     form = EmptyForm()
 
-    # get the quote history, the financials history, and the analyst estimates
+    # get the quote history, the financials history, the analyst estimates, and 
+    # quote details
     start_date_quote_history, start_date_financials_history, end_date = \
         get_valplot_dates()
     quote_history_data = \
@@ -71,6 +72,7 @@ def stock(symbol):
                                      end_date=end_date)
     financials_history = stock.get_financials_history_data()
     analyst_estimates = stock.get_analyst_estimates_data()
+    quote_details = stock.get_quote_details_data()
 
 
     #######################################
@@ -101,7 +103,8 @@ def stock(symbol):
     if not average_price_multiple:
         return render_template(
             'stocks/stock.html', title="Stock - {}".format(stock.symbol), 
-            stock=stock, quote=json.loads(stock.quote_payload), form=form)
+            stock=stock, quote=json.loads(stock.quote_payload), form=form, 
+            quote_details=quote_details)
 
     # get the plot payload 
     plot = stock_valuation_plot(quote_history_data=quote_history_data,
@@ -118,7 +121,7 @@ def stock(symbol):
         'stocks/stock.html', title="Stock - {}".format(stock.symbol), 
         stock=stock, quote=json.loads(stock.quote_payload), form=form, 
         plot=plot, durations=durations, 
-        valuation_metric=_valuation_metric)
+        valuation_metric=_valuation_metric, quote_details=quote_details)
 
 
 @bp.route('/watch/<symbol>', methods=['POST'])

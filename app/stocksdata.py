@@ -180,3 +180,40 @@ def get_quote_history(symbol, start_date=None, end_date=None, interval='1mo',
 
     return data
 
+
+def get_quote_details(symbol):
+    """
+    This function pulls quote details from the web and returns the data in a 
+    dictionary.
+
+    Inputs:
+        'symbol': the ticker symbol of stocks, e.g., 'AAPL', 'AMZN', etc. It is 
+                  not case sensitive.
+
+    Notes:
+        This function currently uses the "yahoo_fin" library for scraping 
+        historical data from Yahoo Finance.
+
+        For more details, check out the author's documentation here: 
+        https://theautomatic.net/yahoo_fin-documentation/#get_quote_table 
+    """
+
+    try:
+        # download data
+        data = stock_info.get_quote_table(symbol)
+
+        # return the downloaded data if it's a dictionary, otherwise raise an
+        # exception
+        if isinstance(data, dict):
+            # standardize some key names - this is API specific
+            data['Beta'] = data['Beta (5Y Monthly)']
+            data.pop('Beta (5Y Monthly)', None)
+
+            return data
+        else:
+            raise TypeError("Invalid data type for quote details - only dict "
+                            "is accepted.")
+
+    except:
+        # raise a more informational exception
+        raise ConnectionAbortedError('Unable to download quote details data.')

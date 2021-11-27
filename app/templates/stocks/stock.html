@@ -200,16 +200,28 @@
 
         {# display quote details here #}
         <div class="col-sm-4">
-            <table class="table table-hover">
-                <tbody>
-                    {% for field in quote_details %}
+            <p>
+                <table class="table">
+                    <thread>
                         <tr>
-                            <td>{{ field }}</td>
-                            <td>{{ quote_details[field] }}</td>
+                            <th style="border: 0px;">
+                                <h4>
+                                    Quote Details
+                                </h4>
+                            </th>
+                            <th style="border: 0px;"></th>
                         </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                    </thread>
+                    <tbody>
+                        {% for field in quote_details %}
+                            <tr>
+                                <td>{{ field }}</td>
+                                <td>{{ quote_details[field] }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </p>
         </div>
     </div>
 {% endblock %}

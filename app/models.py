@@ -248,8 +248,18 @@ class Stock(db.Model):
             self.last_quote_details_update = now
             db.session.commit()
 
-        return json.loads(self.quote_details_paylod)        
+        return json.loads(self.quote_details_paylod)
+
+    def get_fundamental_indicators(self):
+        """
+        This method gets/calculates fundamental indicators from the saved 
+        financials history payload, and returns them in a nested dictionary 
+        including different categories of indicators, such as 'Financial 
+        Strength', 'Growth', etc.
+        """
         
+        # TODO
+
 
 class User(UserMixin, db.Model):
     """

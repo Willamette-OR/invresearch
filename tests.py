@@ -233,6 +233,18 @@ class UserTestCase(unittest.TestCase):
         self.assertEqual(revenue.data, {datetime(2019, 1, 1): 200,
                                         datetime(2020, 1, 1): 300})
         
+        # test operator overloading
+        operating_income = Metric(name='operating income', 
+                                  timestamps=timestamps, 
+                                  values=['50', '100', '100', '175'], 
+                                  start_date=start_date)
+        rev_to_oi = revenue / operating_income
+        self.assertEqual(rev_to_oi.name, 'revenue / operating income')
+        self.assertEqual(rev_to_oi.timestamps, (datetime(2019, 1, 1), 
+                                                datetime(2020, 1, 1)))
+        self.assertEqual(rev_to_oi.values, (2.0, 3.0))
+        self.assertEqual(rev_to_oi.TTM_value, 2.0)
+
         # test per share operations
         num_of_shares = [100, 150]
         revenue = TotalMetric(name=name, timestamps=timestamps, values=values, 

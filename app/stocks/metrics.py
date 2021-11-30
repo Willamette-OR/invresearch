@@ -63,6 +63,35 @@ class Metric(object):
         self.timestamps = tuple(self.data.keys())
         self.values = tuple(self.data.values())
 
+    def get_timestamps_str(self, timestamps_format='%Y-%m'):
+        """
+        This method returns the saved timestamps in the string format.
+        """
+
+        return [timestamp.strftime(timestamps_format) for timestamp in \
+            self.timestamps]
+
+    def __truediv__(self, other):
+        """
+        This special function overloads the division operator '/'.
+        """
+
+        if self.timestamps != other.timestamps:
+            raise ValueError("Timestamp sequences of the two input metrics "
+                             "must be identical.")
+        else:
+            name_division = '{} / {}'.format(self.name, other.name)
+            timestamps_division = self.get_timestamps_str()
+            values_division = list(
+                np.array(self.values) / np.array(other.values))
+            division = Metric(name=name_division, 
+                              timestamps=timestamps_division,
+                              values=values_division,
+                              start_date=datetime(1900, 1, 1))
+            division.TTM_value = self.TTM_value / other.TTM_value
+            
+            return division
+
 
 class TotalMetric(Metric):
     """

@@ -20,8 +20,8 @@ class Metric(object):
             - "values": a sequence of values (could be strings) of the metric,
                         with each value corresponding to the timestamp of the 
                         same position in the input sequence of timestamps
-            - "start_date": only records after this date from the input data 
-                            will be considered
+            - "start_date": a Python datetime object - only records after this 
+                            date from the input data will be considered 
             - "input_timestamps_format": default "%Y-%m". Format used to 
                                          convert string formatted input 
                                          timestamps to Python datetime objects.

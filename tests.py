@@ -245,6 +245,13 @@ class UserTestCase(unittest.TestCase):
         self.assertEqual(rev_to_oi.values, (2.0, 3.0))
         self.assertEqual(rev_to_oi.TTM_value, 2.0)
 
+        rev_plus_oi = revenue + operating_income
+        self.assertEqual(rev_plus_oi.name, 'revenue + operating income')
+        self.assertEqual(rev_plus_oi.timestamps, (datetime(2019, 1, 1), 
+                                                  datetime(2020, 1, 1)))
+        self.assertEqual(rev_plus_oi.values, (300, 400))
+        self.assertEqual(rev_plus_oi.TTM_value, 525)
+
         # test per share operations
         num_of_shares = [100, 150]
         revenue = TotalMetric(name=name, timestamps=timestamps, values=values, 

@@ -71,6 +71,27 @@ class Metric(object):
         return [timestamp.strftime(timestamps_format) for timestamp in \
             self.timestamps]
 
+    def __add__(self, other):
+        """
+        This special function overloads the add operator '+'.
+        """
+
+        if self.timestamps != other.timestamps:
+            raise ValueError("Timestamp sequences of the two input metrics "
+                             "must be identical.")
+        else:
+            name_sum = '{} + {}'.format(self.name, other.name)
+            timestamps_sum = self.get_timestamps_str()
+            values_sum = list(
+                np.array(self.values) + np.array(other.values))
+            summation = Metric(name=name_sum, 
+                               timestamps=timestamps_sum,
+                               values=values_sum,
+                               start_date=datetime(1900, 1, 1))
+            summation.TTM_value = self.TTM_value + other.TTM_value
+
+            return summation
+
     def __truediv__(self, other):
         """
         This special function overloads the division operator '/'.

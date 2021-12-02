@@ -73,6 +73,8 @@ def stock(symbol):
     financials_history = stock.get_financials_history_data()
     analyst_estimates = stock.get_analyst_estimates_data()
     quote_details = stock.get_quote_details_data()
+    fundamental_indicators = stock.get_fundamental_indicator_data(
+        start_date=start_date_financials_history)
 
 
     #######################################
@@ -104,7 +106,9 @@ def stock(symbol):
         return render_template(
             'stocks/stock.html', title="Stock - {}".format(stock.symbol), 
             stock=stock, quote=json.loads(stock.quote_payload), form=form, 
-            quote_details=quote_details)
+            quote_details=quote_details, 
+            fundamental_indicators=fundamental_indicators
+        )
 
     # get the plot payload 
     plot = stock_valuation_plot(quote_history_data=quote_history_data,
@@ -121,7 +125,9 @@ def stock(symbol):
         'stocks/stock.html', title="Stock - {}".format(stock.symbol), 
         stock=stock, quote=json.loads(stock.quote_payload), form=form, 
         plot=plot, durations=durations, 
-        valuation_metric=_valuation_metric, quote_details=quote_details)
+        valuation_metric=_valuation_metric, quote_details=quote_details,
+        fundamental_indicators=fundamental_indicators
+    )
 
 
 @bp.route('/watch/<symbol>', methods=['POST'])

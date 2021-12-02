@@ -235,7 +235,29 @@
             </div>
         </div>
         <div id="fundamentals" class="tab-pane fade">
-            Placeholder
+            {# Indicators for financial strength #}
+            <div class="col-sm-4">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <td style="border: 0px;">
+                                <h4>Financial Strength</h4>
+                            </td>
+                            <td style="border: 0px;"></td>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for indicator in fundamental_indicators['financial strength'] %}
+                            <tr>
+                                <td>{{ indicator }}</td>
+                                <td style="font-weight: bold;">
+                                    {{ fundamental_indicators['financial strength'][indicator] }}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 {% endblock %}

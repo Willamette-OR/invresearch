@@ -1,5 +1,5 @@
 from datetime import datetime
-from app.stocks.metrics import Metric
+from app.metrics import Metric
 
 
 section_lookup = {
@@ -42,6 +42,12 @@ def get_fundamental_indicators(financials_history,
 
     data_indicators = {}
 
+    ######################
+    # Financial strength #
+    ######################
+
+    data_indicators['financial strength'] = {}
+
     # Debt-to-Cash
     # save the TTM value
     _name = 'Debt-to-Cash'
@@ -57,14 +63,14 @@ def get_fundamental_indicators(financials_history,
                    financials_history=financials_history,
                    start_date=start_date)
     _metric = (short_term_debt + long_term_debt) / cash
-    data_indicators[_name] = _metric.TTM_value
+    data_indicators['financial strength'][_name] = _metric.TTM_value
 
     # Equity-to-Asset
     # save the TTM value
     _name = 'Equity-to-Asset'
     _metric = get_metric(name=_name, financials_history=financials_history, 
                          start_date=start_date)
-    data_indicators[_name] = _metric.TTM_value
+    data_indicators['financial strength'][_name] = _metric.TTM_value
 
     # return the constructed dictionary
     return data_indicators

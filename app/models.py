@@ -13,6 +13,7 @@ from app.search import query_index, add_to_index, remove_from_index
 from app.stocksdata import get_quote, get_quote_history, \
                            get_financials_history, get_analyst_estimates, \
                            get_quote_details
+from app.fundamental_analysis import get_fundamental_indicators
 
 
 class SearchableMixin(object):
@@ -250,15 +251,24 @@ class Stock(db.Model):
 
         return json.loads(self.quote_details_paylod)
 
-    def get_fundamental_indicators(self):
+    def get_fundamental_indicator_data(self, start_date='01-01-1900'):
         """
         This method gets/calculates fundamental indicators from the saved 
         financials history payload, and returns them in a nested dictionary 
         including different categories of indicators, such as 'Financial 
         Strength', 'Growth', etc.
+
+        Inputs:
+            'start_date': a Python datetime object. 
+                          Only data of financials history after this date will 
+                          be used when deriving fundamental indicators.
+                          Defaulted to be 1/1/1900.
         """
         
-        # TODO
+        return get_fundamental_indicators(
+            financials_history=self.get_financials_history_data(), 
+            start_date=datetime.strptime(start_date, '%m-%d-%Y')
+        )
 
 
 class User(UserMixin, db.Model):

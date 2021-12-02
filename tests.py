@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from config import Config
 from app import create_app, db
 from app.models import User, Post, Message, Stock
-from app.stocks.metrics import Metric, TotalMetric
+from app.metrics import Metric, TotalMetric
 
 
 class TestingConfig(Config):

@@ -1,5 +1,5 @@
 import requests
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask import current_app
 from yahoo_fin import stock_info
 
@@ -146,7 +146,9 @@ def get_analyst_estimates(symbol):
     return get_guru_data(symbol, data_type='analyst_estimate')
 
 
-def get_quote_history(symbol, start_date=None, end_date=None, interval='1mo', 
+def get_quote_history(symbol, start_date=None, 
+                      end_date=(datetime.utcnow()-timedelta(days=1)), 
+                      interval='1mo', 
                       header='close'):
     """
     This function pulls historical quote data, and returns the cleaned up data 
@@ -157,7 +159,9 @@ def get_quote_history(symbol, start_date=None, end_date=None, interval='1mo',
 
     Inputs:
         'start_date': '%m/%d/%Y'
-        'end_date': '%m/%d/%Y
+        'end_date': '%m/%d/%Y;
+                    Defaulted to be 1 day before utcnow to hack around a 
+                    duplication bug in the yahoo_fin library.
 
     Note:
         It currently uses the "yahoo_fin" library for scraping historical data 

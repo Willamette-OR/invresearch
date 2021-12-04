@@ -111,5 +111,17 @@ def get_fundamental_indicators(financials_history,
     data_indicators['financial strength'][_name] = \
         float("{:.2f}".format(_metric.TTM_value))
 
+    ############
+    #  Growth  #
+    ############
+
+    data_indicators['growth'] = {}
+
+    # 3-Year EBITDA Growth Rate
+    _name = '3-Year EBITDA Growth Rate'
+    data_indicators['growth'][_name] = \
+        "{:.2f}%".format(ebitda.growth_rate(num_of_years=3) * 100) \
+            if ebitda.growth_rate(num_of_years=5) else 'N/A'
+
     # return the constructed dictionary
     return data_indicators

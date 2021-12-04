@@ -1,5 +1,6 @@
-from datetime import datetime
 import numpy as np
+from datetime import datetime
+from sklearn.linear_model import LinearRegression
 
 
 class Metric(object):
@@ -112,6 +113,44 @@ class Metric(object):
             division.TTM_value = self.TTM_value / other.TTM_value
             
             return division
+
+    def growth_rate(self, num_of_years=3):
+        """
+        This method calculates the latest annual growth rate 'G' of the metric, 
+        given a specific number of years. 
+
+        For example, if asked to calculate the 3-year growth rate, 3 + 1 = 4 
+        years of the most recent metric values will be used (to get 3 
+        non-trivial intervals of annual growth). The growth rate 'G' will be 
+        based on the coefficient 'A' of a linear regression fit of:
+            'x': # years since year 0 for year n
+            'y': log(the metri value for year n),
+
+        where G = 10^A - 1.
+        """
+
+        try:
+            # prep input data, and y will be the natural logs of metric values
+            x = np.array(range(num_of_years + 1)).reshape((-1, 1))
+            y = np.log(self.values[-(num_of_years + 1):])
+
+            # run linear regression on the log scale
+            model = LinearRegression().fit(x, y)
+
+            # get the growth rate based on the log scale linear model
+            return np.exp(model.coef_)[0] - 1
+        except:
+            # if a log scale linear regression errors out, use a less ideal 
+            # formula to compute the CAGR
+            if len(self.values) < num_of_years + 1:
+                return None
+            else:
+                total_growth = \
+                    self.values[-1] / self.values[-(num_of_years + 1)]
+                if total_growth > 0:
+                    return total_growth**(1 / num_of_years) - 1
+                else:
+                    return None                
 
 
 class TotalMetric(Metric):

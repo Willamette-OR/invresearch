@@ -209,35 +209,33 @@
         
                 {# display quote details here #}
                 <div class="col-sm-4">
-                    <p>
-                        <table class="table">
-                            <thread>
+                    <table class="table table-hover">
+                        <thread>
+                            <tr>
+                                <th style="border: 0px;">
+                                    <h4>
+                                        Quote Details
+                                    </h4>
+                                </th>
+                                <th style="border: 0px;"></th>
+                            </tr>
+                        </thread>
+                        <tbody>
+                            {% for field in quote_details %}
                                 <tr>
-                                    <th style="border: 0px;">
-                                        <h4>
-                                            Quote Details
-                                        </h4>
-                                    </th>
-                                    <th style="border: 0px;"></th>
+                                    <td>{{ field }}</td>
+                                    <td style="font-weight:bold">{{ quote_details[field] }}</td>
                                 </tr>
-                            </thread>
-                            <tbody>
-                                {% for field in quote_details %}
-                                    <tr>
-                                        <td>{{ field }}</td>
-                                        <td style="font-weight:bold">{{ quote_details[field] }}</td>
-                                    </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </p>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
         <div id="fundamentals" class="tab-pane fade">
             {# Indicators for financial strength #}
             <div class="col-sm-4">
-                <table class="table">
+                <table class="table table-hover">
                     <thead>
                         <tr>
                             <td style="border: 0px;">
@@ -252,6 +250,29 @@
                                 <td>{{ indicator }}</td>
                                 <td style="font-weight: bold;">
                                     {{ fundamental_indicators['financial strength'][indicator] }}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {# Indicators for growth rates #}
+            <div class="col-sm-4">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <td style="border: 0px;">
+                                <h4>Business Growth</h4>
+                            </td>
+                            <td style="border: 0px;"></td>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for indicator in fundamental_indicators['growth'] %}
+                            <tr>
+                                <td>{{ indicator }}</td>
+                                <td style="font-weight: bold;">
+                                    {{ fundamental_indicators['growth'][indicator] }}
                                 </td>
                             </tr>
                         {% endfor %}

@@ -15,7 +15,11 @@ section_lookup = {
     'Operating Income': 'income_statement',
     'Net Income': 'income_statement',
     'Cash Flow from Operations': 'cashflow_statement',
-    'Operating Margin %': 'income_statement'
+    'Gross Margin %': 'common_size_ratios',
+    'Operating Margin %': 'common_size_ratios',
+    'Net Margin %': 'common_size_ratios',
+    'FCF Margin %': 'common_size_ratios',
+    'ROE %': 'common_size_ratios'
 }
 
 
@@ -167,11 +171,48 @@ def get_fundamental_indicators(financials_history,
         "{:.2f}%".format(operating_cashflow.growth_rate(num_of_years=5) * 100) \
             if operating_cashflow.growth_rate(num_of_years=5) else "N/A"
 
+    #################
+    # Profitability #
+    #################
+
+    data_indicators['profitability'] = {}
+
+    # Gross Margin
+    _name = 'Gross Margin %'
+    gross_margin = get_metric(name=_name, 
+                              financials_history=financials_history, 
+                              start_date=start_date)
+    data_indicators['profitability'][_name] = \
+        "{:.2f}%".format(gross_margin.TTM_value)
+
     # Operating Margin
     _name = 'Operating Margin %'
     operating_margin = get_metric(name=_name, 
                                   financials_history=financials_history, 
                                   start_date=start_date)
+    data_indicators['profitability'][_name] = \
+        "{:.2f}%".format(operating_margin.TTM_value)
+
+    # Net Margin
+    _name = 'Net Margin %'
+    net_margin = get_metric(name=_name, 
+                            financials_history=financials_history, 
+                            start_date=start_date)
+    data_indicators['profitability'][_name] = \
+        "{:.2f}%".format(net_margin.TTM_value)
+    
+    # FCF Margin
+    _name = 'FCF Margin %'
+    fcf_margin = get_metric(name=_name, financials_history=financials_history, 
+                            start_date=start_date)
+    data_indicators['profitability'][_name] = \
+        "{:.2f}%".format(fcf_margin.TTM_value)
+
+    # ROE
+    _name = 'ROE %'
+    roe = get_metric(name=_name, financials_history=financials_history, 
+                     start_date=start_date)
+    data_indicators['profitability'][_name] = "{:.2f}%".format(roe.TTM_value)
 
     # return the constructed dictionary
     return data_indicators

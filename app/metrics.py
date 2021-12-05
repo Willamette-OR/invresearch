@@ -42,7 +42,13 @@ class Metric(object):
         # TODO - occasionally a value could be None if the input values are 
         # from analyst estimates (Guru). Defaulting those values to 0 for now.
         if convert_to_numeric:
-            _values = [float(value) if value else 0 for value in values]
+            #_values = [float(value) if value else 0 for value in values]
+            _values = []
+            for value in values:
+                try:
+                    _values.append(float(value))
+                except:
+                    _values.append(0)
         else:
             _values = values
 

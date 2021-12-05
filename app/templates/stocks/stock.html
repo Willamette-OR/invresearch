@@ -279,6 +279,29 @@
                     </tbody>
                 </table>
             </div>
+            {# Indicators for profitability #}
+            <div class="col-sm-4">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <td style="border: 0px;">
+                                <h4>Profitability</h4> 
+                            </td>
+                            <td style="border: 0px;"></td>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for indicator in fundamental_indicators['profitability'] %}
+                            <tr>
+                                <td>{{ indicator }}</td>
+                                <td style="font-weight: bold;">
+                                    {{ fundamental_indicators['profitability'][indicator] }}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 {% endblock %}

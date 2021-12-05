@@ -10,7 +10,12 @@ section_lookup = {
     'Debt-to-Equity': 'common_size_ratios',
     'EBITDA': 'income_statement',
     'Interest Coverage': 'valuation_and_quality',
-    'Altman Z-Score': 'valuation_and_quality'
+    'Altman Z-Score': 'valuation_and_quality',
+    'Revenue': 'income_statement',
+    'Operating Income': 'income_statement',
+    'Net Income': 'income_statement',
+    'Cash Flow from Operations': 'cashflow_statement',
+    'Operating Margin %': 'income_statement'
 }
 
 
@@ -117,11 +122,56 @@ def get_fundamental_indicators(financials_history,
 
     data_indicators['growth'] = {}
 
-    # 3-Year EBITDA Growth Rate
-    _name = '3-Year EBITDA Growth Rate'
-    data_indicators['growth'][_name] = \
-        "{:.2f}%".format(ebitda.growth_rate(num_of_years=3) * 100) \
-            if ebitda.growth_rate(num_of_years=5) else 'N/A'
+    # 3-Year & 5-Year Revenue Growth Rate
+    revenue = get_metric(name='Revenue', financials_history=financials_history, 
+                         start_date=start_date)
+    data_indicators['growth']['3-Year Revenue Growth Rate'] = \
+        "{:.2f}%".format(revenue.growth_rate(num_of_years=3) * 100) \
+            if revenue.growth_rate(num_of_years=3) else 'N/A'
+    data_indicators['growth']['5-Year Revenue Growth Rate'] = \
+        "{:.2f}%".format(revenue.growth_rate(num_of_years=5) * 100) \
+            if revenue.growth_rate(num_of_years=5) else 'N/A'
+
+    # 3-Year & 5-Year Operating Income Growth Rate
+    _name = 'Operating Income'
+    operating_income = get_metric(name=_name, 
+                                  financials_history=financials_history, 
+                                  start_date=start_date)
+    data_indicators['growth']['3-Year Operating Income Growth Rate'] = \
+        "{:.2f}%".format(operating_income.growth_rate(num_of_years=3) * 100) \
+            if operating_income.growth_rate(num_of_years=3) else 'N/A'
+    data_indicators['growth']['5-Year Operating Income Growth Rate'] = \
+        "{:.2f}%".format(operating_income.growth_rate(num_of_years=5) * 100) \
+            if operating_income.growth_rate(num_of_years=5) else 'N/A'
+
+    # 3-Year & 5-Year Net Income Growth Rate 
+    _name = 'Net Income'
+    net_income = get_metric(name=_name, financials_history=financials_history, 
+                            start_date=start_date)
+    data_indicators['growth']['3-Year Net Income Growth Rate'] = \
+        "{:.2f}%".format(net_income.growth_rate(num_of_years=3) * 100) \
+            if net_income.growth_rate(num_of_years=3) else "N/A"
+    data_indicators['growth']['5-Year Net Income Growth Rate'] = \
+        "{:.2f}%".format(net_income.growth_rate(num_of_years=5) * 100) \
+            if net_income.growth_rate(num_of_years=5) else "N/A"
+
+    # 3-Year & 5-Year Operating Cash Flow Growth Rate
+    _name = 'Cash Flow from Operations'
+    operating_cashflow = get_metric(name=_name, 
+                                    financials_history=financials_history, 
+                                    start_date=start_date)
+    data_indicators['growth']['3-Year Operating Cash Flow Growth Rate'] = \
+        "{:.2f}%".format(operating_cashflow.growth_rate(num_of_years=3) * 100) \
+            if operating_cashflow.growth_rate(num_of_years=3) else "N/A"
+    data_indicators['growth']['5-Year Operating Cash Flow Growth Rate'] = \
+        "{:.2f}%".format(operating_cashflow.growth_rate(num_of_years=5) * 100) \
+            if operating_cashflow.growth_rate(num_of_years=5) else "N/A"
+
+    # Operating Margin
+    _name = 'Operating Margin %'
+    operating_margin = get_metric(name=_name, 
+                                  financials_history=financials_history, 
+                                  start_date=start_date)
 
     # return the constructed dictionary
     return data_indicators

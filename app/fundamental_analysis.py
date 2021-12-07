@@ -216,3 +216,45 @@ def get_fundamental_indicators(financials_history,
 
     # return the constructed dictionary
     return data_indicators
+
+
+def get_estimated_return(quote_history_data, normal_price_data):
+    """
+    This helper function calculate the estimated annualized return, given the 
+    input quote history data and normal price data.
+
+    Inputs:
+        'quote_history_data': a dictionary of "<timestamp>: <price>", where 
+                              timestamps are Python's datetime objects, and 
+                              prices are those taken from historical quotes, 
+                              including quotes from the latest month.
+        'normal_price_data': a dictionary of "<timestamp>: <price>", where 
+                             timestamps are Python's datetime objects, and 
+                             prices are "normal prices" calculated based on 
+                             some income/cash flow metric & the historical 
+                             average price multiple based on the same metric.
+                             It should include time periods where the "normal 
+                             price" is based on analyst estimates, which is in 
+                             the future.
+    """
+
+    # get the historical price and the corresponding timestamp
+    latest_quote_timestamp = max(quote_history_data.keys())
+    latest_quote_price = quote_history_data[latest_quote_timestamp]
+
+    # get the latest non-zero normal price and the corresponding timestamp
+    normal_price_data_copy = normal_price_data.copy()
+    while True:
+        latest_normal_timestamp = max(normal_price_data_copy.keys())
+        latest_normal_price = normal_price_data_copy[latest_normal_timestamp]
+        if latest_normal_price != 0:
+            break
+        else:
+            normal_price_data_copy.pop(latest_normal_timestamp)
+
+    # compute and return the estimated annualized return
+    num_of_years = (latest_normal_timestamp - latest_quote_timestamp).days / 365
+    if num_of_years > 0:
+        return (latest_normal_price / latest_quote_price)**(1/num_of_years) - 1
+    else:
+        return None

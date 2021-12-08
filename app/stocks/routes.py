@@ -9,6 +9,7 @@ from app.models import Stock
 from app.main.forms import EmptyForm, SearchForm
 from app.stocksdata import get_company_profile, search_stocks_by_symbol, \
                            section_lookup_by_metric
+from app.fundamental_analysis import get_estimated_return
 from app.stocks import bp
 from app.stocks.plot import get_valplot_dates, get_durations, \
                             get_normal_price, stock_valuation_plot
@@ -116,6 +117,16 @@ def stock(symbol):
                                 average_price_multiple=average_price_multiple)
 
 
+    # add "estimated annual return" to the quote details dictionary, based on 
+    # the quote history data and the normal price data
+    # TODO - get total returns by factoring dividend yields
+    # TODO - update the Ajax logic to update annual return numbers
+    estimated_return_pct = \
+        get_estimated_return(quote_history_data=quote_history_data, 
+                             normal_price_data=normal_price_data) * 100
+    estimated_return = "{:.1f}%".format(estimated_return_pct)
+        
+
     ###################################
     # End of Valuation Plotting Setup #
     ###################################
@@ -126,7 +137,8 @@ def stock(symbol):
         stock=stock, quote=json.loads(stock.quote_payload), form=form, 
         plot=plot, durations=durations, 
         valuation_metric=_valuation_metric, quote_details=quote_details,
-        fundamental_indicators=fundamental_indicators
+        fundamental_indicators=fundamental_indicators,
+        estimated_return=estimated_return
     )
 
 

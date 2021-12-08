@@ -227,6 +227,18 @@
                                     <td style="font-weight:bold">{{ quote_details[field] }}</td>
                                 </tr>
                             {% endfor %}
+
+                            {# add another row for estimated annual returns #}
+                            <tr>
+                                <td>Estimated Annual Return</td>
+                                <td style="font-weight: bold;">
+                                    {% if estimated_return %}
+                                        {{ estimated_return }}
+                                    {% else %}
+                                        N/A
+                                    {% endif %}
+                                </td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -239,7 +251,7 @@
                     <thead>
                         <tr>
                             <td style="border: 0px;">
-                                <h4>Financial Strength</h4>
+                                <h4 style="font-weight: bold;">Financial Strength</h4>
                             </td>
                             <td style="border: 0px;"></td>
                         </tr>
@@ -262,7 +274,7 @@
                     <thead>
                         <tr>
                             <td style="border: 0px;">
-                                <h4>Business Growth</h4>
+                                <h4 style="font-weight: bold;">Business Growth</h4>
                             </td>
                             <td style="border: 0px;"></td>
                         </tr>
@@ -285,7 +297,7 @@
                     <thead>
                         <tr>
                             <td style="border: 0px;">
-                                <h4>Profitability</h4> 
+                                <h4 style="font-weight: bold;">Profitability</h4> 
                             </td>
                             <td style="border: 0px;"></td>
                         </tr>

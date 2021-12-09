@@ -188,7 +188,7 @@ def get_quote_history(symbol, start_date=None,
 def get_quote_details(symbol):
     """
     This function pulls quote details from the web and returns the data in a 
-    dictionary.
+    dictionary, plus the numeric value of the dividend yield.
 
     Inputs:
         'symbol': the ticker symbol of stocks, e.g., 'AAPL', 'AMZN', etc. It is 
@@ -219,7 +219,15 @@ def get_quote_details(symbol):
             data['Forward Dividend & Yield'] = \
                 data_downloaded['Forward Dividend & Yield']
 
-            return data
+            # get the numeric value of the dividend yield
+            s = data_downloaded['Forward Dividend & Yield']
+            dividend_yield_str = s[(s.find('(') + 1):s.find('%')]
+            try:
+                dividend_yield = float(dividend_yield_str) / 100
+            except:
+                dividend_yield = 0
+
+            return data, dividend_yield
         else:
             raise TypeError("Invalid data type for quote details - only dict "
                             "is accepted.")

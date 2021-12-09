@@ -119,6 +119,7 @@ class Stock(db.Model):
     quote_history_payload = db.Column(db.Text)
     quote_details_paylod = db.Column(db.Text)
     last_quote_details_update = db.Column(db.DateTime, index=True, default=None)
+    dividend_yield = db.Column(db.Float, index=True)
 
     def __repr__(self):
         return "<Stock: {}>".format(self.symbol)
@@ -244,7 +245,7 @@ class Stock(db.Model):
         if not self.last_quote_details_update or \
             (now - self.last_quote_details_update).total_seconds() >= \
                 delay_hours * 3600:
-            data = get_quote_details(self.symbol)
+            data, self.dividend_yield = get_quote_details(self.symbol)
             self.quote_details_paylod = json.dumps(data)
             self.last_quote_details_update = now
             db.session.commit()

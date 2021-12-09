@@ -119,14 +119,12 @@ def stock(symbol):
 
     # add "estimated annual return" to the quote details dictionary, based on 
     # the quote history data and the normal price data
-    # TODO - get total returns by factoring dividend yields
     # TODO - update the Ajax logic to update annual return numbers
-    estimated_return_pct = \
+    estimated_return = \
         get_estimated_return(quote_history_data=quote_history_data, 
-                             normal_price_data=normal_price_data) * 100
-    estimated_return = "{:.1f}%".format(estimated_return_pct)
+                             normal_price_data=normal_price_data, 
+                             dividend_yield=stock.dividend_yield)
         
-
     ###################################
     # End of Valuation Plotting Setup #
     ###################################

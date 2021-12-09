@@ -218,10 +218,14 @@ def get_fundamental_indicators(financials_history,
     return data_indicators
 
 
-def get_estimated_return(quote_history_data, normal_price_data):
+def get_estimated_return(quote_history_data, normal_price_data, 
+                         dividend_yield=0):
     """
     This helper function calculate the estimated annualized return, given the 
     input quote history data and normal price data.
+
+    The estimated annualized return is the sum of estimated annualized price 
+    return/appreciation and the given dividend yield.
 
     Inputs:
         'quote_history_data': a dictionary of "<timestamp>: <price>", where 
@@ -236,6 +240,7 @@ def get_estimated_return(quote_history_data, normal_price_data):
                              It should include time periods where the "normal 
                              price" is based on analyst estimates, which is in 
                              the future.
+        'dividend_yield': a numeric value, defaulted to be 0.
     """
 
     # get the historical price and the corresponding timestamp
@@ -252,9 +257,11 @@ def get_estimated_return(quote_history_data, normal_price_data):
         else:
             normal_price_data_copy.pop(latest_normal_timestamp)
 
-    # compute and return the estimated annualized return
+    # compute and compute the estimated total annualized return, formatted
     num_of_years = (latest_normal_timestamp - latest_quote_timestamp).days / 365
     if num_of_years > 0:
-        return (latest_normal_price / latest_quote_price)**(1/num_of_years) - 1
+        price_return = \
+            (latest_normal_price / latest_quote_price)**(1/num_of_years) - 1
+        return "{:.2f}%".format((price_return + dividend_yield) * 100)
     else:
-        return None
+        return 'N/A'

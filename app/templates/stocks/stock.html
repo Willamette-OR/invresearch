@@ -22,6 +22,10 @@
 
     {# script to update stock valuation graph on the page #}
     <script>
+        function set_estimated_return(r) {
+            $('#estimated_return').text(r);
+        };
+
         function plot_valuation(symbol, num_of_years, metric, dest_elem,
                                 metric_elem='.current_valuation_metric') {
             // if the input parameter of 'metric' is undefined, get the value 
@@ -42,6 +46,7 @@
                 $(dest_elem).html(plot.script);
                 $(dest_elem).html(plot.div);
                 $(metric_elem).text(current_metric);
+                set_estimated_return(plot.estimated_return);
             }).fail(function() {
                 $(dest_elem).text('Error: unable to update plot.')
             });  
@@ -231,7 +236,7 @@
                             {# add another row for estimated annual returns #}
                             <tr>
                                 <td>Estimated Annual Return</td>
-                                <td style="font-weight: bold;">
+                                <td id="estimated_return" style="font-weight: bold;">
                                     {% if estimated_return %}
                                         {{ estimated_return }}
                                     {% else %}

@@ -385,5 +385,12 @@ def update_valuation_plot():
                                 normal_price_data=normal_price_data,
                                 average_price_multiple=average_price_multiple)
 
+    # add to the paylod the updated estimated return, specific to the updated 
+    # valuation plot 
+    plot['estimated_return'] = \
+        get_estimated_return(quote_history_data=quote_history_data, 
+                             normal_price_data=normal_price_data, 
+                             dividend_yield=stock.dividend_yield)
+
     # return a json payload for Ajax requests
     return jsonify(plot)

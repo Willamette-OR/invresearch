@@ -119,7 +119,6 @@ def stock(symbol):
 
     # add "estimated annual return" to the quote details dictionary, based on 
     # the quote history data and the normal price data
-    # TODO - update the Ajax logic to update annual return numbers
     estimated_return = \
         get_estimated_return(quote_history_data=quote_history_data, 
                              normal_price_data=normal_price_data, 

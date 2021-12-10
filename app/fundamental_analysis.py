@@ -262,6 +262,6 @@ def get_estimated_return(quote_history_data, normal_price_data,
     if num_of_years > 0:
         price_return = \
             (latest_normal_price / latest_quote_price)**(1/num_of_years) - 1
-        return "{:.2f}%".format((price_return + dividend_yield) * 100)
+        return float("{:.2f}".format((price_return + dividend_yield) * 100))
     else:
-        return 'N/A'
+        return None

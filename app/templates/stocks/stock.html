@@ -24,6 +24,7 @@
     <script>
         function set_estimated_return(r) {
             $('#estimated_return').text(r);
+            $('#estimated_return').css('color', r>=15 ? 'green' : r>=0 ? 'black' : 'red')
         };
 
         function plot_valuation(symbol, num_of_years, metric, dest_elem,
@@ -236,13 +237,23 @@
                             {# add another row for estimated annual returns #}
                             <tr>
                                 <td>Estimated Annual Return</td>
-                                <td id="estimated_return" style="font-weight: bold;">
-                                    {% if estimated_return %}
-                                        {{ estimated_return }}
-                                    {% else %}
+                                {% if estimated_return %}
+                                    <td>
+                                        <span id="estimated_return" 
+                                            style="font-weight: bold; 
+                                                   color: {% if estimated_return>=15 %}green
+                                                          {% elif estimated_return>=0 %}black
+                                                          {% else %}red
+                                                          {% endif %};">
+                                            {{ estimated_return }}
+                                        </span>%
+                                    </td>
+                                {% else %}
+                                    <td id="estimated_return" 
+                                        style="font-weight: bold;">
                                         N/A
-                                    {% endif %}
-                                </td>
+                                    </td>
+                                {% endif %}
                             </tr>
                         </tbody>
                     </table>

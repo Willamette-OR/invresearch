@@ -1,0 +1,21 @@
+<table class="table table-hover">
+    <thead>
+        <tr>
+            <td style="border: 0px;">
+                <h4 style="font-weight: bold;">{{ table_header }}</h4>
+            </td>
+            <td style="border: 0px;"></td>
+        </tr>
+    </thead>
+    <tbody>
+        {% set indicators = fundamental_indicators[table_header] %}
+        {% for indicator in indicators %}
+            <tr>
+                <td>{{ indicator }}</td>
+                <td style="font-weight: bold;">
+                    {{ indicators[indicator] }}
+                </td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>

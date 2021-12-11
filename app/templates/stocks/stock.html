@@ -260,75 +260,20 @@
                 </div>
             </div>
         </div>
+
+        {# The Fundamentals Tab #}
         <div id="fundamentals" class="tab-pane fade">
-            {# Indicators for financial strength #}
             <div class="col-sm-4">
-                <table class="table table-hover">
-                    <thead>
-                        <tr>
-                            <td style="border: 0px;">
-                                <h4 style="font-weight: bold;">Financial Strength</h4>
-                            </td>
-                            <td style="border: 0px;"></td>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for indicator in fundamental_indicators['financial strength'] %}
-                            <tr>
-                                <td>{{ indicator }}</td>
-                                <td style="font-weight: bold;">
-                                    {{ fundamental_indicators['financial strength'][indicator] }}
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                {% set table_header = "Financial Strength" %}
+                {% include 'stocks/_indicators.html' %}
             </div>
-            {# Indicators for growth rates #}
             <div class="col-sm-4">
-                <table class="table table-hover">
-                    <thead>
-                        <tr>
-                            <td style="border: 0px;">
-                                <h4 style="font-weight: bold;">Business Growth</h4>
-                            </td>
-                            <td style="border: 0px;"></td>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for indicator in fundamental_indicators['growth'] %}
-                            <tr>
-                                <td>{{ indicator }}</td>
-                                <td style="font-weight: bold;">
-                                    {{ fundamental_indicators['growth'][indicator] }}
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                {% set table_header = "Business Growth" %}
+                {% include 'stocks/_indicators.html' %}
             </div>
-            {# Indicators for profitability #}
             <div class="col-sm-4">
-                <table class="table table-hover">
-                    <thead>
-                        <tr>
-                            <td style="border: 0px;">
-                                <h4 style="font-weight: bold;">Profitability</h4> 
-                            </td>
-                            <td style="border: 0px;"></td>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for indicator in fundamental_indicators['profitability'] %}
-                            <tr>
-                                <td>{{ indicator }}</td>
-                                <td style="font-weight: bold;">
-                                    {{ fundamental_indicators['profitability'][indicator] }}
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                {% set table_header = "Profitability" %}
+                {% include 'stocks/_indicators.html' %}
             </div>
         </div>
     </div>

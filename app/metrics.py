@@ -9,7 +9,8 @@ class Metric(object):
     """
 
     def __init__(self, name, timestamps, values, start_date, 
-                 input_timestamps_format='%Y-%m', convert_to_numeric=True):
+                 input_timestamps_format='%Y-%m', convert_to_numeric=True,
+                 str_defaulted_to=0):
         """
         Constructor.
         
@@ -29,6 +30,9 @@ class Metric(object):
             - "convert_to_numeric": default to be True; if True the method 
                                     will attempt to convert all input values 
                                     to float values
+            - 'str_defaulted_to': the default value to default an input string 
+                                  value to, when trying to convert values in 
+                                  the input 'values' to numeric values.
         """
 
         # raise an error if the length of input timestamps is different from 
@@ -42,13 +46,12 @@ class Metric(object):
         # TODO - occasionally a value could be None if the input values are 
         # from analyst estimates (Guru). Defaulting those values to 0 for now.
         if convert_to_numeric:
-            #_values = [float(value) if value else 0 for value in values]
             _values = []
             for value in values:
                 try:
                     _values.append(float(value))
                 except:
-                    _values.append(0)
+                    _values.append(str_defaulted_to)
         else:
             _values = values
 

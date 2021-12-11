@@ -92,8 +92,9 @@ def get_fundamental_indicators(financials_history,
     # save the TTM value
     _name = 'Debt-to-Equity'
     _metric = get_metric(name=_name, financials_history=financials_history,
-                         start_date=start_date, convert_to_numeric=False)
-    data_indicators['financial strength'][_name] = _metric.TTM_value
+                         start_date=start_date)
+    data_indicators['financial strength'][_name] = \
+        "{:.2f}".format(_metric.TTM_value)
 
     # Debt-to-EBITDA
     # save the TTM value

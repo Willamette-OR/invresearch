@@ -79,50 +79,55 @@ def get_fundamental_indicators(financials_history,
         get_metric(name='Long-Term Debt & Capital Lease Obligation',
                    financials_history=financials_history,
                    start_date=start_date)
-    _metric = (short_term_debt + long_term_debt) / cash
+    debt_to_cash = (short_term_debt + long_term_debt) / cash
     data_indicators[financial_strength_name][_name] = \
-        float("{:.2f}".format(_metric.TTM_value))
+        float("{:.2f}".format(debt_to_cash.TTM_value))
 
     # Equity-to-Asset
     # save the TTM value
     _name = 'Equity-to-Asset'
-    _metric = get_metric(name=_name, financials_history=financials_history, 
-                         start_date=start_date)
+    equity_to_asset = get_metric(name=_name, 
+                                 financials_history=financials_history, 
+                                 start_date=start_date)
     data_indicators[financial_strength_name][_name] = \
-        float("{:.2f}".format(_metric.TTM_value))
+        float("{:.2f}".format(equity_to_asset.TTM_value))
 
     # Debt-to-Equity
     # save the TTM value
     _name = 'Debt-to-Equity'
-    _metric = get_metric(name=_name, financials_history=financials_history,
-                         start_date=start_date)
+    debt_to_equity = get_metric(name=_name, 
+                                financials_history=financials_history,
+                                start_date=start_date)
     data_indicators[financial_strength_name][_name] = \
-        "{:.2f}".format(_metric.TTM_value)
+        float("{:.2f}".format(debt_to_equity.TTM_value))
 
     # Debt-to-EBITDA
     # save the TTM value
     _name = 'Debt-to-EBITDA'
     ebitda = get_metric(name='EBITDA', financials_history=financials_history, 
                         start_date=start_date)
-    _metric = (short_term_debt + long_term_debt) / ebitda
+    debt_to_ebitda = (short_term_debt + long_term_debt) / ebitda
     data_indicators[financial_strength_name][_name] = \
-        float("{:.2f}".format(_metric.TTM_value))
+        float("{:.2f}".format(debt_to_ebitda.TTM_value))
 
     # Interest Coverage
     # save the TTM value
     _name = 'Interest Coverage'
-    _metric = get_metric(name=_name, financials_history=financials_history,
-                         start_date=start_date, convert_to_numeric=False)
-    data_indicators[financial_strength_name][_name] = _metric.TTM_value \
-        if _metric.TTM_value != '0' else 'No Debt'
+    interest_coverage = get_metric(name=_name, 
+                                   financials_history=financials_history,
+                                   start_date=start_date)
+    data_indicators[financial_strength_name][_name] = \
+        float("{:.2f}".format(interest_coverage.TTM_value)) \
+            if interest_coverage.TTM_value != 0 else 'N/A'
 
     # Altman Z-Score
     # save the TTM value
     _name = 'Altman Z-Score'
-    _metric = get_metric(name=_name, financials_history=financials_history,
-                         start_date=start_date)
+    altman_z_score = get_metric(name=_name, 
+                                financials_history=financials_history,
+                                start_date=start_date)
     data_indicators[financial_strength_name][_name] = \
-        float("{:.2f}".format(_metric.TTM_value))
+        float("{:.2f}".format(altman_z_score.TTM_value))
 
     ############
     #  Growth  #
@@ -134,10 +139,10 @@ def get_fundamental_indicators(financials_history,
     revenue = get_metric(name='Revenue', financials_history=financials_history, 
                          start_date=start_date)
     data_indicators[growth_name]['3-Year Revenue Growth Rate'] = \
-        "{:.2f}%".format(revenue.growth_rate(num_of_years=3) * 100) \
+        float("{:.2f}".format(revenue.growth_rate(num_of_years=3) * 100)) \
             if revenue.growth_rate(num_of_years=3) else 'N/A'
     data_indicators[growth_name]['5-Year Revenue Growth Rate'] = \
-        "{:.2f}%".format(revenue.growth_rate(num_of_years=5) * 100) \
+        float("{:.2f}".format(revenue.growth_rate(num_of_years=5) * 100)) \
             if revenue.growth_rate(num_of_years=5) else 'N/A'
 
     # 3-Year & 5-Year Operating Income Growth Rate
@@ -146,21 +151,23 @@ def get_fundamental_indicators(financials_history,
                                   financials_history=financials_history, 
                                   start_date=start_date)
     data_indicators[growth_name]['3-Year Operating Income Growth Rate'] = \
-        "{:.2f}%".format(operating_income.growth_rate(num_of_years=3) * 100) \
-            if operating_income.growth_rate(num_of_years=3) else 'N/A'
+        float("{:.2f}".format(
+            operating_income.growth_rate(num_of_years=3) * 100)) \
+                if operating_income.growth_rate(num_of_years=3) else 'N/A'
     data_indicators[growth_name]['5-Year Operating Income Growth Rate'] = \
-        "{:.2f}%".format(operating_income.growth_rate(num_of_years=5) * 100) \
-            if operating_income.growth_rate(num_of_years=5) else 'N/A'
+        float("{:.2f}".format(
+            operating_income.growth_rate(num_of_years=5) * 100)) \
+                if operating_income.growth_rate(num_of_years=5) else 'N/A'
 
     # 3-Year & 5-Year Net Income Growth Rate 
     _name = 'Net Income'
     net_income = get_metric(name=_name, financials_history=financials_history, 
                             start_date=start_date)
     data_indicators[growth_name]['3-Year Net Income Growth Rate'] = \
-        "{:.2f}%".format(net_income.growth_rate(num_of_years=3) * 100) \
+        float("{:.2f}".format(net_income.growth_rate(num_of_years=3) * 100)) \
             if net_income.growth_rate(num_of_years=3) else "N/A"
     data_indicators[growth_name]['5-Year Net Income Growth Rate'] = \
-        "{:.2f}%".format(net_income.growth_rate(num_of_years=5) * 100) \
+        float("{:.2f}".format(net_income.growth_rate(num_of_years=5) * 100)) \
             if net_income.growth_rate(num_of_years=5) else "N/A"
 
     # 3-Year & 5-Year Operating Cash Flow Growth Rate
@@ -169,11 +176,13 @@ def get_fundamental_indicators(financials_history,
                                     financials_history=financials_history, 
                                     start_date=start_date)
     data_indicators[growth_name]['3-Year Operating Cash Flow Growth Rate'] = \
-        "{:.2f}%".format(operating_cashflow.growth_rate(num_of_years=3) * 100) \
-            if operating_cashflow.growth_rate(num_of_years=3) else "N/A"
+        float("{:.2f}".format(
+            operating_cashflow.growth_rate(num_of_years=3) * 100)) \
+                if operating_cashflow.growth_rate(num_of_years=3) else "N/A"
     data_indicators[growth_name]['5-Year Operating Cash Flow Growth Rate'] = \
-        "{:.2f}%".format(operating_cashflow.growth_rate(num_of_years=5) * 100) \
-            if operating_cashflow.growth_rate(num_of_years=5) else "N/A"
+        float("{:.2f}".format(
+            operating_cashflow.growth_rate(num_of_years=5) * 100)) \
+                if operating_cashflow.growth_rate(num_of_years=5) else "N/A"
 
     #################
     # Profitability #
@@ -187,7 +196,7 @@ def get_fundamental_indicators(financials_history,
                               financials_history=financials_history, 
                               start_date=start_date)
     data_indicators[profitability_name][_name] = \
-        "{:.2f}%".format(gross_margin.TTM_value)
+        float("{:.2f}".format(gross_margin.TTM_value))
 
     # Operating Margin
     _name = 'Operating Margin %'
@@ -195,7 +204,7 @@ def get_fundamental_indicators(financials_history,
                                   financials_history=financials_history, 
                                   start_date=start_date)
     data_indicators[profitability_name][_name] = \
-        "{:.2f}%".format(operating_margin.TTM_value)
+        float("{:.2f}".format(operating_margin.TTM_value))
 
     # Net Margin
     _name = 'Net Margin %'
@@ -203,20 +212,21 @@ def get_fundamental_indicators(financials_history,
                             financials_history=financials_history, 
                             start_date=start_date)
     data_indicators[profitability_name][_name] = \
-        "{:.2f}%".format(net_margin.TTM_value)
+        float("{:.2f}".format(net_margin.TTM_value))
     
     # FCF Margin
     _name = 'FCF Margin %'
     fcf_margin = get_metric(name=_name, financials_history=financials_history, 
                             start_date=start_date)
     data_indicators[profitability_name][_name] = \
-        "{:.2f}%".format(fcf_margin.TTM_value)
+        float("{:.2f}".format(fcf_margin.TTM_value))
 
     # ROE
     _name = 'ROE %'
     roe = get_metric(name=_name, financials_history=financials_history, 
                      start_date=start_date)
-    data_indicators[profitability_name][_name] = "{:.2f}%".format(roe.TTM_value)
+    data_indicators[profitability_name][_name] = \
+        float("{:.2f}".format(roe.TTM_value))
 
     # return the constructed dictionary
     return data_indicators

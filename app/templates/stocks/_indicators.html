@@ -12,8 +12,16 @@
         {% for indicator in indicators %}
             <tr>
                 <td>{{ indicator }}</td>
-                <td style="font-weight: bold;">
-                    {{ indicators[indicator] }}
+                {% set value = indicators[indicator] %}
+                <td style="font-weight: bold;
+                           color: {% if value in ('N/A', 'No Debt') %}black
+                                  {% elif value < 0 %}red
+                                  {% else %}black
+                                  {% endif %};">
+                    {{ value }}
+                    {% if table_header in ('Business Growth', 'Profitability') and value not in ('N/A', 'No Debt') %}
+                        %
+                    {% endif %}
                 </td>
             </tr>
         {% endfor %}

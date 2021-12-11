@@ -3,6 +3,57 @@ from datetime import datetime
 from sklearn.linear_model import LinearRegression
 
 
+def get_growth_rate(x, values_in_range, num_of_years, log_scale):
+    """
+    """
+
+    # only compute the growth rate if the number of values is 
+    # sufficient;
+    # return None otherwise
+    if len(values_in_range) == (num_of_years + 1):
+
+        # run the model on the log scale if specified
+        if log_scale:
+
+            # run the model when all values within the given timewindow 
+            # are positive
+            if all(values_in_range > 0):
+                y = np.log(values_in_range)
+
+                # run linear regression on the log scale
+                model = LinearRegression().fit(x, y)
+
+                # return the growth rate based on the log scale linear 
+                # model
+                return np.exp(model.coef_)[0] - 1
+
+            # return the growth rate based on the total growth 
+            # directly, if there are non-positive values
+            elif values_in_range[-1] > 0 and \
+                values_in_range[-(num_of_years + 1)] > 0:
+
+                # calculate the total growth for the given time window
+                total_growth = \
+                    values_in_range[-1] / values_in_range[-(num_of_years + 1)]
+                return total_growth**(1 / num_of_years) - 1
+
+            # return None otherwise
+            else:
+                return None
+        
+        # run the model on the linear scale
+        else:
+            y = values_in_range
+            model = LinearRegression().fit(x, y)
+
+            # return the model coefficiently directly 
+            return model.coef_
+
+    # return None if the number of values is not sufficient
+    else:
+        return None
+
+
 class Metric(object):
     """
     This class implements metrics from financial reports.
@@ -123,7 +174,7 @@ class Metric(object):
             
             return division
 
-    def growth_rate(self, num_of_years=3):
+    def growth_rate(self, num_of_years=3, log_scale=True):
         """
         This method calculates the latest annual growth rate 'G' of the metric, 
         given a specific number of years. 
@@ -135,31 +186,20 @@ class Metric(object):
             'x': # years since year 0 for year n
             'y': log(the metri value for year n),
 
-        where G = 10^A - 1.
+        where G = exp(A) - 1.
         """
 
-        try:
-            # prep input data, and y will be the natural logs of metric values
-            x = np.array(range(num_of_years + 1)).reshape((-1, 1))
-            y = np.log(self.values[-(num_of_years + 1):])
+        # prep x for the input data
+        x = np.array(range(num_of_years + 1)).reshape((-1, 1))
 
-            # run linear regression on the log scale
-            model = LinearRegression().fit(x, y)
+        # get all values within range
+        values_in_range = np.array(self.values[-(num_of_years + 1):])
 
-            # get the growth rate based on the log scale linear model
-            return np.exp(model.coef_)[0] - 1
-        except:
-            # if a log scale linear regression errors out, use a less ideal 
-            # formula to compute the CAGR
-            if len(self.values) < num_of_years + 1:
-                return None
-            else:
-                total_growth = \
-                    self.values[-1] / self.values[-(num_of_years + 1)]
-                if total_growth > 0:
-                    return total_growth**(1 / num_of_years) - 1
-                else:
-                    return None
+        # get the growth rate
+        rate = get_growth_rate(x=x, values_in_range=values_in_range, 
+                               num_of_years=num_of_years, log_scale=log_scale)
+
+        return rate
 
     def percentile_rank(self, target_value, num_of_years=10, 
                         disregarded_values=[0, np.nan]):

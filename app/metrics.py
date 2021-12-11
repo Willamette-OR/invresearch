@@ -159,7 +159,28 @@ class Metric(object):
                 if total_growth > 0:
                     return total_growth**(1 / num_of_years) - 1
                 else:
-                    return None                
+                    return None
+
+    def percentile_rank(self, target_value, num_of_years=10, 
+                        disregarded_values=[0, np.nan]):
+        """
+        This method calculates and returns the percentile rank of the target 
+        value during the pre-specified time window. 
+        """
+
+        # calculate the start date of the time window to be considered
+        latest_reported_year = self.timestamps[-1].year
+        start_date = datetime((latest_reported_year - num_of_years + 1), 1, 1)
+
+        # get all metric values within the specified time window, except 
+        # pre-specified values that need to be dropped
+        values = np.array([self.data[timestamp] for timestamp in self.data 
+                           if timestamp > start_date and 
+                              self.data[timestamp] not in disregarded_values])
+        
+        # return the percentile rank of the target value, given the sequence of 
+        # all qualified values.
+        return 100 * (target_value > values).sum() / len(values)
 
 
 class TotalMetric(Metric):

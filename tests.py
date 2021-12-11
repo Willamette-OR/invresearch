@@ -232,6 +232,8 @@ class UserTestCase(unittest.TestCase):
         self.assertEqual(revenue.TTM_value, 350)
         self.assertEqual(revenue.data, {datetime(2019, 1, 1): 200,
                                         datetime(2020, 1, 1): 300})
+        self.assertEqual(revenue.percentile_rank(150), 0)
+        self.assertEqual(revenue.percentile_rank(250), 50)
         
         # test operator overloading
         operating_income = Metric(name='operating income', 

@@ -47,7 +47,7 @@ def get_growth_rate(x, values_in_range, num_of_years, log_scale):
             model = LinearRegression().fit(x, y)
 
             # return the model coefficiently directly 
-            return model.coef_
+            return model.coef_[0]
 
     # return None if the number of values is not sufficient
     else:
@@ -221,6 +221,70 @@ class Metric(object):
         # return the percentile rank of the target value, given the sequence of 
         # all qualified values.
         return 100 * (target_value > values).sum() / len(values)
+
+    def rating(self, benchmark_value=None, trend_interval=3, reverse=False, 
+               latest='TTM', debug=False):
+        """
+        This helper function calculates the rating for the given metric, based 
+        on a benchmark value if pre-specified, whether the metric has been 
+        trending better or worse recently, etc.
+
+        Inputs:
+            'benchmark_value': a numeric value, defaulted to None. For example, 
+                               it can be the industrial or S&P average/median 
+                               value for the same metric.
+            'trend_interval': a numeric value, defaulted to 3 (years). It's the 
+                              time window used to calculate the trend of the 
+                              metric values.
+            'reverse': a boolean value, defaulted to False. If True, higher 
+                       metric values indicate "better". 
+            'latest': a string value, defaulted to 'TTM'. If 'TTM', the TTM 
+                      value of the metric will be used to calculate the 
+                      percentile rank. Otherwise, the latest value in the 
+                      values sequence of the metric will be used.
+        """
+
+        # get the percentile rank based rating of the latest value, a value 
+        # between 0 and 1
+        if latest == 'TTM':
+            latest_value = self.TTM_value
+        else:
+            latest_value = self.values[-1]
+        percentile_rank_pct = \
+            self.percentile_rank(target_value=latest_value) / 100
+        rating_per_percentile_rank = \
+            percentile_rank_pct if not reverse else (1 - percentile_rank_pct)
+
+        # get the trend of recent values and the related rating, either 0 or 1
+        trend_values = \
+            self.growth_rate(num_of_years=trend_interval, log_scale=False) > 0
+        if not trend_values and reverse:
+            rating_per_trend_values = 1
+        else:
+            rating_per_trend_values = trend_values * (not reverse)
+
+        # get the benchmark value based rating, a value between 0 and 1
+        if benchmark_value:
+            ratio_vs_benchmark = latest_value / benchmark_value
+            if (ratio_vs_benchmark <= 1) and reverse:
+                rating_per_benchmark_value = 1
+            else:
+                rating_per_benchmark_value = (ratio_vs_benchmark > 1) * \
+                    (not reverse)
+        else:
+            rating_per_benchmark_value = 0
+
+        # calculate and return the weighted average rating
+        average_rating = ((1/3) * rating_per_percentile_rank + \
+                          (1/3) * rating_per_trend_values + \
+                          (1/3) * rating_per_benchmark_value) / \
+                          ((2/3) + (1/3)*(benchmark_value is not None))
+
+        if debug:
+            return average_rating, rating_per_percentile_rank, \
+                   rating_per_trend_values, rating_per_benchmark_value
+        else:
+            return average_rating
 
 
 class TotalMetric(Metric):

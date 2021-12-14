@@ -6,13 +6,18 @@
             </td>
             <td style="border: 0px;"></td>
         </tr>
+        <tr>
+            <td></td>
+            <td>Current</td>
+            <td>Rating</td>
+        </tr>
     </thead>
     <tbody>
         {% set indicators = fundamental_indicators[table_header] %}
         {% for indicator in indicators %}
             <tr>
                 <td>{{ indicator }}</td>
-                {% set value = indicators[indicator] %}
+                {% set value = indicators[indicator]['Current'] %}
                 <td style="font-weight: bold;
                            color: {% if value in ('N/A', 'No Debt') %}black
                                   {% elif value < 0 %}red
@@ -23,6 +28,7 @@
                         %
                     {% endif %}
                 </td>
+                <td>{{ indicators[indicator]['Rating'] }}%</td>
             </tr>
         {% endfor %}
     </tbody>

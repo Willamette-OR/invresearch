@@ -220,7 +220,10 @@ class Metric(object):
         
         # return the percentile rank of the target value, given the sequence of 
         # all qualified values.
-        return 100 * (target_value > values).sum() / len(values)
+        # return 50 if 'values' is empty
+        rank = 100 * (target_value > values).sum() / len(values) \
+            if len(values) > 0 else 50
+        return rank 
 
     def rating(self, benchmark_value=None, trend_interval=3, reverse=False, 
                latest='TTM', debug=False):

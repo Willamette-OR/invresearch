@@ -23,6 +23,11 @@ section_lookup = {
 }
 
 
+benchmark_ratios = {
+    'Debt-to-Equity': 1.5
+}
+
+
 def get_metric(name, financials_history, start_date, convert_to_numeric=True):
     """
     This helper function extracts a metric's data from the financials history 
@@ -80,8 +85,14 @@ def get_fundamental_indicators(financials_history,
                    financials_history=financials_history,
                    start_date=start_date)
     debt_to_cash = (short_term_debt + long_term_debt) / cash
+    
     data_indicators[financial_strength_name][_name] = \
-        float("{:.2f}".format(debt_to_cash.TTM_value))
+        {
+            "Current": float("{:.2f}".format(debt_to_cash.TTM_value)),
+            "Rating": float("{:.0f}".format(
+                debt_to_cash.rating(benchmark_value=None, reverse=True) * 100))
+        }
+        
 
     # Equity-to-Asset
     # save the TTM value
@@ -90,8 +101,12 @@ def get_fundamental_indicators(financials_history,
                                  financials_history=financials_history, 
                                  start_date=start_date)
     data_indicators[financial_strength_name][_name] = \
-        float("{:.2f}".format(equity_to_asset.TTM_value))
-
+        {
+            'Current': float("{:.2f}".format(equity_to_asset.TTM_value)),
+            'Rating': float("{:.0f}".format(
+                equity_to_asset.rating(benchmark_value=None) * 100))
+        }
+        
     # Debt-to-Equity
     # save the TTM value
     _name = 'Debt-to-Equity'
@@ -99,7 +114,12 @@ def get_fundamental_indicators(financials_history,
                                 financials_history=financials_history,
                                 start_date=start_date)
     data_indicators[financial_strength_name][_name] = \
-        float("{:.2f}".format(debt_to_equity.TTM_value))
+        {
+            'Current': float("{:.2f}".format(debt_to_equity.TTM_value)),
+            'Rating': float("{:.0f}".format(debt_to_equity.rating(
+                benchmark_value=benchmark_ratios['Debt-to-Equity'], 
+                reverse=True) * 100))
+        }
 
     # Debt-to-EBITDA
     # save the TTM value
@@ -108,7 +128,12 @@ def get_fundamental_indicators(financials_history,
                         start_date=start_date)
     debt_to_ebitda = (short_term_debt + long_term_debt) / ebitda
     data_indicators[financial_strength_name][_name] = \
-        float("{:.2f}".format(debt_to_ebitda.TTM_value))
+        {
+            'Current': float("{:.2f}".format(debt_to_ebitda.TTM_value)),
+            'Rating': float("{:.0f}".format(
+                debt_to_ebitda.rating(benchmark_value=None, reverse=True) * 
+                100))
+        }
 
     # Interest Coverage
     # save the TTM value
@@ -117,8 +142,12 @@ def get_fundamental_indicators(financials_history,
                                    financials_history=financials_history,
                                    start_date=start_date)
     data_indicators[financial_strength_name][_name] = \
-        float("{:.2f}".format(interest_coverage.TTM_value)) \
-            if interest_coverage.TTM_value != 0 else 'N/A'
+        {
+            'Current': float("{:.2f}".format(interest_coverage.TTM_value)) \
+                if interest_coverage.TTM_value != 0 else 'N/A',
+            'Rating': float("{:.0f}".format(
+                interest_coverage.rating(benchmark_value=None) * 100))
+        }
 
     # Altman Z-Score
     # save the TTM value
@@ -127,7 +156,11 @@ def get_fundamental_indicators(financials_history,
                                 financials_history=financials_history,
                                 start_date=start_date)
     data_indicators[financial_strength_name][_name] = \
-        float("{:.2f}".format(altman_z_score.TTM_value))
+        {
+            'Current': float("{:.2f}".format(altman_z_score.TTM_value)),
+            'Rating': float("{:.0f}".format(
+                altman_z_score.rating(benchmark_value=None) * 100))
+        }
 
     ############
     #  Growth  #

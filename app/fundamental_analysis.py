@@ -171,51 +171,79 @@ def get_fundamental_indicators(financials_history,
     # 3-Year & 5-Year Revenue Growth Rate
     revenue = get_metric(name='Revenue', financials_history=financials_history, 
                          start_date=start_date)
-    data_indicators[growth_name]['3-Year Revenue Growth Rate'] = \
-        float("{:.2f}".format(revenue.growth_rate(num_of_years=3) * 100)) \
-            if revenue.growth_rate(num_of_years=3) else 'N/A'
-    data_indicators[growth_name]['5-Year Revenue Growth Rate'] = \
-        float("{:.2f}".format(revenue.growth_rate(num_of_years=5) * 100)) \
-            if revenue.growth_rate(num_of_years=5) else 'N/A'
-
+    data_indicators[growth_name]['3-Year Revenue Growth'] = \
+        {
+            'Current': float("{:.2f}".format(
+                revenue.growth_rate(num_of_years=3) * 100)) \
+                    if revenue.growth_rate(num_of_years=3) else 'N/A',
+            'Rating': '(N/A)'
+        }
+    data_indicators[growth_name]['5-Year Revenue Growth'] = \
+        {
+            'Current': float("{:.2f}".format(
+                revenue.growth_rate(num_of_years=5) * 100)) \
+                    if revenue.growth_rate(num_of_years=5) else 'N/A',
+            'Rating': '(N/A)'
+        }
+        
     # 3-Year & 5-Year Operating Income Growth Rate
     _name = 'Operating Income'
     operating_income = get_metric(name=_name, 
                                   financials_history=financials_history, 
                                   start_date=start_date)
-    data_indicators[growth_name]['3-Year Operating Income Growth Rate'] = \
-        float("{:.2f}".format(
-            operating_income.growth_rate(num_of_years=3) * 100)) \
-                if operating_income.growth_rate(num_of_years=3) else 'N/A'
-    data_indicators[growth_name]['5-Year Operating Income Growth Rate'] = \
-        float("{:.2f}".format(
-            operating_income.growth_rate(num_of_years=5) * 100)) \
-                if operating_income.growth_rate(num_of_years=5) else 'N/A'
-
+    data_indicators[growth_name]['3-Year Operating Income Growth'] = \
+        {
+            'Current': float("{:.2f}".format(
+                operating_income.growth_rate(num_of_years=3) * 100)) \
+                    if operating_income.growth_rate(num_of_years=3) else 'N/A',
+            'Rating': '(N/A)'
+        }
+    data_indicators[growth_name]['5-Year Operating Income Growth'] = \
+        {
+            'Current': float("{:.2f}".format(
+                operating_income.growth_rate(num_of_years=5) * 100)) \
+                    if operating_income.growth_rate(num_of_years=5) else 'N/A',
+            'Rating': '(N/A)'
+        }
+        
     # 3-Year & 5-Year Net Income Growth Rate 
     _name = 'Net Income'
     net_income = get_metric(name=_name, financials_history=financials_history, 
                             start_date=start_date)
-    data_indicators[growth_name]['3-Year Net Income Growth Rate'] = \
-        float("{:.2f}".format(net_income.growth_rate(num_of_years=3) * 100)) \
-            if net_income.growth_rate(num_of_years=3) else "N/A"
-    data_indicators[growth_name]['5-Year Net Income Growth Rate'] = \
-        float("{:.2f}".format(net_income.growth_rate(num_of_years=5) * 100)) \
-            if net_income.growth_rate(num_of_years=5) else "N/A"
-
+    data_indicators[growth_name]['3-Year Net Income Growth'] = \
+        {
+            'Current': float("{:.2f}".format(
+                net_income.growth_rate(num_of_years=3) * 100)) \
+                    if net_income.growth_rate(num_of_years=3) else "N/A",
+            'Rating': '(N/A)'
+        }
+    data_indicators[growth_name]['5-Year Net Income Growth'] = \
+        {
+            'Current': float("{:.2f}".format(
+                net_income.growth_rate(num_of_years=5) * 100)) \
+                    if net_income.growth_rate(num_of_years=5) else "N/A",
+            'Rating': '(N/A)'
+        }
+        
     # 3-Year & 5-Year Operating Cash Flow Growth Rate
     _name = 'Cash Flow from Operations'
     operating_cashflow = get_metric(name=_name, 
                                     financials_history=financials_history, 
                                     start_date=start_date)
-    data_indicators[growth_name]['3-Year Operating Cash Flow Growth Rate'] = \
-        float("{:.2f}".format(
-            operating_cashflow.growth_rate(num_of_years=3) * 100)) \
-                if operating_cashflow.growth_rate(num_of_years=3) else "N/A"
-    data_indicators[growth_name]['5-Year Operating Cash Flow Growth Rate'] = \
-        float("{:.2f}".format(
-            operating_cashflow.growth_rate(num_of_years=5) * 100)) \
-                if operating_cashflow.growth_rate(num_of_years=5) else "N/A"
+    data_indicators[growth_name]['3-Year Operating Cash Flow Growth'] = \
+        {
+            'Current': float("{:.2f}".format(
+                operating_cashflow.growth_rate(num_of_years=3) * 100)) \
+                if operating_cashflow.growth_rate(num_of_years=3) else "N/A",
+            'Rating': '(N/A)'
+        }
+    data_indicators[growth_name]['5-Year Operating Cash Flow Growth'] = \
+        {
+            'Current': float("{:.2f}".format(
+                operating_cashflow.growth_rate(num_of_years=5) * 100)) \
+                if operating_cashflow.growth_rate(num_of_years=5) else "N/A",
+            'Rating': '(N/A)'
+        }
 
     #################
     # Profitability #

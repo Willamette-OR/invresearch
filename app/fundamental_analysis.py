@@ -24,7 +24,12 @@ section_lookup = {
 
 
 benchmark_ratios = {
-    'Debt-to-Equity': 1.5
+    'Debt-to-Equity': 1.5,
+    'Gross Margin %': 38.32,
+    'Operating Margin %': 14.56,
+    'Net Margin %': 10.46,
+    'FCF Margin %': 18.75,
+    'ROE %': 16.35
 }
 
 
@@ -251,43 +256,45 @@ def get_fundamental_indicators(financials_history,
 
     data_indicators[profitability_name] = {}
 
-    # Gross Margin
-    _name = 'Gross Margin %'
-    gross_margin = get_metric(name=_name, 
-                              financials_history=financials_history, 
-                              start_date=start_date)
-    data_indicators[profitability_name][_name] = \
-        float("{:.2f}".format(gross_margin.TTM_value))
+    profitability_metrics_inputs = [
+        {
+            'name': 'Gross Margin %',
+            'reverse': False
+        },
+        {
+            'name': 'Operating Margin %',
+            'reverse': False
+        },
+        {
+            'name': 'Operating Margin %',
+            'reverse': False
+        },
+        {
+            'name': 'Net Margin %',
+            'reverse': False
+        },
+        {
+            'name': 'FCF Margin %',
+            'reverse': False
+        },
+        {
+            'name': 'ROE %',
+            'reverse': False
+        },
+    ]
 
-    # Operating Margin
-    _name = 'Operating Margin %'
-    operating_margin = get_metric(name=_name, 
-                                  financials_history=financials_history, 
-                                  start_date=start_date)
-    data_indicators[profitability_name][_name] = \
-        float("{:.2f}".format(operating_margin.TTM_value))
-
-    # Net Margin
-    _name = 'Net Margin %'
-    net_margin = get_metric(name=_name, 
+    for item in profitability_metrics_inputs:
+        name = item['name']
+        metric = get_metric(name=name, 
                             financials_history=financials_history, 
                             start_date=start_date)
-    data_indicators[profitability_name][_name] = \
-        float("{:.2f}".format(net_margin.TTM_value))
-    
-    # FCF Margin
-    _name = 'FCF Margin %'
-    fcf_margin = get_metric(name=_name, financials_history=financials_history, 
-                            start_date=start_date)
-    data_indicators[profitability_name][_name] = \
-        float("{:.2f}".format(fcf_margin.TTM_value))
-
-    # ROE
-    _name = 'ROE %'
-    roe = get_metric(name=_name, financials_history=financials_history, 
-                     start_date=start_date)
-    data_indicators[profitability_name][_name] = \
-        float("{:.2f}".format(roe.TTM_value))
+        data_indicators[profitability_name][name] = \
+            {
+                'Current': float("{:.2f}".format(metric.TTM_value)),
+                'Rating': int("{:.0f}".format(metric.rating(
+                    benchmark_value=benchmark_ratios[name], 
+                    reverse=item['reverse']) * 100))
+            }
 
     # return the constructed dictionary
     return data_indicators

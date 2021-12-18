@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask import current_app
 from flask_login import UserMixin
@@ -11,7 +11,9 @@ import redis
 from app import db, login 
 from app.search import query_index, add_to_index, remove_from_index
 from app.stocksdata import get_quote, get_quote_history, \
-                           get_financials_history, get_analyst_estimates
+                           get_financials_history, get_analyst_estimates, \
+                           get_quote_details
+from app.fundamental_analysis import get_fundamental_indicators
 
 
 class SearchableMixin(object):
@@ -115,6 +117,9 @@ class Stock(db.Model):
     last_analyst_estimates_update = db.Column(db.DateTime, index=True, 
                                               default=None)
     quote_history_payload = db.Column(db.Text)
+    quote_details_paylod = db.Column(db.Text)
+    last_quote_details_update = db.Column(db.DateTime, index=True, default=None)
+    dividend_yield = db.Column(db.Float, index=True)
 
     def __repr__(self):
         return "<Stock: {}>".format(self.symbol)
@@ -197,7 +202,8 @@ class Stock(db.Model):
         # creates/refreshes the quote history and save it 
         now = datetime.utcnow()
         if not self.last_quote_history_update or \
-            (now - self.last_quote_history_update).seconds > (delay * 3600):
+            (now - self.last_quote_history_update).total_seconds() > \
+                (delay * 3600):
 
             # download quote history from the web
             raw_data = get_quote_history(symbol=self.symbol, 
@@ -223,6 +229,47 @@ class Stock(db.Model):
         timestamp_end_date = datetime.strptime(end_date, '%m-%d-%Y')
         return {key: value for (key, value) in raw_data.items() \
                 if timestamp_start_date <= key <= timestamp_end_date}
+
+    def get_quote_details_data(self, delay_hours=24):
+        """
+        This method creates/refreshes a saved quote details payload if needed, 
+        and returns the data in a dictionary such as <'Beta': 1.0>
+
+        Inputs:
+            'delay_days': number of hours to wait before downloading new quote 
+                          details data from the web. 
+                          Defaulted to 24.
+        """
+
+        now = datetime.utcnow()
+        if not self.last_quote_details_update or \
+            (now - self.last_quote_details_update).total_seconds() >= \
+                delay_hours * 3600:
+            data, self.dividend_yield = get_quote_details(self.symbol)
+            self.quote_details_paylod = json.dumps(data)
+            self.last_quote_details_update = now
+            db.session.commit()
+
+        return json.loads(self.quote_details_paylod)
+
+    def get_fundamental_indicator_data(self, start_date='01-01-1900'):
+        """
+        This method gets/calculates fundamental indicators from the saved 
+        financials history payload, and returns them in a nested dictionary 
+        including different categories of indicators, such as 'Financial 
+        Strength', 'Growth', etc.
+
+        Inputs:
+            'start_date': a Python datetime object. 
+                          Only data of financials history after this date will 
+                          be used when deriving fundamental indicators.
+                          Defaulted to be 1/1/1900.
+        """
+        
+        return get_fundamental_indicators(
+            financials_history=self.get_financials_history_data(), 
+            start_date=datetime.strptime(start_date, '%m-%d-%Y')
+        )
 
 
 class User(UserMixin, db.Model):

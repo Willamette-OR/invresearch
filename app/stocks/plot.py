@@ -3,7 +3,7 @@ from bokeh.plotting import figure
 from bokeh.embed import components
 from bokeh.resources import CDN
 from bokeh.models import HoverTool, Band
-from app.stocks.metrics import Metric, TotalMetric
+from app.metrics import Metric, TotalMetric
 
 def example_plot():
     """

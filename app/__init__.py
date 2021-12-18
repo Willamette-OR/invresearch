@@ -71,7 +71,7 @@ def create_app(config=Config):
     # set up logging when the created app is not in debug or testing mode
     if not app.debug and not app.testing:
         # only enable error reports via email when MAIL_SERVER is configured.
-        if app.config['MAIL_SERVER']:
+        if app.config['MAIL_SERVER'] and app.config['EMAIL_LOGGING']:
             host = (app.config['MAIL_SERVER'], app.config['MAIL_PORT'])
             auth = None
             if app.config['MAIL_USERNAME'] or app.config['MAIL_PASSWORD']:

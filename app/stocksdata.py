@@ -1,5 +1,5 @@
 import requests
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask import current_app
 from yahoo_fin import stock_info
 
@@ -146,7 +146,9 @@ def get_analyst_estimates(symbol):
     return get_guru_data(symbol, data_type='analyst_estimate')
 
 
-def get_quote_history(symbol, start_date=None, end_date=None, interval='1mo', 
+def get_quote_history(symbol, start_date=None, 
+                      end_date=(datetime.utcnow()-timedelta(days=1)), 
+                      interval='1mo', 
                       header='close'):
     """
     This function pulls historical quote data, and returns the cleaned up data 
@@ -157,7 +159,9 @@ def get_quote_history(symbol, start_date=None, end_date=None, interval='1mo',
 
     Inputs:
         'start_date': '%m/%d/%Y'
-        'end_date': '%m/%d/%Y
+        'end_date': '%m/%d/%Y;
+                    Defaulted to be 1 day before utcnow to hack around a 
+                    duplication bug in the yahoo_fin library.
 
     Note:
         It currently uses the "yahoo_fin" library for scraping historical data 
@@ -180,3 +184,54 @@ def get_quote_history(symbol, start_date=None, end_date=None, interval='1mo',
 
     return data
 
+
+def get_quote_details(symbol):
+    """
+    This function pulls quote details from the web and returns the data in a 
+    dictionary, plus the numeric value of the dividend yield.
+
+    Inputs:
+        'symbol': the ticker symbol of stocks, e.g., 'AAPL', 'AMZN', etc. It is 
+                  not case sensitive.
+
+    Notes:
+        This function currently uses the "yahoo_fin" library for scraping 
+        historical data from Yahoo Finance.
+
+        For more details, check out the author's documentation here: 
+        https://theautomatic.net/yahoo_fin-documentation/#get_quote_table 
+    """
+
+    try:
+        # download data
+        data_downloaded = stock_info.get_quote_table(symbol)
+
+        # return the downloaded data if it's a dictionary, otherwise raise an
+        # exception
+        if isinstance(data_downloaded, dict):
+            # standardize the downloaded data - this is API specific
+            data = {}
+            data['Market Cap'] = data_downloaded['Market Cap']
+            data['Beta (5Y Monthly)'] = data_downloaded['Beta (5Y Monthly)']
+            data['52 Week Range'] = data_downloaded['52 Week Range']
+            data['Earnings Date'] = data_downloaded['Earnings Date']
+            data['Ex-Dividend Date'] = data_downloaded['Ex-Dividend Date']
+            data['Forward Dividend & Yield'] = \
+                data_downloaded['Forward Dividend & Yield']
+
+            # get the numeric value of the dividend yield
+            s = data_downloaded['Forward Dividend & Yield']
+            dividend_yield_str = s[(s.find('(') + 1):s.find('%')]
+            try:
+                dividend_yield = float(dividend_yield_str) / 100
+            except:
+                dividend_yield = 0
+
+            return data, dividend_yield
+        else:
+            raise TypeError("Invalid data type for quote details - only dict "
+                            "is accepted.")
+
+    except:
+        # raise a more informational exception
+        raise ConnectionAbortedError('Unable to download quote details data.')

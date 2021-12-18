@@ -27,3 +27,4 @@ class Config:
     FINNHUB_API_KEY = os.environ.get('FINNHUB_API_KEY')
     GURU_API_KEY = os.environ.get('GURU_API_KEY')
     STOCK_VALUATION_METRIC_DEFAULT = 'EBITDA'
+    EMAIL_LOGGING = False

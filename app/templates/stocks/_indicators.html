@@ -1,0 +1,35 @@
+<table class="table table-hover">
+    <thead>
+        <tr>
+            <td style="border: 0px;">
+                <h4 style="font-weight: bold;">{{ table_header }}</h4>
+            </td>
+            <td style="border: 0px;"></td>
+        </tr>
+        <tr>
+            <td></td>
+            <td>Current</td>
+            <td>Rating</td>
+        </tr>
+    </thead>
+    <tbody>
+        {% set indicators = fundamental_indicators[table_header] %}
+        {% for indicator in indicators %}
+            <tr>
+                <td>{{ indicator }}</td>
+                {% set value = indicators[indicator]['Current'] %}
+                <td style="font-weight: bold;
+                           color: {% if value in ('N/A', 'No Debt') %}black
+                                  {% elif value < 0 %}red
+                                  {% else %}black
+                                  {% endif %};">
+                    {{ value }}
+                    {% if table_header in ('Business Growth', 'Profitability') and value not in ('N/A', 'No Debt') %}
+                        %
+                    {% endif %}
+                </td>
+                <td>{{ indicators[indicator]['Rating'] }}%</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>

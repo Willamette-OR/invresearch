@@ -9,6 +9,7 @@ from app.models import Stock
 from app.main.forms import EmptyForm, SearchForm
 from app.stocksdata import get_company_profile, search_stocks_by_symbol, \
                            section_lookup_by_metric
+from app.fundamental_analysis import get_estimated_return
 from app.stocks import bp
 from app.stocks.plot import get_valplot_dates, get_durations, \
                             get_normal_price, stock_valuation_plot
@@ -63,7 +64,8 @@ def stock(symbol):
     # watching/unwatching stocks
     form = EmptyForm()
 
-    # get the quote history, the financials history, and the analyst estimates
+    # get the quote history, the financials history, the analyst estimates, and 
+    # quote details
     start_date_quote_history, start_date_financials_history, end_date = \
         get_valplot_dates()
     quote_history_data = \
@@ -71,6 +73,9 @@ def stock(symbol):
                                      end_date=end_date)
     financials_history = stock.get_financials_history_data()
     analyst_estimates = stock.get_analyst_estimates_data()
+    quote_details = stock.get_quote_details_data()
+    fundamental_indicators = stock.get_fundamental_indicator_data(
+        start_date=start_date_financials_history)
 
 
     #######################################
@@ -101,7 +106,10 @@ def stock(symbol):
     if not average_price_multiple:
         return render_template(
             'stocks/stock.html', title="Stock - {}".format(stock.symbol), 
-            stock=stock, quote=json.loads(stock.quote_payload), form=form)
+            stock=stock, quote=json.loads(stock.quote_payload), form=form, 
+            quote_details=quote_details, 
+            fundamental_indicators=fundamental_indicators
+        )
 
     # get the plot payload 
     plot = stock_valuation_plot(quote_history_data=quote_history_data,
@@ -109,6 +117,13 @@ def stock(symbol):
                                 average_price_multiple=average_price_multiple)
 
 
+    # add "estimated annual return" to the quote details dictionary, based on 
+    # the quote history data and the normal price data
+    estimated_return = \
+        get_estimated_return(quote_history_data=quote_history_data, 
+                             normal_price_data=normal_price_data, 
+                             dividend_yield=stock.dividend_yield)
+        
     ###################################
     # End of Valuation Plotting Setup #
     ###################################
@@ -118,7 +133,10 @@ def stock(symbol):
         'stocks/stock.html', title="Stock - {}".format(stock.symbol), 
         stock=stock, quote=json.loads(stock.quote_payload), form=form, 
         plot=plot, durations=durations, 
-        valuation_metric=_valuation_metric)
+        valuation_metric=_valuation_metric, quote_details=quote_details,
+        fundamental_indicators=fundamental_indicators,
+        estimated_return=estimated_return
+    )
 
 
 @bp.route('/watch/<symbol>', methods=['POST'])
@@ -365,6 +383,13 @@ def update_valuation_plot():
     plot = stock_valuation_plot(quote_history_data=quote_history_data,
                                 normal_price_data=normal_price_data,
                                 average_price_multiple=average_price_multiple)
+
+    # add to the paylod the updated estimated return, specific to the updated 
+    # valuation plot 
+    plot['estimated_return'] = \
+        get_estimated_return(quote_history_data=quote_history_data, 
+                             normal_price_data=normal_price_data, 
+                             dividend_yield=stock.dividend_yield)
 
     # return a json payload for Ajax requests
     return jsonify(plot)

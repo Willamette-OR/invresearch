@@ -106,7 +106,7 @@ _financial_strength_metrics_inputs = [
         'name': 'Debt-to-Equity',
         'reverse': True,
         'derive': None,
-        'benchmark': None
+        'benchmark': 0.09
     },
     {
         'name': 'Debt-to-EBITDA',
@@ -118,13 +118,13 @@ _financial_strength_metrics_inputs = [
         'name': 'Interest Coverage',
         'reverse': False,
         'derive': None,
-        'benchmark': None
+        'benchmark': 10.2
     },
     {
         'name': 'Altman Z-Score',
         'reverse': False,
         'derive': None,
-        'benchmark': None
+        'benchmark': 3.0
     }
 ]
 
@@ -186,7 +186,7 @@ _profitability_metrics_inputs = [
             'name': 'ROE %',
             'reverse': False,
             'derive': None,
-            'benchmark': 16.35
+            'benchmark': 19.6
         },
     ]
 

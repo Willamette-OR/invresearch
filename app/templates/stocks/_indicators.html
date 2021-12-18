@@ -8,8 +8,8 @@
         </tr>
         <tr>
             <td></td>
-            <td>Current</td>
-            <td>Rating</td>
+            <td style="text-align: right;">Current</td>
+            <td style="text-align: right;">Rating</td>
         </tr>
     </thead>
     <tbody>
@@ -19,6 +19,7 @@
                 <td>{{ indicator }}</td>
                 {% set value = indicators[indicator]['Current'] %}
                 <td style="font-weight: bold;
+                           text-align: right;
                            color: {% if value in ('N/A', 'No Debt') %}black
                                   {% elif value < 0 %}red
                                   {% else %}black
@@ -28,7 +29,9 @@
                         %
                     {% endif %}
                 </td>
-                <td>{{ indicators[indicator]['Rating'] }}%</td>
+                <td style="text-align: right;">
+                    {{ indicators[indicator]['Rating'] }}%
+                </td>
             </tr>
         {% endfor %}
     </tbody>

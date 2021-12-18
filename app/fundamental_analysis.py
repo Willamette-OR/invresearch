@@ -2,34 +2,6 @@ from datetime import datetime
 from app.metrics import Metric
 
 
-_profitability_metrics_inputs = [
-        {
-            'name': 'Gross Margin %',
-            'reverse': False
-        },
-        {
-            'name': 'Operating Margin %',
-            'reverse': False
-        },
-        {
-            'name': 'Operating Margin %',
-            'reverse': False
-        },
-        {
-            'name': 'Net Margin %',
-            'reverse': False
-        },
-        {
-            'name': 'FCF Margin %',
-            'reverse': False
-        },
-        {
-            'name': 'ROE %',
-            'reverse': False
-        },
-    ]
-
-
 section_lookup = {
     'Cash, Cash Equivalents, Marketable Securities': 'balance_sheet',
     'Short-Term Debt & Capital Lease Obligation': 'balance_sheet',
@@ -48,16 +20,6 @@ section_lookup = {
     'Net Margin %': 'common_size_ratios',
     'FCF Margin %': 'common_size_ratios',
     'ROE %': 'common_size_ratios'
-}
-
-
-benchmark_values = {
-    'Debt-to-Equity': 1.5,
-    'Gross Margin %': 38.32,
-    'Operating Margin %': 14.56,
-    'Net Margin %': 10.46,
-    'FCF Margin %': 18.75,
-    'ROE %': 16.35
 }
 
 
@@ -167,6 +129,68 @@ _financial_strength_metrics_inputs = [
 ]
 
 
+_growth_metrics_inputs = [
+    {
+        'name': 'Revenue',
+        'reverse': False,
+        'derive': None,
+        'benchmark': None
+    },
+    {
+        'name': 'Operating Income',
+        'reverse': False,
+        'derive': None,
+        'benchmark': None
+    },
+    {
+        'name': 'Net Income',
+        'reverse': False,
+        'derive': None,
+        'benchmark': None
+    },
+    {
+        'name': 'Cash Flow from Operations',
+        'reverse': False,
+        'derive': None,
+        'benchmark': None
+    },
+]
+
+
+_profitability_metrics_inputs = [
+        {
+            'name': 'Gross Margin %',
+            'reverse': False,
+            'derive': None,
+            'benchmark': 38.32
+        },
+        {
+            'name': 'Operating Margin %',
+            'reverse': False,
+            'derive': None,
+            'benchmark': 14.56
+        },
+        {
+            'name': 'Net Margin %',
+            'reverse': False,
+            'derive': None,
+            'benchmark': 10.46
+        },
+        {
+            'name': 'FCF Margin %',
+            'reverse': False,
+            'derive': None,
+            'benchmark': 18.75
+        },
+        {
+            'name': 'ROE %',
+            'reverse': False,
+            'derive': None,
+            'benchmark': 16.35
+        },
+    ]
+
+
 def get_fundamental_indicators(financials_history, 
                                start_date=datetime(1900, 1, 1),
                                financial_strength_name='Financial Strength',
@@ -199,7 +223,7 @@ def get_fundamental_indicators(financials_history,
                             derive=item['derive'])
         data_indicators[financial_strength_name][name] = \
             {
-                'Metric': metric,
+                'Object': metric,
                 'Current': float("{:.2f}".format(metric.TTM_value)),
                 'Rating': int("{:.0f}".format(
                     metric.rating(benchmark_value=item['benchmark'], 
@@ -211,83 +235,28 @@ def get_fundamental_indicators(financials_history,
     ############
 
     data_indicators[growth_name] = {}
-
-    # 3-Year & 5-Year Revenue Growth Rate
-    revenue = get_metric(name='Revenue', financials_history=financials_history, 
-                         start_date=start_date)
-    data_indicators[growth_name]['3-Year Revenue Growth'] = \
-        {
-            'Current': float("{:.2f}".format(
-                revenue.growth_rate(num_of_years=3) * 100)) \
-                    if revenue.growth_rate(num_of_years=3) else 'N/A',
-            'Rating': '(N/A)'
-        }
-    data_indicators[growth_name]['5-Year Revenue Growth'] = \
-        {
-            'Current': float("{:.2f}".format(
-                revenue.growth_rate(num_of_years=5) * 100)) \
-                    if revenue.growth_rate(num_of_years=5) else 'N/A',
-            'Rating': '(N/A)'
-        }
-        
-    # 3-Year & 5-Year Operating Income Growth Rate
-    _name = 'Operating Income'
-    operating_income = get_metric(name=_name, 
-                                  financials_history=financials_history, 
-                                  start_date=start_date)
-    data_indicators[growth_name]['3-Year Operating Income Growth'] = \
-        {
-            'Current': float("{:.2f}".format(
-                operating_income.growth_rate(num_of_years=3) * 100)) \
-                    if operating_income.growth_rate(num_of_years=3) else 'N/A',
-            'Rating': '(N/A)'
-        }
-    data_indicators[growth_name]['5-Year Operating Income Growth'] = \
-        {
-            'Current': float("{:.2f}".format(
-                operating_income.growth_rate(num_of_years=5) * 100)) \
-                    if operating_income.growth_rate(num_of_years=5) else 'N/A',
-            'Rating': '(N/A)'
-        }
-        
-    # 3-Year & 5-Year Net Income Growth Rate 
-    _name = 'Net Income'
-    net_income = get_metric(name=_name, financials_history=financials_history, 
-                            start_date=start_date)
-    data_indicators[growth_name]['3-Year Net Income Growth'] = \
-        {
-            'Current': float("{:.2f}".format(
-                net_income.growth_rate(num_of_years=3) * 100)) \
-                    if net_income.growth_rate(num_of_years=3) else "N/A",
-            'Rating': '(N/A)'
-        }
-    data_indicators[growth_name]['5-Year Net Income Growth'] = \
-        {
-            'Current': float("{:.2f}".format(
-                net_income.growth_rate(num_of_years=5) * 100)) \
-                    if net_income.growth_rate(num_of_years=5) else "N/A",
-            'Rating': '(N/A)'
-        }
-        
-    # 3-Year & 5-Year Operating Cash Flow Growth Rate
-    _name = 'Cash Flow from Operations'
-    operating_cashflow = get_metric(name=_name, 
-                                    financials_history=financials_history, 
-                                    start_date=start_date)
-    data_indicators[growth_name]['3-Year Operating Cash Flow Growth'] = \
-        {
-            'Current': float("{:.2f}".format(
-                operating_cashflow.growth_rate(num_of_years=3) * 100)) \
-                if operating_cashflow.growth_rate(num_of_years=3) else "N/A",
-            'Rating': '(N/A)'
-        }
-    data_indicators[growth_name]['5-Year Operating Cash Flow Growth'] = \
-        {
-            'Current': float("{:.2f}".format(
-                operating_cashflow.growth_rate(num_of_years=5) * 100)) \
-                if operating_cashflow.growth_rate(num_of_years=5) else "N/A",
-            'Rating': '(N/A)'
-        }
+    for item in _growth_metrics_inputs:
+        name = item['name']
+        metric = get_metric(name=name, 
+                            financials_history=financials_history, 
+                            start_date=start_date,
+                            derive=item['derive'])
+        data_indicators[growth_name]['3-Year '+ name + ' Growth'] = \
+            {
+                'Object': metric,
+                'Current': float("{:.1f}".format(
+                    metric.growth_rate(num_of_years=3) * 100)) \
+                        if metric.growth_rate(num_of_years=3) else 'N/A',
+                'Rating': '(N/A)'
+            }
+        data_indicators[growth_name]['5-Year ' + name + ' Growth'] = \
+            {
+                'Object': metric,
+                'Current': float("{:.1f}".format(
+                    metric.growth_rate(num_of_years=5) * 100)) \
+                        if metric.growth_rate(num_of_years=5) else 'N/A',
+                'Rating': '(N/A)'
+            }
 
     #################
     # Profitability #
@@ -298,12 +267,14 @@ def get_fundamental_indicators(financials_history,
         name = item['name']
         metric = get_metric(name=name, 
                             financials_history=financials_history, 
-                            start_date=start_date)
+                            start_date=start_date,
+                            derive=item['derive'])
         data_indicators[profitability_name][name] = \
             {
-                'Current': float("{:.2f}".format(metric.TTM_value)),
+                'Object': metric,
+                'Current': float("{:.1f}".format(metric.TTM_value)),
                 'Rating': int("{:.0f}".format(metric.rating(
-                    benchmark_value=benchmark_values[name], 
+                    benchmark_value=item['benchmark'], 
                     reverse=item['reverse']) * 100))
             }
 

@@ -2,6 +2,34 @@ from datetime import datetime
 from app.metrics import Metric
 
 
+_profitability_metrics_inputs = [
+        {
+            'name': 'Gross Margin %',
+            'reverse': False
+        },
+        {
+            'name': 'Operating Margin %',
+            'reverse': False
+        },
+        {
+            'name': 'Operating Margin %',
+            'reverse': False
+        },
+        {
+            'name': 'Net Margin %',
+            'reverse': False
+        },
+        {
+            'name': 'FCF Margin %',
+            'reverse': False
+        },
+        {
+            'name': 'ROE %',
+            'reverse': False
+        },
+    ]
+
+
 section_lookup = {
     'Cash, Cash Equivalents, Marketable Securities': 'balance_sheet',
     'Short-Term Debt & Capital Lease Obligation': 'balance_sheet',
@@ -33,21 +61,110 @@ benchmark_values = {
 }
 
 
-def get_metric(name, financials_history, start_date, convert_to_numeric=True):
+def derive_debt_to_cash(name, financials_history, start_date):
+    """
+    This function derives and returns the metric for Debt-to-Cash.
+    """
+
+    cash = get_metric(name='Cash, Cash Equivalents, Marketable Securities',
+                      financials_history=financials_history,
+                      start_date=start_date)
+    short_term_debt = \
+        get_metric(name='Short-Term Debt & Capital Lease Obligation',
+                   financials_history=financials_history,
+                   start_date=start_date)
+    long_term_debt = \
+        get_metric(name='Long-Term Debt & Capital Lease Obligation',
+                   financials_history=financials_history,
+                   start_date=start_date)
+    debt_to_cash = (short_term_debt + long_term_debt) / cash
+    debt_to_cash.name = name
+
+    return debt_to_cash
+
+
+def derive_debt_to_ebitda(name, financials_history, start_date):
+    """
+    This function derives and returns the metric for Debt-to-EBITDA.
+    """
+
+    short_term_debt = \
+        get_metric(name='Short-Term Debt & Capital Lease Obligation',
+                   financials_history=financials_history,
+                   start_date=start_date)
+    long_term_debt = \
+        get_metric(name='Long-Term Debt & Capital Lease Obligation',
+                   financials_history=financials_history,
+                   start_date=start_date)
+    ebitda = get_metric(name='EBITDA', financials_history=financials_history, 
+                        start_date=start_date)
+    debt_to_ebitda = (short_term_debt + long_term_debt) / ebitda
+    debt_to_ebitda.name = name
+
+    return debt_to_ebitda
+
+
+def get_metric(name, financials_history, start_date, convert_to_numeric=True, 
+               derive=None):
     """
     This helper function extracts a metric's data from the financials history 
     data, based on the given metric name and start date of the financials 
     history to be considered.
     """
 
-    return Metric(
-        name=name, 
-        timestamps=financials_history['financials']['annuals']['Fiscal Year'],
-        values=financials_history['financials']['annuals']\
-            [section_lookup[name]][name],
-        start_date=start_date,
-        convert_to_numeric=convert_to_numeric
+    # if 'derive' function is given, derive the metric first
+    if derive:
+        return derive(name, financials_history, start_date)
+    else:
+        return Metric(
+            name=name, 
+            timestamps=financials_history['financials']['annuals']\
+                ['Fiscal Year'],
+            values=financials_history['financials']['annuals']\
+                [section_lookup[name]][name],
+            start_date=start_date,
+            convert_to_numeric=convert_to_numeric
     )
+
+
+_financial_strength_metrics_inputs = [
+    {
+        'name': 'Debt-to-Cash',
+        'reverse': True,
+        'derive': derive_debt_to_cash,
+        'benchmark': None
+    },
+    {
+        'name': 'Equity-to-Asset',
+        'reverse': False,
+        'derive': None,
+        'benchmark': None
+    },
+    {
+        'name': 'Debt-to-Equity',
+        'reverse': True,
+        'derive': None,
+        'benchmark': None
+    },
+    {
+        'name': 'Debt-to-EBITDA',
+        'reverse': True,
+        'derive': derive_debt_to_ebitda,
+        'benchmark': None
+    },
+    {
+        'name': 'Interest Coverage',
+        'reverse': False,
+        'derive': None,
+        'benchmark': None
+    },
+    {
+        'name': 'Altman Z-Score',
+        'reverse': False,
+        'derive': None,
+        'benchmark': None
+    }
+]
 
 
 def get_fundamental_indicators(financials_history, 
@@ -74,98 +191,20 @@ def get_fundamental_indicators(financials_history,
     ######################
 
     data_indicators[financial_strength_name] = {}
-
-    # Debt-to-Cash
-    # save the TTM value
-    _name = 'Debt-to-Cash'
-    cash = get_metric(name='Cash, Cash Equivalents, Marketable Securities',
-                      financials_history=financials_history,
-                      start_date=start_date)
-    short_term_debt = \
-        get_metric(name='Short-Term Debt & Capital Lease Obligation',
-                   financials_history=financials_history,
-                   start_date=start_date)
-    long_term_debt = \
-        get_metric(name='Long-Term Debt & Capital Lease Obligation',
-                   financials_history=financials_history,
-                   start_date=start_date)
-    debt_to_cash = (short_term_debt + long_term_debt) / cash
-    
-    data_indicators[financial_strength_name][_name] = \
-        {
-            "Current": float("{:.2f}".format(debt_to_cash.TTM_value)),
-            "Rating": int("{:.0f}".format(
-                debt_to_cash.rating(benchmark_value=None, reverse=True) * 100))
-        }
-        
-
-    # Equity-to-Asset
-    # save the TTM value
-    _name = 'Equity-to-Asset'
-    equity_to_asset = get_metric(name=_name, 
-                                 financials_history=financials_history, 
-                                 start_date=start_date)
-    data_indicators[financial_strength_name][_name] = \
-        {
-            'Current': float("{:.2f}".format(equity_to_asset.TTM_value)),
-            'Rating': int("{:.0f}".format(
-                equity_to_asset.rating(benchmark_value=None) * 100))
-        }
-        
-    # Debt-to-Equity
-    # save the TTM value
-    _name = 'Debt-to-Equity'
-    debt_to_equity = get_metric(name=_name, 
-                                financials_history=financials_history,
-                                start_date=start_date)
-    data_indicators[financial_strength_name][_name] = \
-        {
-            'Current': float("{:.2f}".format(debt_to_equity.TTM_value)),
-            'Rating': int("{:.0f}".format(debt_to_equity.rating(
-                benchmark_value=benchmark_values['Debt-to-Equity'], 
-                reverse=True) * 100))
-        }
-
-    # Debt-to-EBITDA
-    # save the TTM value
-    _name = 'Debt-to-EBITDA'
-    ebitda = get_metric(name='EBITDA', financials_history=financials_history, 
-                        start_date=start_date)
-    debt_to_ebitda = (short_term_debt + long_term_debt) / ebitda
-    data_indicators[financial_strength_name][_name] = \
-        {
-            'Current': float("{:.2f}".format(debt_to_ebitda.TTM_value)),
-            'Rating': int("{:.0f}".format(
-                debt_to_ebitda.rating(benchmark_value=None, reverse=True) * 
-                100))
-        }
-
-    # Interest Coverage
-    # save the TTM value
-    _name = 'Interest Coverage'
-    interest_coverage = get_metric(name=_name, 
-                                   financials_history=financials_history,
-                                   start_date=start_date)
-    data_indicators[financial_strength_name][_name] = \
-        {
-            'Current': float("{:.2f}".format(interest_coverage.TTM_value)) \
-                if interest_coverage.TTM_value != 0 else 'N/A',
-            'Rating': int("{:.0f}".format(
-                interest_coverage.rating(benchmark_value=None) * 100))
-        }
-
-    # Altman Z-Score
-    # save the TTM value
-    _name = 'Altman Z-Score'
-    altman_z_score = get_metric(name=_name, 
-                                financials_history=financials_history,
-                                start_date=start_date)
-    data_indicators[financial_strength_name][_name] = \
-        {
-            'Current': float("{:.2f}".format(altman_z_score.TTM_value)),
-            'Rating': int("{:.0f}".format(
-                altman_z_score.rating(benchmark_value=None) * 100))
-        }
+    for item in _financial_strength_metrics_inputs:
+        name = item['name']
+        metric = get_metric(name=name, 
+                            financials_history=financials_history, 
+                            start_date=start_date,
+                            derive=item['derive'])
+        data_indicators[financial_strength_name][name] = \
+            {
+                'Metric': metric,
+                'Current': float("{:.2f}".format(metric.TTM_value)),
+                'Rating': int("{:.0f}".format(
+                    metric.rating(benchmark_value=item['benchmark'], 
+                                  reverse=item['reverse']) * 100))
+            }
 
     ############
     #  Growth  #
@@ -255,35 +294,7 @@ def get_fundamental_indicators(financials_history,
     #################
 
     data_indicators[profitability_name] = {}
-
-    profitability_metrics_inputs = [
-        {
-            'name': 'Gross Margin %',
-            'reverse': False
-        },
-        {
-            'name': 'Operating Margin %',
-            'reverse': False
-        },
-        {
-            'name': 'Operating Margin %',
-            'reverse': False
-        },
-        {
-            'name': 'Net Margin %',
-            'reverse': False
-        },
-        {
-            'name': 'FCF Margin %',
-            'reverse': False
-        },
-        {
-            'name': 'ROE %',
-            'reverse': False
-        },
-    ]
-
-    for item in profitability_metrics_inputs:
+    for item in _profitability_metrics_inputs:
         name = item['name']
         metric = get_metric(name=name, 
                             financials_history=financials_history, 

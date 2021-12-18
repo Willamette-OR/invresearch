@@ -23,7 +23,7 @@ section_lookup = {
 }
 
 
-benchmark_ratios = {
+benchmark_values = {
     'Debt-to-Equity': 1.5,
     'Gross Margin %': 38.32,
     'Operating Margin %': 14.56,
@@ -94,7 +94,7 @@ def get_fundamental_indicators(financials_history,
     data_indicators[financial_strength_name][_name] = \
         {
             "Current": float("{:.2f}".format(debt_to_cash.TTM_value)),
-            "Rating": float("{:.0f}".format(
+            "Rating": int("{:.0f}".format(
                 debt_to_cash.rating(benchmark_value=None, reverse=True) * 100))
         }
         
@@ -108,7 +108,7 @@ def get_fundamental_indicators(financials_history,
     data_indicators[financial_strength_name][_name] = \
         {
             'Current': float("{:.2f}".format(equity_to_asset.TTM_value)),
-            'Rating': float("{:.0f}".format(
+            'Rating': int("{:.0f}".format(
                 equity_to_asset.rating(benchmark_value=None) * 100))
         }
         
@@ -121,8 +121,8 @@ def get_fundamental_indicators(financials_history,
     data_indicators[financial_strength_name][_name] = \
         {
             'Current': float("{:.2f}".format(debt_to_equity.TTM_value)),
-            'Rating': float("{:.0f}".format(debt_to_equity.rating(
-                benchmark_value=benchmark_ratios['Debt-to-Equity'], 
+            'Rating': int("{:.0f}".format(debt_to_equity.rating(
+                benchmark_value=benchmark_values['Debt-to-Equity'], 
                 reverse=True) * 100))
         }
 
@@ -135,7 +135,7 @@ def get_fundamental_indicators(financials_history,
     data_indicators[financial_strength_name][_name] = \
         {
             'Current': float("{:.2f}".format(debt_to_ebitda.TTM_value)),
-            'Rating': float("{:.0f}".format(
+            'Rating': int("{:.0f}".format(
                 debt_to_ebitda.rating(benchmark_value=None, reverse=True) * 
                 100))
         }
@@ -150,7 +150,7 @@ def get_fundamental_indicators(financials_history,
         {
             'Current': float("{:.2f}".format(interest_coverage.TTM_value)) \
                 if interest_coverage.TTM_value != 0 else 'N/A',
-            'Rating': float("{:.0f}".format(
+            'Rating': int("{:.0f}".format(
                 interest_coverage.rating(benchmark_value=None) * 100))
         }
 
@@ -163,7 +163,7 @@ def get_fundamental_indicators(financials_history,
     data_indicators[financial_strength_name][_name] = \
         {
             'Current': float("{:.2f}".format(altman_z_score.TTM_value)),
-            'Rating': float("{:.0f}".format(
+            'Rating': int("{:.0f}".format(
                 altman_z_score.rating(benchmark_value=None) * 100))
         }
 
@@ -292,7 +292,7 @@ def get_fundamental_indicators(financials_history,
             {
                 'Current': float("{:.2f}".format(metric.TTM_value)),
                 'Rating': int("{:.0f}".format(metric.rating(
-                    benchmark_value=benchmark_ratios[name], 
+                    benchmark_value=benchmark_values[name], 
                     reverse=item['reverse']) * 100))
             }
 

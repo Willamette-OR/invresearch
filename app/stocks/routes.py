@@ -393,3 +393,20 @@ def update_valuation_plot():
 
     # return a json payload for Ajax requests
     return jsonify(plot)
+
+
+@bp.route('/stock/<symbol>/metric_profile/<metric_name>')
+@login_required
+def metric_profile(symbol, metric_name):
+    """
+    This view function handles requests to view the profile of a given 
+    financial metric for a pre-specified stock.
+    """
+
+    # retrieve the stock database object
+    stock = Stock.query.filter_by(symbol=symbol).first_or_404()
+
+    return render_template(
+        'stocks/metric.html', title=stock.symbol + metric_name, stock=stock, 
+        metric_name=metric_name
+    )

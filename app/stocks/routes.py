@@ -406,7 +406,24 @@ def metric_profile(symbol, metric_name):
     # retrieve the stock database object
     stock = Stock.query.filter_by(symbol=symbol).first_or_404()
 
+    # get all fundamental indicators filtered by dates, defaulted to 
+    # considering 20 years of financials history
+    _, start_date, _ = get_valplot_dates(num_of_years=20)
+    metrics_data = stock.get_fundamental_indicator_data(start_date=start_date)
+    
+    # get the pre-specified metric
+    try:
+        metric = [
+            metrics_data[section][name]['Object'] 
+            for section in metrics_data 
+            for name in metrics_data[section] 
+            if name==metric_name
+        ][0]
+    except IndexError:
+        flash('Unable to find metric: {}.'.format(metric_name))
+        return redirect(url_for('stocks.stock', symbol=stock.symbol))
+
     return render_template(
-        'stocks/metric.html', title=stock.symbol + metric_name, stock=stock, 
-        metric_name=metric_name
+        'stocks/metric.html', title=stock.symbol + metric.name, stock=stock, 
+        metric_name=metric.name
     )

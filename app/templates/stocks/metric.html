@@ -3,6 +3,10 @@
 
 {% block app_content %}
 <h2>
-    {{ stock.symbol }} {{ metric_name }} {{ 1.9 }}
+    <a href="{{ url_for('stocks.stock', symbol=stock.symbol) }}">
+        {{ stock.name }}
+    </a>
+     {{ metric.name }} : 
+    <span style="color: steelblue;">{{ "%.2f"|format(metric.TTM_value) }} (TTM)</span>
 </h2>
 {% endblock %}

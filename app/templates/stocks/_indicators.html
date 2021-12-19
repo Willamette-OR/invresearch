@@ -16,7 +16,11 @@
         {% set indicators = fundamental_indicators[table_header] %}
         {% for indicator in indicators %}
             <tr>
-                <td>{{ indicator }}</td>
+                <td>
+                    <a href="{{ url_for('stocks.metric_profile', symbol=stock.symbol, metric_name=indicator) }}">
+                        {{ indicator }}
+                    </a>
+                </td>
                 {% set value = indicators[indicator]['Current'] %}
                 <td style="font-weight: bold;
                            text-align: right;

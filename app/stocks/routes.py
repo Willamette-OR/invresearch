@@ -424,6 +424,6 @@ def metric_profile(symbol, metric_name):
         return redirect(url_for('stocks.stock', symbol=stock.symbol))
 
     return render_template(
-        'stocks/metric.html', title=stock.symbol + metric.name, stock=stock, 
-        metric_name=metric.name
+        'stocks/metric.html', title=stock.symbol + ': '+ metric.name, 
+        stock=stock, metric=metric
     )

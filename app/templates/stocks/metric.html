@@ -2,11 +2,18 @@
 
 
 {% block app_content %}
-<h2>
-    <a href="{{ url_for('stocks.stock', symbol=stock.symbol) }}">
-        {{ stock.name }}
-    </a>
-     {{ metric.name }} : 
-    <span style="color: steelblue;">{{ "%.2f"|format(metric.TTM_value) }} (TTM)</span>
-</h2>
+    <h2>
+        <a href="{{ url_for('stocks.stock', symbol=stock.symbol) }}">
+            {{ stock.name }}
+        </a>
+        {{ metric.name }} : 
+        <span style="color: steelblue;">{{ "%.2f"|format(metric.TTM_value) }} (TTM)</span>
+    </h2>
+    <hr>
+    {# render the plot #}
+    <span class="timeseries-plot">
+        {{ plot.resources|safe }}
+        {{ plot.script|safe }}
+        {{ plot.div|safe }}
+    </span>
 {% endblock %}

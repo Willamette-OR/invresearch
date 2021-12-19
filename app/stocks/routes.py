@@ -12,7 +12,8 @@ from app.stocksdata import get_company_profile, search_stocks_by_symbol, \
 from app.fundamental_analysis import get_estimated_return
 from app.stocks import bp
 from app.stocks.plot import get_valplot_dates, get_durations, \
-                            get_normal_price, stock_valuation_plot
+                            get_normal_price, stock_valuation_plot, \
+                            timeseries_plot
 
 
 @bp.before_request
@@ -423,7 +424,16 @@ def metric_profile(symbol, metric_name):
         flash('Unable to find metric: {}.'.format(metric_name))
         return redirect(url_for('stocks.stock', symbol=stock.symbol))
 
+    # prepare for plotting
+    plot_dict = dict(zip(metric.timestamps, metric.values))
+    plot, table_data = timeseries_plot(
+        name=metric.name, 
+        data_list=[plot_dict], 
+        symbols=[stock.symbol], 
+        start_date=datetime.strptime(start_date, '%m-%d-%Y')
+    )
+
     return render_template(
         'stocks/metric.html', title=stock.symbol + ': '+ metric.name, 
-        stock=stock, metric=metric
+        stock=stock, metric=metric, plot=plot, table_data=table_data
     )

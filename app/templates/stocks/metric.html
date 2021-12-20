@@ -7,13 +7,43 @@
             {{ stock.name }}
         </a>
         {{ metric.name }} : 
-        <span style="color: steelblue;">{{ "%.2f"|format(metric.TTM_value) }} (TTM)</span>
+        <span style="color: steelblue;">{{ "{:,.2f}".format(metric.TTM_value) }} (TTM)</span>
     </h2>
     <hr>
-    {# render the plot #}
+
+    {# render the time series plot #}
     <span class="timeseries-plot">
         {{ plot.resources|safe }}
         {{ plot.script|safe }}
         {{ plot.div|safe }}
     </span>
+
+    <br>
+
+    {# render the time series data table #}
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <td>Date</td>
+                    {% for timestamp in metric.timestamps %}
+                        <td>{{ timestamp.strftime('%Y') }}</td>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>{{ metric.name }}</td>
+                    {% for value in metric.values %}
+                        <td style="font-weight: bold;
+                                   color: {% if value < 0 %}red
+                                          {% else %}black
+                                          {% endif %};">
+                            {{ "{:,.2f}".format(value) }}
+                        </td>
+                    {% endfor %}
+                </tr>
+            </tbody>
+        </table>
+    </div>
 {% endblock %}

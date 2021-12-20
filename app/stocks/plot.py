@@ -389,9 +389,7 @@ def timeseries_plot(name, data_list, symbols,
     )
 
     # initiate a Bokeh figure object
-    p = figure(width=1000,
-               height=400,
-               x_axis_type='datetime',
+    p = figure(x_axis_type='datetime',
                x_axis_label='Time',
                y_axis_label='Value',
                tools=[hover_tool])
@@ -423,6 +421,8 @@ def timeseries_plot(name, data_list, symbols,
     # customizations
     p.toolbar_location = None
     p.legend.location = 'top_left'
+    p.sizing_mode = 'scale_width'
+    p.plot_height = 200
 
     # get the javascript for loading BokehJS remotely from a CDN
     payload = {}

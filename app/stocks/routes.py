@@ -396,9 +396,9 @@ def update_valuation_plot():
     return jsonify(plot)
 
 
-@bp.route('/stock/<symbol>/metric_profile/<metric_name>')
+@bp.route('/stock/<symbol>/metric_profile/<indicator_name>')
 @login_required
-def metric_profile(symbol, metric_name):
+def metric_profile(symbol, indicator_name):
     """
     This view function handles requests to view the profile of a given 
     financial metric for a pre-specified stock.
@@ -407,22 +407,30 @@ def metric_profile(symbol, metric_name):
     # retrieve the stock database object
     stock = Stock.query.filter_by(symbol=symbol).first_or_404()
 
+    # get request arguments
+    payload_only = request.args.get('payload_only', 0, type=int)
+    num_of_years = request.args.get('num_of_years', 20, type=int)
+
     # get all fundamental indicators filtered by dates, defaulted to 
     # considering 20 years of financials history
-    _, start_date, _ = get_valplot_dates(num_of_years=20)
-    metrics_data = stock.get_fundamental_indicator_data(start_date=start_date)
+    _, start_date, _ = get_valplot_dates(num_of_years=num_of_years)
+    indicators_data = \
+        stock.get_fundamental_indicator_data(start_date=start_date)
     
-    # get the pre-specified metric
+    # get the payload of the pre-specified indicator
     try:
-        metric = [
-            metrics_data[section][name]['Object'] 
-            for section in metrics_data 
-            for name in metrics_data[section] 
-            if name==metric_name
+        indicator_data = [
+            indicators_data[section][name]
+            for section in indicators_data 
+            for name in indicators_data[section] 
+            if name==indicator_name
         ][0]
     except IndexError:
-        flash('Unable to find metric: {}.'.format(metric_name))
+        flash('Unable to find metric: {}.'.format(indicator_name))
         return redirect(url_for('stocks.stock', symbol=stock.symbol))
+
+    # get data of the underlying metric out of the indicator payload
+    metric = indicator_data['Object']
 
     # prepare for plotting
     plot_dict = dict(zip(metric.timestamps, metric.values))
@@ -433,7 +441,14 @@ def metric_profile(symbol, metric_name):
         start_date=datetime.strptime(start_date, '%m-%d-%Y')
     )
 
-    return render_template(
-        'stocks/metric.html', title=stock.symbol + ': '+ metric.name, 
-        stock=stock, metric=metric, plot=plot, table_data=table_data
-    )
+    if payload_only:
+        # TODO - add the table data to this payload, after converting the 
+        # format of timestamps to strings
+        payload = {'plot': plot}
+        return jsonify(payload)
+    else:
+        return render_template(
+            'stocks/metric.html', title=stock.symbol + ': '+ metric.name, 
+            stock=stock, metric=metric, indicator_data=indicator_data, 
+            indicator_name=indicator_name, plot=plot, table_data=table_data
+        )

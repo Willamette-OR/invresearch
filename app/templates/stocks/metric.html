@@ -1,49 +1,99 @@
 {% extends 'base.html' %}
 
 
+{% block scripts %}
+    {{ super() }}
+
+    <script>
+        function set_timeseries_plot(plot) {
+            $('.timeseries-plot').html(plot.resources);
+            $('.timeseries-plot').html(plot.script);
+            $('.timeseries-plot').html(plot.div);
+        }
+
+        function update_page(symbol, name, num_of_years) {
+            $.ajax(
+                '/stock/' + symbol + '/metric_profile/' + name + 
+                '?payload_only=1&num_of_years=' + num_of_years
+            ).done(function(response) {
+                set_timeseries_plot(response.plot);
+            }).fail(function() {
+                // pass
+            })
+        }
+    </script>
+{% endblock %}
+
+
 {% block app_content %}
     <h2>
         <a href="{{ url_for('stocks.stock', symbol=stock.symbol) }}">
             {{ stock.name }}
         </a>
-        {{ metric.name }} : 
-        <span style="color: steelblue;">{{ "{:,.2f}".format(metric.TTM_value) }} (TTM)</span>
+        {{ indicator_name }} : 
+        <span style="color: steelblue;">
+            {% if indicator_data['Current'] == 'N/A' %}
+                (N/A)
+            {% else %}
+                {{ "{:,.2f}".format(indicator_data['Current']) }} (TTM)
+            {% endif %}
+        </span>
     </h2>
+
     <hr>
 
     {# render the time series plot #}
-    <span class="timeseries-plot">
-        {{ plot.resources|safe }}
-        {{ plot.script|safe }}
-        {{ plot.div|safe }}
-    </span>
-
-    <br>
-
-    {# render the time series data table #}
-    <div class="table-responsive">
-        <table class="table table-hover">
-            <thead>
-                <tr>
-                    <td>Date</td>
-                    {% for timestamp in metric.timestamps %}
-                        <td>{{ timestamp.strftime('%Y') }}</td>
-                    {% endfor %}
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>{{ metric.name }}</td>
-                    {% for value in metric.values %}
-                        <td style="font-weight: bold;
-                                   color: {% if value < 0 %}red
-                                          {% else %}black
-                                          {% endif %};">
-                            {{ "{:,.2f}".format(value) }}
-                        </td>
-                    {% endfor %}
-                </tr>
-            </tbody>
-        </table>
+    <div class="container">
+        <div class="row">
+            <div class='btn-group'>
+                {% for num_of_years in [5, 10, 15, 20] %}
+                    <a href="javascript:update_page(
+                                '{{ stock.symbol }}',
+                                '{{ indicator_name }}',
+                                '{{ num_of_years }}'
+                            )" 
+                       class="btn btn-default" role="button">
+                        {{ num_of_years }}Y
+                    </a>
+                {% endfor %}
+            </div>
+        </div>
+        <br>
+        <div class="row">
+            <span class="timeseries-plot">
+                {{ plot.resources|safe }}
+                {{ plot.script|safe }}
+                {{ plot.div|safe }}
+            </span>
+        </div>
+        <br>
+        <div class="row">
+            {# render the time series data table #}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <td>Date</td>
+                            {% for timestamp in table_data.keys() %}
+                                <td>{{ timestamp.strftime('%Y') }}</td>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>{{ metric.name }}</td>
+                            {% for value in table_data.values() %}
+                                <td style="font-weight: bold;
+                                           color: {% if value < 0 %}red
+                                                  {% else %}black
+                                                  {% endif %};">
+                                    {{ "{:,.2f}".format(value) }}
+                                </td>
+                            {% endfor %}
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 {% endblock %}

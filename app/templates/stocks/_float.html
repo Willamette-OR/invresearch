@@ -1,0 +1,12 @@
+{% if value %}
+    <span style="font-weight: bold;
+                color: {% if value < 0 %}red
+                        {% else %}black
+                        {% endif %};">
+        {{ "{:,.2f}".format(value) }}
+    </span>
+{% else %}
+    <span style="font-weight: bold;">
+        N/A
+    </span>
+{% endif %}

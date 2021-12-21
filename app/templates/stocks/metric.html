@@ -35,8 +35,9 @@
             {% if indicator_data['Current'] == 'N/A' %}
                 (N/A)
             {% else %}
-                {{ "{:,.2f}".format(indicator_data['Current']) }} (TTM)
+                {{ "{:,.2f}".format(indicator_data['Current']) }}
             {% endif %}
+            (as of {{ stock.get_last_financials_report_date(type='quarterly').strftime('%m-%Y') }})
         </span>
     </h2>
 
@@ -96,28 +97,22 @@
             </div>
         </div>
         <br>
-        <div class="row">
+        <div class="row well">
             <p>
                 The TTM value of {{ stock.name }}'s {{ metric.name }} was 
-                {{ "{:,.2f}".format(metric.TTM_value) }}, higher than 
-                {% if metric.pctrank_of_latest_10y %}
-                    {{ "{:.0f}".format(metric.pctrank_of_latest_10y[0]*100) }}% 
-                {% else %}
-                    (N/A)%
-                {% endif %}
+                {% set value = metric.TTM_value %} {% include 'stocks/_float.html' %}, 
+                higher than 
+                {% set value = metric.pctrank_of_latest_10y[0] %} {% include 'stocks/_percent.html' %}
                 of the values during the past 10 years.
             </p>
             <p>
                 During the last 10 years, the the highest {{ metric.name }} 
                 of {{ stock.name }} was 
-                {% if metric.max_10y %}
-                    {{ "{:,.2f}".format(metric.max_10y) }}. The lowest was 
-                    {{ "{:,.2f}".format(metric.min_10y) }}. And the median was 
-                    {{ "{:,.2f}".format(metric.median_10y) }}.
-                {% else %}
-                    (N/A). The lowest was (N/A). And the median was (N/A).
-                {% endif %}
-                
+                {% set value = metric.max_10y %} {% include 'stocks/_float.html' %}.
+                The lowest was
+                {% set value = metric.min_10y %} {% include 'stocks/_float.html' %}.
+                And the median was
+                {% set value = metric.median_10y %} {% include 'stocks/_float.html' %}.                
             </p>
         </div>
     </div>

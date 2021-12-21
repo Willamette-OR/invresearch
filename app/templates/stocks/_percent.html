@@ -1,0 +1,7 @@
+<span style="font-weight: bold;">
+    {% if value == 0 or value %}
+        {{ "{:.0f}".format(value * 100) }}%
+    {% else %}
+        N/A
+    {% endif %}
+</span>

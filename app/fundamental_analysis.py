@@ -191,6 +191,28 @@ _profitability_metrics_inputs = [
     ]
 
 
+def get_fundamental_start_date(num_of_years=20, last_report_date=None):
+    """
+    This helper function gets the start date of the pre-specified history of 
+    fundamentals.
+
+    Inputs:
+        'num_of_years': an integer, defaulted to be 20. It is the number of 
+                        years to be considered in fundamentals related analysis.
+        'last_report_date': a Python datetime object, defaulted to be None. It 
+                            is the date of the last financial reports available 
+                            in the history of fundamentals.
+    """
+
+    # set the last report date to utcnow if not given
+    end_date = last_report_date if last_report_date else datetime.utcnow()
+        
+    # get the first year to be included, given the pre-specified time window
+    start_year = end_date.year - num_of_years + 1
+    
+    return datetime(start_year, 1, 1)
+
+
 def get_fundamental_indicators(financials_history, 
                                start_date=datetime(1900, 1, 1),
                                financial_strength_name='Financial Strength',

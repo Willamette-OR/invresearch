@@ -9,7 +9,8 @@ from app.models import Stock
 from app.main.forms import EmptyForm, SearchForm
 from app.stocksdata import get_company_profile, search_stocks_by_symbol, \
                            section_lookup_by_metric
-from app.fundamental_analysis import get_estimated_return
+from app.fundamental_analysis import get_estimated_return, \
+                                     get_fundamental_start_date
 from app.stocks import bp
 from app.stocks.plot import get_valplot_dates, get_durations, \
                             get_normal_price, stock_valuation_plot, \
@@ -413,9 +414,11 @@ def metric_profile(symbol, indicator_name):
 
     # get all fundamental indicators filtered by dates, defaulted to 
     # considering 20 years of financials history
-    _, start_date, _ = get_valplot_dates(num_of_years=(num_of_years-1))
-    indicators_data = \
-        stock.get_fundamental_indicator_data(start_date=start_date)
+    start_date = get_fundamental_start_date(
+        num_of_years=num_of_years, 
+        last_report_date=stock.get_last_financials_report_date())
+    indicators_data = stock.get_fundamental_indicator_data(
+        start_date=start_date.strftime('%m-%d-%Y'))
     
     # get the payload of the pre-specified indicator
     try:
@@ -442,7 +445,7 @@ def metric_profile(symbol, indicator_name):
         name=metric.name, 
         data_list=[plot_dict], 
         symbols=[stock.symbol], 
-        start_date=datetime.strptime(start_date, '%m-%d-%Y')
+        start_date=start_date
     )
 
     if payload_only:

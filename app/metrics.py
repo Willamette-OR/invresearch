@@ -1,5 +1,7 @@
 import numpy as np
+import statistics
 from datetime import datetime
+from numpy.lib.function_base import median
 from sklearn.linear_model import LinearRegression
 
 
@@ -201,11 +203,16 @@ class Metric(object):
 
         return rate
 
-    def percentile_rank(self, target_value, num_of_years=10, 
-                        disregarded_values=[0, np.nan]):
+    def get_valid_values(self, num_of_years=10, disregarded_values=[0, np.nan]):
         """
-        This method calculates and returns the percentile rank of the target 
-        value during the pre-specified time window. 
+        This method returns a list of 'valid' values within the given time 
+        window.
+
+        Inputs:
+            'num_of_years': an integer object defaulted to 10.
+            'disregarded_values': a list object defaulted to [0, np.nan]. 
+                                  Values that fall into this list will NOT be 
+                                  considered 'valid'.
         """
 
         # calculate the start date of the time window to be considered
@@ -215,8 +222,22 @@ class Metric(object):
         # get all metric values within the specified time window, except 
         # pre-specified values that need to be dropped
         values = np.array([self.data[timestamp] for timestamp in self.data 
-                           if timestamp > start_date and 
+                           if timestamp >= start_date and 
                               self.data[timestamp] not in disregarded_values])
+
+        return values
+
+    def percentile_rank(self, target_value, num_of_years=10, 
+                        disregarded_values=[0, np.nan]):
+        """
+        This method calculates and returns the percentile rank of the target 
+        value during the pre-specified time window. 
+        """
+
+        # get all metric values within the specified time window, except 
+        # pre-specified values that need to be dropped
+        values = self.get_valid_values(num_of_years=num_of_years, 
+                                       disregarded_values=disregarded_values)
         
         # return the percentile rank of the target value, given the sequence of 
         # all qualified values.
@@ -224,6 +245,59 @@ class Metric(object):
         rank = 100 * (target_value > values).sum() / len(values) \
             if len(values) > 0 else 50
         return rank 
+
+    def pctrank_of_latest(self, latest='TTM', num_of_years=10):
+        """
+        This method calculates and returns the percentile rank of the 'latest' 
+        value of the metric, within the pre-specified time window. 
+
+        The returned value will be normalized to be between 0 and 1.
+
+        Inputs:
+            'latest': a string object defaulted to 'TTM'. 
+            'num_of_years': an integer object defaulted to 10. 
+        """
+
+        if latest == 'TTM':
+            latest_value = self.TTM_value
+        else:
+            latest_value = self.values[-1]
+        
+        return self.percentile_rank(
+            target_value=latest_value, 
+            num_of_years=num_of_years
+            ) / 100, latest_value
+
+    def get_range_info(self, latest='TTM', number_of_years=10, 
+                       disregarded_values=[0, np.nan]):
+        """
+        This method derives the min, max, and median value of the metric within 
+        the given time window, as well as the percentile rank of the given 
+        latest value within the same time window.
+
+        The derived values will be returned.
+
+        Inputs:
+            'latest': a string object defaulted to 'TTM'. 
+            'num_of_years': an integer object defaulted to 10. 
+        """
+
+        # get valid values within range
+        values = self.get_valid_values(num_of_years=number_of_years, 
+                                       disregarded_values=disregarded_values)
+
+        # get range statistics of all valid values
+        if len(values) > 0:
+            min_value, max_value = min(values), max(values)
+            median_value = statistics.median(values)
+        else:
+            min_value, max_value, median_value = None, None, None
+
+        # get the percentile rank for the 'latest' metric value
+        pctrank_of_latest = self.pctrank_of_latest(latest=latest, 
+                                                   num_of_years=number_of_years)
+
+        return min_value, max_value, median_value, pctrank_of_latest
 
     def rating(self, benchmark_value=None, trend_interval=3, reverse=False, 
                latest='TTM', debug=False):
@@ -249,12 +323,8 @@ class Metric(object):
 
         # get the percentile rank based rating of the latest value, a value 
         # between 0 and 1
-        if latest == 'TTM':
-            latest_value = self.TTM_value
-        else:
-            latest_value = self.values[-1]
-        percentile_rank_pct = \
-            self.percentile_rank(target_value=latest_value) / 100
+        percentile_rank_pct, latest_value = \
+            self.pctrank_of_latest(latest=latest)
         rating_per_percentile_rank = \
             percentile_rank_pct if not reverse else (1 - percentile_rank_pct)
 

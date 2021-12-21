@@ -413,7 +413,7 @@ def metric_profile(symbol, indicator_name):
 
     # get all fundamental indicators filtered by dates, defaulted to 
     # considering 20 years of financials history
-    _, start_date, _ = get_valplot_dates(num_of_years=num_of_years)
+    _, start_date, _ = get_valplot_dates(num_of_years=(num_of_years-1))
     indicators_data = \
         stock.get_fundamental_indicator_data(start_date=start_date)
     
@@ -431,6 +431,10 @@ def metric_profile(symbol, indicator_name):
 
     # get data of the underlying metric out of the indicator payload
     metric = indicator_data['Object']
+
+    # get some basic statistics of the underlying metric
+    metric.min_10y, metric.max_10y, metric.median_10y, \
+        metric.pctrank_of_latest_10y = metric.get_range_info()
 
     # prepare for plotting
     plot_dict = dict(zip(metric.timestamps, metric.values))

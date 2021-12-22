@@ -300,7 +300,8 @@ class Metric(object):
         return min_value, max_value, median_value, pctrank_of_latest
 
     def rating(self, benchmark_value=None, trend_interval=3, reverse=False, 
-               latest='TTM', debug=False):
+               latest='TTM', debug=False, wgt_benchmark=1/3, wgt_pctrank=1/3,
+               wgt_trend=1/3):
         """
         This helper function calculates the rating for the given metric, based 
         on a benchmark value if pre-specified, whether the metric has been 
@@ -329,15 +330,16 @@ class Metric(object):
             percentile_rank_pct if not reverse else (1 - percentile_rank_pct)
 
         # get the trend of recent values and the related rating, either 0 or 1
-        trend_values = \
-            self.growth_rate(num_of_years=trend_interval, log_scale=False) > 0
+        trend = self.growth_rate(num_of_years=trend_interval, log_scale=False)
+        trend_values = trend > 0
         if not trend_values and reverse:
             rating_per_trend_values = 1
         else:
             rating_per_trend_values = trend_values * (not reverse)
 
         # get the benchmark value based rating, a value between 0 and 1
-        if benchmark_value:
+        if benchmark_value is not None:
+            wgt_bmnew = wgt_benchmark
             ratio_vs_benchmark = latest_value / benchmark_value
             if (ratio_vs_benchmark <= 1) and reverse:
                 rating_per_benchmark_value = 1
@@ -345,17 +347,31 @@ class Metric(object):
                 rating_per_benchmark_value = (ratio_vs_benchmark > 1) * \
                     (not reverse)
         else:
+            wgt_bmnew = 0
             rating_per_benchmark_value = 0
 
         # calculate and return the weighted average rating
-        average_rating = ((1/3) * rating_per_percentile_rank + \
-                          (1/3) * rating_per_trend_values + \
-                          (1/3) * rating_per_benchmark_value) / \
-                          ((2/3) + (1/3)*(benchmark_value is not None))
+        average_rating = (wgt_pctrank * rating_per_percentile_rank + 
+                          wgt_trend * rating_per_trend_values + 
+                          wgt_bmnew * rating_per_benchmark_value) / \
+                          (wgt_pctrank + wgt_trend + wgt_bmnew)
 
         if debug:
-            return average_rating, rating_per_percentile_rank, \
-                   rating_per_trend_values, rating_per_benchmark_value
+            return {
+                'reverse': reverse,
+                'latest_value': latest_value,
+                'benchmark_value': benchmark_value,
+                'rating_per_benchmark_value': rating_per_benchmark_value,
+                'wgt_bmnew': wgt_bmnew,
+                'pctrank': percentile_rank_pct,
+                'rating_per_percentile_rank': rating_per_percentile_rank,
+                'wgt_pctrank': wgt_pctrank,
+                'trend': trend,
+                'rating_per_trend_values': rating_per_trend_values,
+                'wgt_trend': wgt_trend,
+                'wgt_total': wgt_bmnew + wgt_pctrank + wgt_trend,
+                'rating': average_rating
+            }
         else:
             return average_rating
 

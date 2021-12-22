@@ -284,7 +284,8 @@ class Stock(db.Model):
 
         return json.loads(self.quote_details_paylod)
 
-    def get_fundamental_indicator_data(self, start_date='01-01-1900'):
+    def get_fundamental_indicator_data(self, start_date='01-01-1900', 
+                                       debug=False):
         """
         This method gets/calculates fundamental indicators from the saved 
         financials history payload, and returns them in a nested dictionary 
@@ -300,7 +301,8 @@ class Stock(db.Model):
         
         return get_fundamental_indicators(
             financials_history=self.get_financials_history_data(), 
-            start_date=datetime.strptime(start_date, '%m-%d-%Y')
+            start_date=datetime.strptime(start_date, '%m-%d-%Y'),
+            debug=debug
         )
 
 

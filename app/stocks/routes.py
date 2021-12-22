@@ -418,7 +418,7 @@ def metric_profile(symbol, indicator_name):
         num_of_years=num_of_years, 
         last_report_date=stock.get_last_financials_report_date())
     indicators_data = stock.get_fundamental_indicator_data(
-        start_date=start_date.strftime('%m-%d-%Y'))
+        start_date=start_date.strftime('%m-%d-%Y'), debug=True)
     
     # get the payload of the pre-specified indicator
     try:

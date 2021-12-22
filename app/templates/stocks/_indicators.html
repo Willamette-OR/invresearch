@@ -34,7 +34,8 @@
                     {% endif %}
                 </td>
                 <td style="text-align: right;">
-                    {{ indicators[indicator]['Rating'] }}%
+                    {% set value = indicators[indicator]['Rating'] %}
+                    {% include 'stocks/_percent.html' %}
                 </td>
             </tr>
         {% endfor %}

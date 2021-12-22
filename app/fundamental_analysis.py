@@ -209,7 +209,7 @@ def get_fundamental_start_date(num_of_years=20, last_report_date=None):
         
     # get the first year to be included, given the pre-specified time window
     start_year = end_date.year - num_of_years + 1
-    
+
     return datetime(start_year, 1, 1)
 
 
@@ -217,7 +217,8 @@ def get_fundamental_indicators(financials_history,
                                start_date=datetime(1900, 1, 1),
                                financial_strength_name='Financial Strength',
                                growth_name='Business Growth',
-                               profitability_name='Profitability'):
+                               profitability_name='Profitability',
+                               debug=False):
     """
     This function gets raw data from the input financials history data after a 
     pre-specified start date,creates and returns a dictionary of indicators 
@@ -247,9 +248,9 @@ def get_fundamental_indicators(financials_history,
             {
                 'Object': metric,
                 'Current': float("{:.2f}".format(metric.TTM_value)),
-                'Rating': int("{:.0f}".format(
-                    metric.rating(benchmark_value=item['benchmark'], 
-                                  reverse=item['reverse']) * 100))
+                'Rating': metric.rating(benchmark_value=item['benchmark'], 
+                                        reverse=item['reverse'],
+                                        debug=debug)
             }
 
     ############
@@ -269,7 +270,7 @@ def get_fundamental_indicators(financials_history,
                 'Current': float("{:.1f}".format(
                     metric.growth_rate(num_of_years=3) * 100)) \
                         if metric.growth_rate(num_of_years=3) else 'N/A',
-                'Rating': '(N/A)'
+                'Rating': None
             }
         data_indicators[growth_name]['5-Year ' + name + ' Growth'] = \
             {
@@ -277,7 +278,7 @@ def get_fundamental_indicators(financials_history,
                 'Current': float("{:.1f}".format(
                     metric.growth_rate(num_of_years=5) * 100)) \
                         if metric.growth_rate(num_of_years=5) else 'N/A',
-                'Rating': '(N/A)'
+                'Rating': None
             }
 
     #################
@@ -295,9 +296,9 @@ def get_fundamental_indicators(financials_history,
             {
                 'Object': metric,
                 'Current': float("{:.1f}".format(metric.TTM_value)),
-                'Rating': int("{:.0f}".format(metric.rating(
-                    benchmark_value=item['benchmark'], 
-                    reverse=item['reverse']) * 100))
+                'Rating': metric.rating(benchmark_value=item['benchmark'], 
+                                        reverse=item['reverse'],
+                                        debug=debug)
             }
 
     # return the constructed dictionary

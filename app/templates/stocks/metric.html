@@ -115,5 +115,104 @@
                 {% set value = metric.median_10y %} {% include 'stocks/_float.html' %}.                
             </p>
         </div>
+        <br>
+        <div class="row well table-responsive">
+            {% set rating_data = indicator_data['Rating'] %}
+            <h4>Rating {{ stock.name }}'s {{ indicator_name }}:</h6>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <td style="text-align: right;">Rating =</td>
+                        <td style="text-align: left;">( Benchmark Score * W<sub>B</sub></td>
+                        <td>+</td>
+                        <td style="text-align: left;">10Y-Percentile Rank Score * W<sub>P</sub></td>
+                        <td>+</td>
+                        <td style="text-align: left;">3Y-Trend Score * W<sub>T</sub> )</td>
+                        <td>/</td>
+                        <td style="text-align: left;">Total Weights</td>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if rating_data %}
+                        <tr>
+                            <td style="text-align: right;">=</td>
+                            <td style="text-align: left;">
+                                ( (Latest Value {% if not rating_data['reverse'] %}&gt;{% else %}&lt;{% endif %} Benchmark?) * W<sub>B</sub>
+                            </td>
+                            <td>+</td>
+                            <td style="text-align: left;">
+                                ({% if rating_data['reverse'] %}100% - {% endif %}10Y-Percentile Rank) * W<sub>P</sub>
+                            </td>
+                            <td>+</td>
+                            <td style="text-align: left;">
+                                (3Y-Trend {% if not rating_data['reverse'] %}&gt;{% else %}&lt;{% endif %} 0?) * W<sub>T</sub> )
+                            </td>
+                            <td>/</td>
+                            <td style="text-align: left;">(W<sub>B</sub> + W<sub>P</sub> + W<sub>T</sub>)</td>
+                        </tr>
+                        <tr>
+                            <td style="text-align: right;">=</td>
+                            <td style="text-align: left;">
+                                ( ({% set value = rating_data['latest_value'] %} {% include 'stocks/_float.html' %} 
+                                {% if not rating_data['reverse'] %}&gt;{% else %}&lt;{% endif %} 
+                                {% set value = rating_data['benchmark_value'] %} {% include 'stocks/_float.html' %}
+                                ?) * 
+                                {% set value = rating_data['wgt_bmnew'] %} {% include 'stocks/_float.html' %} 
+                            </td>
+                            <td>+</td>
+                            <td style="text-align: left;">
+                                ({% if rating_data['reverse'] %}100% - {% endif %}
+                                {% set value = rating_data['pctrank'] %} {% include 'stocks/_percent.html' %} 
+                                ) * 
+                                {% set value = rating_data['wgt_pctrank'] %} {% include 'stocks/_float.html' %}
+                            </td>
+                            <td>+</td>
+                            <td style="text-align: left;">
+                                ({% set value = rating_data['trend'] %} {% include 'stocks/_percent.html' %}
+                                {% if not rating_data['reverse'] %}&gt;{% else %}&lt;{% endif %} 0?) * 
+                                {% set value = rating_data['wgt_trend'] %} {% include 'stocks/_float.html' %} )
+                            </td>
+                            <td>/</td>
+                            <td style="text-align: left;">
+                                ({% set value = rating_data['wgt_bmnew'] %} {% include 'stocks/_float.html' %} 
+                                +
+                                {% set value = rating_data['wgt_pctrank'] %} {% include 'stocks/_float.html' %}
+                                +
+                                {% set value = rating_data['wgt_trend'] %} {% include 'stocks/_float.html' %})
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="text-align: right;">=</td>
+                            <td style="text-align: left;">
+                                ( {% set value = rating_data['rating_per_benchmark_value'] * rating_data['wgt_bmnew'] %} {% include 'stocks/_percent.html' %}
+                            </td>
+                            <td>+</td>
+                            <td style="text-align: left;">
+                                {% set value = rating_data['rating_per_percentile_rank'] * rating_data['wgt_pctrank'] %} {% include 'stocks/_percent.html' %}
+                            </td>
+                            <td>+</td>
+                            <td style="text-align: left;">
+                                {% set value = rating_data['rating_per_trend_values'] * rating_data['wgt_trend'] %} {% include 'stocks/_percent.html' %} )
+                            </td>
+                            <td>/</td>
+                            <td style="text-align: left;">
+                                {% set value = rating_data['wgt_total'] %} {% include 'stocks/_float.html' %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="text-align: right;">=</td>
+                            <td style="text-align: left;">
+                                {% set value = rating_data['rating'] %} {% include 'stocks/_percent.html' %}
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td style="text-align: right;">=</td>
+                            <td style="text-align: left; font-weight: bold;">( Calculation details currently not available. )</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
     </div>
 {% endblock %}

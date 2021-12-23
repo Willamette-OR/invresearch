@@ -360,38 +360,30 @@ class UserTestCase(unittest.TestCase):
         revenue = Metric(name, timestamps, values, start_date)
 
         # scenario 1
-        average_rating, rating_per_percentile_rank, \
-            rating_per_trend_values, rating_per_benchmark_value = \
-                revenue.rating(benchmark_value=None, reverse=False, 
-                               latest='TTM', debug=True)
-        self.assertAlmostEqual(average_rating, 1)
-        self.assertAlmostEqual(rating_per_percentile_rank, 1)
-        self.assertAlmostEqual(rating_per_trend_values, 1)
-        self.assertAlmostEqual(rating_per_benchmark_value, 0)
+        rating_data = revenue.rating(
+            benchmark_value=None, reverse=False, latest='TTM', debug=True)
+        self.assertAlmostEqual(rating_data['rating'], 1)
+        self.assertAlmostEqual(rating_data['rating_per_percentile_rank'], 1)
+        self.assertAlmostEqual(rating_data['rating_per_trend_values'], 1)
+        self.assertAlmostEqual(rating_data['rating_per_benchmark_value'], 0)
         
         # scenario 2
-        average_rating, rating_per_percentile_rank, \
-            rating_per_trend_values, rating_per_benchmark_value = \
-                revenue.rating(benchmark_value=7, reverse=True, 
-                               latest='latest', debug=True)
-        self.assertAlmostEqual(average_rating, (0.2 / 3) + 1/3)
-        self.assertAlmostEqual(rating_per_percentile_rank, 0.2)
-        self.assertAlmostEqual(rating_per_trend_values, 0)
-        self.assertAlmostEqual(rating_per_benchmark_value, 1)
+        rating_data = revenue.rating(
+            benchmark_value=7, reverse=True, latest='latest', debug=True)
+        self.assertAlmostEqual(rating_data['rating'], (0.2 / 3) + 1/3)
+        self.assertAlmostEqual(rating_data['rating_per_percentile_rank'], 0.2)
+        self.assertAlmostEqual(rating_data['rating_per_trend_values'], 0)
+        self.assertAlmostEqual(rating_data['rating_per_benchmark_value'], 1)
 
         # scenario 3
         values = [1, -2, 0, 4, 5, 3]
         revenue = Metric(name, timestamps, values, start_date)
-        average_rating, rating_per_percentile_rank, \
-            rating_per_trend_values, rating_per_benchmark_value = \
-                revenue.rating(benchmark_value=2, reverse=True, 
-                               latest='TTM', debug=True)
-        self.assertAlmostEqual(average_rating, 0.5/3)
-        self.assertAlmostEqual(rating_per_percentile_rank, 0.5)
-        self.assertAlmostEqual(rating_per_trend_values, 0)
-        self.assertAlmostEqual(rating_per_benchmark_value, 0)
-
-    
+        rating_data = revenue.rating(
+            benchmark_value=2, reverse=True, latest='TTM', debug=True)
+        self.assertAlmostEqual(rating_data['rating'], 0.5/3)
+        self.assertAlmostEqual(rating_data['rating_per_percentile_rank'], 0.5)
+        self.assertAlmostEqual(rating_data['rating_per_trend_values'], 0)
+        self.assertAlmostEqual(rating_data['rating_per_benchmark_value'], 0)
 
     def test_metric_range_stats(self):
         """
@@ -414,6 +406,28 @@ class UserTestCase(unittest.TestCase):
         self.assertEqual(revenue.max_4y, 6)
         self.assertEqual(revenue.median_4y, 2)
         self.assertAlmostEqual(revenue.pctrank_of_latest_4y[0], 2/3)
+
+    def test_growth_metric_creation(self):
+        """
+        This method tests the logic to create 'growth' metrics from base 
+        metrics.
+        """
+
+        # set up a test case
+        name = 'revenue'
+        timestamps = ['2016-01', '2017-01', '2018-01', '2019-01', '2020-01', 
+                      '2021-01', 'TTM']
+        values = [3, 4, 1, 2, 0, 6, 5]
+        start_date = datetime(1900, 1, 1)
+        revenue = Metric(name, timestamps, values, start_date)
+
+        # test case 1
+        revenue_3ygrowth = revenue.get_growth_metric()
+        self.assertEqual(len(revenue_3ygrowth.values), len(revenue.values))
+        self.assertAlmostEqual(revenue_3ygrowth.values[-1], 0.817120593)
+        self.assertAlmostEqual(revenue_3ygrowth.values[-2], 0)
+        self.assertAlmostEqual(revenue_3ygrowth.values[-3], -0.229155775)
+        self.assertAlmostEqual(revenue_3ygrowth.values[0], 0)
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

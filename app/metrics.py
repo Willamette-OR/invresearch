@@ -7,6 +7,19 @@ from sklearn.linear_model import LinearRegression
 
 def get_growth_rate(x, values_in_range, num_of_years, log_scale):
     """
+    This helper function calculates the annual growth rate implied by the input 
+    sequence of values, for a given number of years at a chosen scale.
+
+    The returned value is either a numeric value or None.
+
+    Inputs:
+        'values_in_range': a sequence of numeric values, used to calculate the 
+                           annual growth rate.
+        'num_of_years': an integer value, and the growth rate to be calculated 
+                        is for this same time window.
+        'log_scale': a boolean value. If True, the growth rate will be at the 
+                     exponential scale; otherwise at the linear scale.
+
     """
 
     # only compute the growth rate if the number of values is 
@@ -202,6 +215,60 @@ class Metric(object):
                                num_of_years=num_of_years, log_scale=log_scale)
 
         return rate
+
+    def get_growth_metric(self, num_of_years=3, log_scale=True):
+        """
+        This method creates a new object of the Metric class, where each value 
+        (associated with a particular timestamp) of this new 'metric' 
+        represents of the N-year annual growth rate (associated with the same 
+        timestamp) of the current metric.
+
+        The returned object is an instance of this same Metric class.
+
+        Inputs:
+            'num_of_years': an integer value, defaulted to 3. When equal to N, 
+                            the N-year annual growth rate will be calculated 
+                            for each timestamp when creating the new metric.
+            'log_scale': a boolean value, defaulted to True. When True, the 
+                         growth rate will be calculated for the exponential 
+                         scale; otherwise at the linear scale.
+        """
+
+        # prep x for the input data of a potential downstream linear regression
+        x = np.array(range(num_of_years + 1)).reshape((-1, 1))
+
+        # initialize the list of growth rate values
+        values_growth_rate = []
+
+        # loop through all timestamps of the current metric, and append the 
+        # growth rate of each corresponding timestamp to the list of growth 
+        # rates.
+        for i in range(len(self.timestamps)):
+
+            # get the start and end position (in the current metric's value 
+            # sequence) of the proper subset of values to be used for growth 
+            # rate calculations
+            start_position = max(0, (i + 1 - (num_of_years + 1)))
+            end_position = i + 1
+
+            # for the current timestamp, retrieve the proper subset of values 
+            # and calcuate the growth rate
+            values_in_range = np.array(
+                self.values[start_position:end_position])
+            current_growth_rate = get_growth_rate(
+                x=x, values_in_range=values_in_range, 
+                num_of_years=num_of_years, log_scale=log_scale
+                )
+
+            values_growth_rate.append(current_growth_rate)
+
+        # creates and returns the new metric
+        name = str(num_of_years) + '-Year ' + self.name + ' Growth'
+        timestamps = [
+            timestamp.strftime('%Y-%m') for timestamp in self.timestamps]
+        start_date = datetime(1900, 1, 1)
+        return Metric(name=name, timestamps=timestamps, 
+                      values=values_growth_rate, start_date=start_date)
 
     def get_valid_values(self, num_of_years=10, disregarded_values=[0, np.nan]):
         """

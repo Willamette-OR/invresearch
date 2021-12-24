@@ -67,7 +67,7 @@ def derive_debt_to_ebitda(name, financials_history, start_date):
 
 
 def get_metric(name, financials_history, start_date, convert_to_numeric=True, 
-               derive=None):
+               scale_factor=1.0, derive=None):
     """
     This helper function extracts a metric's data from the financials history 
     data, based on the given metric name and start date of the financials 
@@ -85,7 +85,8 @@ def get_metric(name, financials_history, start_date, convert_to_numeric=True,
             values=financials_history['financials']['annuals']\
                 [section_lookup[name]][name],
             start_date=start_date,
-            convert_to_numeric=convert_to_numeric
+            convert_to_numeric=convert_to_numeric,
+            scale_factor=scale_factor
     )
 
 
@@ -95,42 +96,48 @@ _financial_strength_metrics_inputs = [
         'reverse': True,
         'derive': derive_debt_to_cash,
         'benchmark': None,
-        'type': 'float'
+        'type': 'float',
+        'scale_factor': 1.0
     },
     {
         'name': 'Equity-to-Asset',
         'reverse': False,
         'derive': None,
         'benchmark': None,
-        'type': 'float'
+        'type': 'float',
+        'scale_factor': 1.0
     },
     {
         'name': 'Debt-to-Equity',
         'reverse': True,
         'derive': None,
         'benchmark': 0.09,
-        'type': 'float'
+        'type': 'float',
+        'scale_factor': 1.0
     },
     {
         'name': 'Debt-to-EBITDA',
         'reverse': True,
         'derive': derive_debt_to_ebitda,
         'benchmark': None,
-        'type': 'float'
+        'type': 'float',
+        'scale_factor': 1.0
     },
     {
         'name': 'Interest Coverage',
         'reverse': False,
         'derive': None,
         'benchmark': 10.2,
-        'type': 'float'
+        'type': 'float',
+        'scale_factor': 1.0
     },
     {
         'name': 'Altman Z-Score',
         'reverse': False,
         'derive': None,
         'benchmark': 3.0,
-        'type': 'float'
+        'type': 'float',
+        'scale_factor': 1.0
     }
 ]
 
@@ -143,28 +150,32 @@ _growth_metrics_inputs = [
         'reverse': False,
         'derive': None,
         'benchmark': 0.1398,
-        'type': 'percent'
+        'type': 'percent',
+        'scale_factor': 1.0
     },
     {
         'name': 'Operating Income',
         'reverse': False,
         'derive': None,
         'benchmark': 0.468,
-        'type': 'percent'
+        'type': 'percent',
+        'scale_factor': 1.0
     },
     {
         'name': 'Net Income',
         'reverse': False,
         'derive': None,
         'benchmark': 0.7325,
-        'type': 'percent'
+        'type': 'percent',
+        'scale_factor': 1.0
     },
     {
         'name': 'Cash Flow from Operations',
         'reverse': False,
         'derive': None,
         'benchmark': 0.1813,
-        'type': 'percent'
+        'type': 'percent',
+        'scale_factor': 1.0
     },
 ]
 
@@ -175,35 +186,40 @@ _profitability_metrics_inputs = [
             'reverse': False,
             'derive': None,
             'benchmark': 38.32,
-            'type': 'percent'
+            'type': 'percent',
+            'scale_factor': 1/100
         },
         {
             'name': 'Operating Margin %',
             'reverse': False,
             'derive': None,
             'benchmark': 14.56,
-            'type': 'percent'
+            'type': 'percent',
+            'scale_factor': 1/100
         },
         {
             'name': 'Net Margin %',
             'reverse': False,
             'derive': None,
             'benchmark': 10.46,
-            'type': 'percent'
+            'type': 'percent',
+            'scale_factor': 1/100
         },
         {
             'name': 'FCF Margin %',
             'reverse': False,
             'derive': None,
             'benchmark': 18.75,
-            'type': 'percent'
+            'type': 'percent',
+            'scale_factor': 1/100
         },
         {
             'name': 'ROE %',
             'reverse': False,
             'derive': None,
             'benchmark': 19.6,
-            'type': 'percent'
+            'type': 'percent',
+            'scale_factor': 1/100
         },
     ]
 
@@ -260,6 +276,7 @@ def get_fundamental_indicators(financials_history,
         metric = get_metric(name=name, 
                             financials_history=financials_history, 
                             start_date=start_date,
+                            scale_factor=item['scale_factor'],
                             derive=item['derive'])
         data_indicators[financial_strength_name][name] = \
             {
@@ -281,13 +298,14 @@ def get_fundamental_indicators(financials_history,
         metric = get_metric(name=name, 
                             financials_history=financials_history, 
                             start_date=start_date,
+                            scale_factor=item['scale_factor'],
                             derive=item['derive'])
         growth_metric = metric.get_growth_metric()
         data_indicators[growth_name][growth_metric.name] = \
             {
                 'Object': metric,
-                'Current': float("{:.1f}".format(
-                    metric.growth_rate(num_of_years=3) * 100)) \
+                'Current': float("{:.2f}".format(
+                    metric.growth_rate(num_of_years=3))) \
                         if metric.growth_rate(num_of_years=3) else None,
                 'Type': item['type'],
                 'Rating': growth_metric.rating(
@@ -305,11 +323,12 @@ def get_fundamental_indicators(financials_history,
         metric = get_metric(name=name, 
                             financials_history=financials_history, 
                             start_date=start_date,
+                            scale_factor=item['scale_factor'],
                             derive=item['derive'])
         data_indicators[profitability_name][name] = \
             {
                 'Object': metric,
-                'Current': float("{:.1f}".format(metric.TTM_value)),
+                'Current': float("{:.2f}".format(metric.TTM_value)),
                 'Type': item['type'],
                 'Rating': metric.rating(benchmark_value=item['benchmark'], 
                                         reverse=item['reverse'],

@@ -76,7 +76,7 @@ class Metric(object):
 
     def __init__(self, name, timestamps, values, start_date, 
                  input_timestamps_format='%Y-%m', convert_to_numeric=True,
-                 str_defaulted_to=0):
+                 str_defaulted_to=0, scale_factor=1.0):
         """
         Constructor.
         
@@ -99,6 +99,9 @@ class Metric(object):
             - 'str_defaulted_to': the default value to default an input string 
                                   value to, when trying to convert values in 
                                   the input 'values' to numeric values.
+            - 'scale_factor': a float value, defaulted to 1.0. The sequence of 
+                              input values will be multiplied by this factor 
+                              when converted to numeric values.
         """
 
         # raise an error if the length of input timestamps is different from 
@@ -115,7 +118,7 @@ class Metric(object):
             _values = []
             for value in values:
                 try:
-                    _values.append(float(value))
+                    _values.append(float(value) * scale_factor)
                 except:
                     _values.append(str_defaulted_to)
         else:

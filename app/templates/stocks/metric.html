@@ -80,11 +80,8 @@
                         <tr>
                             <td>{{ metric.name }}</td>
                             {% for value in table_data.values() %}
-                                <td style="font-weight: bold;
-                                           color: {% if value < 0 %}red
-                                                  {% else %}black
-                                                  {% endif %};">
-                                    {{ "{:,.2f}".format(value) }}
+                                <td>
+                                    {% include 'stocks/_float.html' %}
                                 </td>
                             {% endfor %}
                         </tr>

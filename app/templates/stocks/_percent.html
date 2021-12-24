@@ -1,7 +1,12 @@
-<span style="font-weight: bold;">
-    {% if value == 0 or value %}
+{% if value == 0 or value %}
+    <span style="font-weight: bold;
+                color: {% if value < 0 %}red
+                        {% else %}black
+                        {% endif %};">
         {{ "{:.0f}".format(value * 100) }}%
-    {% else %}
+    </span>
+{% else %}
+    <span style="font-weight: bold;">
         N/A
-    {% endif %}
-</span>
+    </span>
+{% endif %}

@@ -21,21 +21,13 @@
                         {{ indicator }}
                     </a>
                 </td>
-                {% set value = indicators[indicator]['Current'] %}
-                <td style="font-weight: bold;
-                           text-align: right;
-                           color: {% if value in ('N/A', 'No Debt') %}black
-                                  {% elif value < 0 %}red
-                                  {% else %}black
-                                  {% endif %};">
-                    {{ value }}
-                    {% if table_header in ('Business Growth', 'Profitability') and value not in ('N/A', 'No Debt') %}
-                        %
-                    {% endif %}
+                <td style="text-align: right;">
+                    {% set value = indicators[indicator]['Current'] %}
+                    {% set format_type = indicators[indicator]['Type'] %}
+                    {% include 'stocks/_autofmt.html' %}
                 </td>
                 <td style="text-align: right;">
-                    {% set value = indicators[indicator]['Rating'] %}
-                    {% include 'stocks/_percent.html' %}
+                    {% set value = indicators[indicator]['Rating'] %} {% include 'stocks/_percent.html' %}
                 </td>
             </tr>
         {% endfor %}

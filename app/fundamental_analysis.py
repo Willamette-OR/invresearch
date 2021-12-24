@@ -94,65 +94,77 @@ _financial_strength_metrics_inputs = [
         'name': 'Debt-to-Cash',
         'reverse': True,
         'derive': derive_debt_to_cash,
-        'benchmark': None
+        'benchmark': None,
+        'type': 'float'
     },
     {
         'name': 'Equity-to-Asset',
         'reverse': False,
         'derive': None,
-        'benchmark': None
+        'benchmark': None,
+        'type': 'float'
     },
     {
         'name': 'Debt-to-Equity',
         'reverse': True,
         'derive': None,
-        'benchmark': 0.09
+        'benchmark': 0.09,
+        'type': 'float'
     },
     {
         'name': 'Debt-to-EBITDA',
         'reverse': True,
         'derive': derive_debt_to_ebitda,
-        'benchmark': None
+        'benchmark': None,
+        'type': 'float'
     },
     {
         'name': 'Interest Coverage',
         'reverse': False,
         'derive': None,
-        'benchmark': 10.2
+        'benchmark': 10.2,
+        'type': 'float'
     },
     {
         'name': 'Altman Z-Score',
         'reverse': False,
         'derive': None,
-        'benchmark': 3.0
+        'benchmark': 3.0,
+        'type': 'float'
     }
 ]
 
 
+# benchmark values and reverse indicators here are for 3 year grow rates of the 
+# underlying metrics.
 _growth_metrics_inputs = [
     {
         'name': 'Revenue',
         'reverse': False,
         'derive': None,
-        'benchmark': None
+        'benchmark': 0.1398,
+        'type': 'percent'
     },
     {
         'name': 'Operating Income',
         'reverse': False,
         'derive': None,
-        'benchmark': None
+        'benchmark': 0.468,
+        'type': 'percent'
     },
     {
         'name': 'Net Income',
         'reverse': False,
         'derive': None,
-        'benchmark': None
+        'benchmark': 0.7325,
+        'type': 'percent'
     },
     {
         'name': 'Cash Flow from Operations',
         'reverse': False,
         'derive': None,
-        'benchmark': None
+        'benchmark': 0.1813,
+        'type': 'percent'
     },
 ]
 
@@ -162,31 +174,36 @@ _profitability_metrics_inputs = [
             'name': 'Gross Margin %',
             'reverse': False,
             'derive': None,
-            'benchmark': 38.32
+            'benchmark': 38.32,
+            'type': 'percent'
         },
         {
             'name': 'Operating Margin %',
             'reverse': False,
             'derive': None,
-            'benchmark': 14.56
+            'benchmark': 14.56,
+            'type': 'percent'
         },
         {
             'name': 'Net Margin %',
             'reverse': False,
             'derive': None,
-            'benchmark': 10.46
+            'benchmark': 10.46,
+            'type': 'percent'
         },
         {
             'name': 'FCF Margin %',
             'reverse': False,
             'derive': None,
-            'benchmark': 18.75
+            'benchmark': 18.75,
+            'type': 'percent'
         },
         {
             'name': 'ROE %',
             'reverse': False,
             'derive': None,
-            'benchmark': 19.6
+            'benchmark': 19.6,
+            'type': 'percent'
         },
     ]
 
@@ -248,6 +265,7 @@ def get_fundamental_indicators(financials_history,
             {
                 'Object': metric,
                 'Current': float("{:.2f}".format(metric.TTM_value)),
+                'Type': item['type'],
                 'Rating': metric.rating(benchmark_value=item['benchmark'], 
                                         reverse=item['reverse'],
                                         debug=debug)
@@ -264,21 +282,17 @@ def get_fundamental_indicators(financials_history,
                             financials_history=financials_history, 
                             start_date=start_date,
                             derive=item['derive'])
-        data_indicators[growth_name]['3-Year '+ name + ' Growth'] = \
+        growth_metric = metric.get_growth_metric()
+        data_indicators[growth_name][growth_metric.name] = \
             {
                 'Object': metric,
                 'Current': float("{:.1f}".format(
                     metric.growth_rate(num_of_years=3) * 100)) \
-                        if metric.growth_rate(num_of_years=3) else 'N/A',
-                'Rating': None
-            }
-        data_indicators[growth_name]['5-Year ' + name + ' Growth'] = \
-            {
-                'Object': metric,
-                'Current': float("{:.1f}".format(
-                    metric.growth_rate(num_of_years=5) * 100)) \
-                        if metric.growth_rate(num_of_years=5) else 'N/A',
-                'Rating': None
+                        if metric.growth_rate(num_of_years=3) else None,
+                'Type': item['type'],
+                'Rating': growth_metric.rating(
+                    benchmark_value=item['benchmark'], reverse=item['reverse'], 
+                    debug=debug, latest='Other')
             }
 
     #################
@@ -296,6 +310,7 @@ def get_fundamental_indicators(financials_history,
             {
                 'Object': metric,
                 'Current': float("{:.1f}".format(metric.TTM_value)),
+                'Type': item['type'],
                 'Rating': metric.rating(benchmark_value=item['benchmark'], 
                                         reverse=item['reverse'],
                                         debug=debug)

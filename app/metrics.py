@@ -267,8 +267,10 @@ class Metric(object):
         timestamps = [
             timestamp.strftime('%Y-%m') for timestamp in self.timestamps]
         start_date = datetime(1900, 1, 1)
-        return Metric(name=name, timestamps=timestamps, 
-                      values=values_growth_rate, start_date=start_date)
+        metric = Metric(name=name, timestamps=timestamps, 
+                        values=values_growth_rate, start_date=start_date)
+        metric.TTM_value = metric.values[-1]
+        return metric
 
     def get_valid_values(self, num_of_years=10, disregarded_values=[0, np.nan]):
         """
@@ -425,6 +427,7 @@ class Metric(object):
 
         if debug:
             return {
+                'object': self,
                 'reverse': reverse,
                 'latest_value': latest_value,
                 'benchmark_value': benchmark_value,

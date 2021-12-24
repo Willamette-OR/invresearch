@@ -435,9 +435,13 @@ def metric_profile(symbol, indicator_name):
     # get data of the underlying metric out of the indicator payload
     metric = indicator_data['Object']
 
+    # get data of the metric used for 'rating" calculations, in case this 
+    # metric is different from the underlying metric
+    rated_metric = indicator_data['Rating']['object']
+
     # get some basic statistics of the underlying metric
-    metric.min_10y, metric.max_10y, metric.median_10y, \
-        metric.pctrank_of_latest_10y = metric.get_range_info()
+    rated_metric.min_10y, rated_metric.max_10y, rated_metric.median_10y, \
+        rated_metric.pctrank_of_latest_10y = rated_metric.get_range_info()
 
     # prepare for plotting
     plot_dict = dict(zip(metric.timestamps, metric.values))
@@ -456,6 +460,7 @@ def metric_profile(symbol, indicator_name):
     else:
         return render_template(
             'stocks/metric.html', title=stock.symbol + ': '+ metric.name, 
-            stock=stock, metric=metric, indicator_data=indicator_data, 
-            indicator_name=indicator_name, plot=plot, table_data=table_data
+            stock=stock, metric=metric, rated_metric=rated_metric, 
+            indicator_data=indicator_data, indicator_name=indicator_name, 
+            plot=plot, table_data=table_data
         )

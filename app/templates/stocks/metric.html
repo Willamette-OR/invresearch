@@ -99,20 +99,20 @@
         <br>
         <div class="row well">
             <p>
-                The TTM value of {{ stock.name }}'s {{ metric.name }} was 
-                {% set value = metric.TTM_value %} {% include 'stocks/_float.html' %}, 
+                The latest value of {{ stock.name }}'s {{ rated_metric.name }} was 
+                {% set value = indicator_data['Current'] %} {% include 'stocks/_float.html' %}, 
                 higher than 
-                {% set value = metric.pctrank_of_latest_10y[0] %} {% include 'stocks/_percent.html' %}
+                {% set value = rated_metric.pctrank_of_latest_10y[0] %} {% include 'stocks/_percent.html' %}
                 of the values during the past 10 years.
             </p>
             <p>
-                During the last 10 years, the the highest {{ metric.name }} 
+                During the last 10 years, the the highest {{ rated_metric.name }} 
                 of {{ stock.name }} was 
-                {% set value = metric.max_10y %} {% include 'stocks/_float.html' %}.
+                {% set value = rated_metric.max_10y %} {% include 'stocks/_float.html' %}.
                 The lowest was
-                {% set value = metric.min_10y %} {% include 'stocks/_float.html' %}.
+                {% set value = rated_metric.min_10y %} {% include 'stocks/_float.html' %}.
                 And the median was
-                {% set value = metric.median_10y %} {% include 'stocks/_float.html' %}.                
+                {% set value = rated_metric.median_10y %} {% include 'stocks/_float.html' %}.                
             </p>
         </div>
         <br>

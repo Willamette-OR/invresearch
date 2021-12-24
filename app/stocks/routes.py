@@ -462,5 +462,5 @@ def metric_profile(symbol, indicator_name):
             'stocks/metric.html', title=stock.symbol + ': '+ metric.name, 
             stock=stock, metric=metric, rated_metric=rated_metric, 
             indicator_data=indicator_data, indicator_name=indicator_name, 
-            plot=plot, table_data=table_data
+            format_type=indicator_data['Type'], plot=plot, table_data=table_data
         )

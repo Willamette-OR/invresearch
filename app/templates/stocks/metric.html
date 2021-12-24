@@ -32,11 +32,7 @@
         </a>
         {{ indicator_name }} : 
         <span style="color: steelblue;">
-            {% if indicator_data['Current'] == 'N/A' %}
-                (N/A)
-            {% else %}
-                {{ "{:,.2f}".format(indicator_data['Current']) }}
-            {% endif %}
+            {% set value = indicator_data['Current'] %} {% include 'stocks/_autofmt.html' %}                
             (as of {{ stock.get_last_financials_report_date(type='quarterly').strftime('%m-%Y') }})
         </span>
     </h2>
@@ -100,7 +96,7 @@
         <div class="row well">
             <p>
                 The latest value of {{ stock.name }}'s {{ rated_metric.name }} was 
-                {% set value = indicator_data['Current'] %} {% include 'stocks/_float.html' %}, 
+                {% set value = indicator_data['Current'] %} {% include 'stocks/_autofmt.html' %}, 
                 higher than 
                 {% set value = rated_metric.pctrank_of_latest_10y[0] %} {% include 'stocks/_percent.html' %}
                 of the values during the past 10 years.
@@ -108,11 +104,11 @@
             <p>
                 During the last 10 years, the the highest {{ rated_metric.name }} 
                 of {{ stock.name }} was 
-                {% set value = rated_metric.max_10y %} {% include 'stocks/_float.html' %}.
+                {% set value = rated_metric.max_10y %} {% include 'stocks/_autofmt.html' %}.
                 The lowest was
-                {% set value = rated_metric.min_10y %} {% include 'stocks/_float.html' %}.
+                {% set value = rated_metric.min_10y %} {% include 'stocks/_autofmt.html' %}.
                 And the median was
-                {% set value = rated_metric.median_10y %} {% include 'stocks/_float.html' %}.                
+                {% set value = rated_metric.median_10y %} {% include 'stocks/_autofmt.html' %}.                
             </p>
         </div>
         <br>
@@ -153,9 +149,9 @@
                         <tr>
                             <td style="text-align: right;">=</td>
                             <td style="text-align: left;">
-                                ( ({% set value = rating_data['latest_value'] %} {% include 'stocks/_float.html' %} 
+                                ( ({% set value = rating_data['latest_value'] %} {% include 'stocks/_autofmt.html' %} 
                                 {% if not rating_data['reverse'] %}&gt;{% else %}&lt;{% endif %} 
-                                {% set value = rating_data['benchmark_value'] %} {% include 'stocks/_float.html' %}
+                                {% set value = rating_data['benchmark_value'] %} {% include 'stocks/_autofmt.html' %}
                                 ?) * 
                                 {% set value = rating_data['wgt_bmnew'] %} {% include 'stocks/_float.html' %} 
                             </td>

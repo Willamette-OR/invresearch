@@ -185,7 +185,7 @@ _profitability_metrics_inputs = [
             'name': 'Gross Margin %',
             'reverse': False,
             'derive': None,
-            'benchmark': 38.32,
+            'benchmark': 0.3832,
             'type': 'percent',
             'scale_factor': 1/100
         },
@@ -193,7 +193,7 @@ _profitability_metrics_inputs = [
             'name': 'Operating Margin %',
             'reverse': False,
             'derive': None,
-            'benchmark': 14.56,
+            'benchmark': 0.1456,
             'type': 'percent',
             'scale_factor': 1/100
         },
@@ -201,7 +201,7 @@ _profitability_metrics_inputs = [
             'name': 'Net Margin %',
             'reverse': False,
             'derive': None,
-            'benchmark': 10.46,
+            'benchmark': 0.1046,
             'type': 'percent',
             'scale_factor': 1/100
         },
@@ -209,7 +209,7 @@ _profitability_metrics_inputs = [
             'name': 'FCF Margin %',
             'reverse': False,
             'derive': None,
-            'benchmark': 18.75,
+            'benchmark': 0.1875,
             'type': 'percent',
             'scale_factor': 1/100
         },
@@ -217,7 +217,7 @@ _profitability_metrics_inputs = [
             'name': 'ROE %',
             'reverse': False,
             'derive': None,
-            'benchmark': 19.6,
+            'benchmark': 0.196,
             'type': 'percent',
             'scale_factor': 1/100
         },

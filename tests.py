@@ -347,6 +347,38 @@ class UserTestCase(unittest.TestCase):
         pctrank_latest_value = revenue.pctrank_of_latest(latest='')
         self.assertTupleEqual(pctrank_latest_value, (0.8, 5))
 
+    def test_metric_growth_rate(self):
+        """
+        This method tests the metric growth rate calculations.
+        """
+
+        # set up a test case
+        name = 'revenue'
+        timestamps = ['2016-01', '2017-01', '2018-01', '2019-01', '2020-01', 
+                      '2021-01', 'TTM']
+        start_date = datetime(1900, 1, 1)
+
+        # test scenario 1
+        values = [3, 4, 3, 2, 2, 6, 5]
+        revenue = Metric(name, timestamps, values, start_date)
+        self.assertAlmostEqual(revenue.growth_rate(3, True), 0.231144413)
+        self.assertAlmostEqual(revenue.growth_rate(5, True), 0.028420050)
+        self.assertAlmostEqual(revenue.growth_rate(3, False), 0.9)
+
+        # test scenario 2
+        values = [3, 4, 3, -1, -3, 6, 5]
+        revenue = Metric(name, timestamps, values, start_date)
+        self.assertAlmostEqual(revenue.growth_rate(3, True), 0.259921050)
+        self.assertAlmostEqual(revenue.growth_rate(3, False), 0.7)
+
+        # test scenario 3
+        values = [3, 4, -3, -1, -3, -6, 5]
+        revenue = Metric(name, timestamps, values, start_date)
+        self.assertAlmostEqual(revenue.growth_rate(3, True), None)
+        self.assertAlmostEqual(revenue.growth_rate(3, False), -1.1)
+        self.assertAlmostEqual(revenue.growth_rate(5, True), None)
+        self.assertAlmostEqual(revenue.growth_rate(5, False), -1.828571429)
+
     def test_metric_rating(self):
         """
         This method tests the metric rating logic.

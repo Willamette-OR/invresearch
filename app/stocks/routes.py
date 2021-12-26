@@ -9,10 +9,12 @@ from app.models import Stock
 from app.main.forms import EmptyForm, SearchForm
 from app.stocksdata import get_company_profile, search_stocks_by_symbol, \
                            section_lookup_by_metric
-from app.fundamental_analysis import get_estimated_return
+from app.fundamental_analysis import get_estimated_return, \
+                                     get_fundamental_start_date
 from app.stocks import bp
 from app.stocks.plot import get_valplot_dates, get_durations, \
-                            get_normal_price, stock_valuation_plot
+                            get_normal_price, stock_valuation_plot, \
+                            timeseries_plot
 
 
 @bp.before_request
@@ -393,3 +395,72 @@ def update_valuation_plot():
 
     # return a json payload for Ajax requests
     return jsonify(plot)
+
+
+@bp.route('/stock/<symbol>/metric_profile/<indicator_name>')
+@login_required
+def metric_profile(symbol, indicator_name):
+    """
+    This view function handles requests to view the profile of a given 
+    financial metric for a pre-specified stock.
+    """
+
+    # retrieve the stock database object
+    stock = Stock.query.filter_by(symbol=symbol).first_or_404()
+
+    # get request arguments
+    payload_only = request.args.get('payload_only', 0, type=int)
+    num_of_years = request.args.get('num_of_years', 20, type=int)
+
+    # get all fundamental indicators filtered by dates, defaulted to 
+    # considering 20 years of financials history
+    start_date = get_fundamental_start_date(
+        num_of_years=num_of_years, 
+        last_report_date=stock.get_last_financials_report_date())
+    indicators_data = stock.get_fundamental_indicator_data(
+        start_date=start_date.strftime('%m-%d-%Y'), debug=True)
+    
+    # get the payload of the pre-specified indicator
+    try:
+        indicator_data = [
+            indicators_data[section][name]
+            for section in indicators_data 
+            for name in indicators_data[section] 
+            if name==indicator_name
+        ][0]
+    except IndexError:
+        flash('Unable to find metric: {}.'.format(indicator_name))
+        return redirect(url_for('stocks.stock', symbol=stock.symbol))
+
+    # get data of the underlying metric out of the indicator payload
+    metric = indicator_data['Object']
+
+    # get data of the metric used for 'rating" calculations, in case this 
+    # metric is different from the underlying metric
+    rated_metric = indicator_data['Rating']['object']
+
+    # get some basic statistics of the underlying metric
+    rated_metric.min_10y, rated_metric.max_10y, rated_metric.median_10y, \
+        rated_metric.pctrank_of_latest_10y = rated_metric.get_range_info()
+
+    # prepare for plotting
+    plot_dict = dict(zip(metric.timestamps, metric.values))
+    plot, table_data = timeseries_plot(
+        name=metric.name, 
+        data_list=[plot_dict], 
+        symbols=[stock.symbol], 
+        start_date=start_date
+    )
+
+    if payload_only:
+        # TODO - add the table data to this payload, after converting the 
+        # format of timestamps to strings
+        payload = {'plot': plot}
+        return jsonify(payload)
+    else:
+        return render_template(
+            'stocks/metric.html', title=stock.symbol + ': '+ metric.name, 
+            stock=stock, metric=metric, rated_metric=rated_metric, 
+            indicator_data=indicator_data, indicator_name=indicator_name, 
+            format_type=indicator_data['Type'], plot=plot, table_data=table_data
+        )

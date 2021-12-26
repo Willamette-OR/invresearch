@@ -1,0 +1,5 @@
+{% if format_type == 'float' %}
+    {% include 'stocks/_float.html' %}
+{% elif format_type == 'percent' %}
+    {% include 'stocks/_percent.html' %}
+{% endif %}

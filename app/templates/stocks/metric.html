@@ -1,0 +1,211 @@
+{% extends 'base.html' %}
+
+
+{% block scripts %}
+    {{ super() }}
+
+    <script>
+        function set_timeseries_plot(plot) {
+            $('.timeseries-plot').html(plot.resources);
+            $('.timeseries-plot').html(plot.script);
+            $('.timeseries-plot').html(plot.div);
+        }
+
+        function update_page(symbol, name, num_of_years) {
+            $.ajax(
+                '/stock/' + symbol + '/metric_profile/' + name + 
+                '?payload_only=1&num_of_years=' + num_of_years
+            ).done(function(response) {
+                set_timeseries_plot(response.plot);
+            }).fail(function() {
+                // pass
+            })
+        }
+    </script>
+{% endblock %}
+
+
+{% block app_content %}
+    <h2>
+        <a href="{{ url_for('stocks.stock', symbol=stock.symbol) }}">
+            {{ stock.name }}
+        </a>
+        {{ indicator_name }} : 
+        <span style="color: steelblue;">
+            {% set value = indicator_data['Current'] %} {% include 'stocks/_autofmt.html' %}                
+            (as of {{ stock.get_last_financials_report_date(type='quarterly').strftime('%m-%Y') }})
+        </span>
+    </h2>
+
+    <hr>
+
+    {# render the time series plot #}
+    <div class="container">
+        <div class="row">
+            <div class='btn-group'>
+                {% for num_of_years in [5, 10, 15, 20] %}
+                    <a href="javascript:update_page(
+                                '{{ stock.symbol }}',
+                                '{{ indicator_name }}',
+                                '{{ num_of_years }}'
+                            )" 
+                       class="btn btn-default" role="button">
+                        {{ num_of_years }}Y
+                    </a>
+                {% endfor %}
+            </div>
+        </div>
+        <br>
+        <div class="row">
+            <span class="timeseries-plot">
+                {{ plot.resources|safe }}
+                {{ plot.script|safe }}
+                {{ plot.div|safe }}
+            </span>
+        </div>
+        <br>
+        <div class="row">
+            {# render the time series data table #}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <td>Date</td>
+                            {% for timestamp in table_data.keys() %}
+                                <td>{{ timestamp.strftime('%Y') }}</td>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>{{ metric.name }}</td>
+                            {% for value in table_data.values() %}
+                                <td>
+                                    {% include 'stocks/_float.html' %}
+                                </td>
+                            {% endfor %}
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <br>
+        <div class="row well">
+            <p>
+                The latest value of {{ stock.name }}'s {{ rated_metric.name }} was 
+                {% set value = indicator_data['Current'] %} {% include 'stocks/_autofmt.html' %}, 
+                higher than 
+                {% set value = rated_metric.pctrank_of_latest_10y[0] %} {% include 'stocks/_percent.html' %}
+                of the values during the past 10 years.
+            </p>
+            <p>
+                During the last 10 years, the the highest {{ rated_metric.name }} 
+                of {{ stock.name }} was 
+                {% set value = rated_metric.max_10y %} {% include 'stocks/_autofmt.html' %}.
+                The lowest was
+                {% set value = rated_metric.min_10y %} {% include 'stocks/_autofmt.html' %}.
+                And the median was
+                {% set value = rated_metric.median_10y %} {% include 'stocks/_autofmt.html' %}.                
+            </p>
+        </div>
+        <br>
+        <div class="row well table-responsive">
+            {% set rating_data = indicator_data['Rating'] %}
+            <h4>Rating {{ stock.name }}'s {{ indicator_name }}:</h6>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <td style="text-align: right;">Rating =</td>
+                        <td style="text-align: left;">( Benchmark Score * W<sub>B</sub></td>
+                        <td>+</td>
+                        <td style="text-align: left;">10Y-Percentile Rank Score * W<sub>P</sub></td>
+                        <td>+</td>
+                        <td style="text-align: left;">3Y-Trend Score * W<sub>T</sub> )</td>
+                        <td>/</td>
+                        <td style="text-align: left;">Total Weights</td>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if rating_data %}
+                        <tr>
+                            <td style="text-align: right;">=</td>
+                            <td style="text-align: left;">
+                                ( (Latest Value {% if not rating_data['reverse'] %}&gt;{% else %}&lt;{% endif %} Benchmark?) * W<sub>B</sub>
+                            </td>
+                            <td>+</td>
+                            <td style="text-align: left;">
+                                ({% if rating_data['reverse'] %}100% - {% endif %}10Y-Percentile Rank) * W<sub>P</sub>
+                            </td>
+                            <td>+</td>
+                            <td style="text-align: left;">
+                                (3Y-Trend {% if not rating_data['reverse'] %}&gt;{% else %}&lt;{% endif %} 0?) * W<sub>T</sub> )
+                            </td>
+                            <td>/</td>
+                            <td style="text-align: left;">(W<sub>B</sub> + W<sub>P</sub> + W<sub>T</sub>)</td>
+                        </tr>
+                        <tr>
+                            <td style="text-align: right;">=</td>
+                            <td style="text-align: left;">
+                                ( ({% set value = rating_data['latest_value'] %} {% include 'stocks/_autofmt.html' %} 
+                                {% if not rating_data['reverse'] %}&gt;{% else %}&lt;{% endif %} 
+                                {% set value = rating_data['benchmark_value'] %} {% include 'stocks/_autofmt.html' %}
+                                ?) * 
+                                {% set value = rating_data['wgt_bmnew'] %} {% include 'stocks/_float.html' %} 
+                            </td>
+                            <td>+</td>
+                            <td style="text-align: left;">
+                                ({% if rating_data['reverse'] %}100% - {% endif %}
+                                {% set value = rating_data['pctrank'] %} {% include 'stocks/_percent.html' %} 
+                                ) * 
+                                {% set value = rating_data['wgt_pctrank'] %} {% include 'stocks/_float.html' %}
+                            </td>
+                            <td>+</td>
+                            <td style="text-align: left;">
+                                ({% set value = rating_data['trend'] %} {% include 'stocks/_percent.html' %}
+                                {% if not rating_data['reverse'] %}&gt;{% else %}&lt;{% endif %} 0?) * 
+                                {% set value = rating_data['wgt_trend'] %} {% include 'stocks/_float.html' %} )
+                            </td>
+                            <td>/</td>
+                            <td style="text-align: left;">
+                                ({% set value = rating_data['wgt_bmnew'] %} {% include 'stocks/_float.html' %} 
+                                +
+                                {% set value = rating_data['wgt_pctrank'] %} {% include 'stocks/_float.html' %}
+                                +
+                                {% set value = rating_data['wgt_trend'] %} {% include 'stocks/_float.html' %})
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="text-align: right;">=</td>
+                            <td style="text-align: left;">
+                                ( {% set value = rating_data['rating_per_benchmark_value'] * rating_data['wgt_bmnew'] %} {% include 'stocks/_percent.html' %}
+                            </td>
+                            <td>+</td>
+                            <td style="text-align: left;">
+                                {% set value = rating_data['rating_per_percentile_rank'] * rating_data['wgt_pctrank'] %} {% include 'stocks/_percent.html' %}
+                            </td>
+                            <td>+</td>
+                            <td style="text-align: left;">
+                                {% set value = rating_data['rating_per_trend_values'] * rating_data['wgt_trend'] %} {% include 'stocks/_percent.html' %} )
+                            </td>
+                            <td>/</td>
+                            <td style="text-align: left;">
+                                {% set value = rating_data['wgt_total'] %} {% include 'stocks/_float.html' %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="text-align: right;">=</td>
+                            <td style="text-align: left;">
+                                {% set value = rating_data['rating'] %} {% include 'stocks/_percent.html' %}
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td style="text-align: right;">=</td>
+                            <td style="text-align: left; font-weight: bold;">( Calculation details currently not available. )</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

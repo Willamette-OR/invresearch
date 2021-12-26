@@ -1,10 +1,25 @@
 import numpy as np
+import statistics
 from datetime import datetime
+from numpy.lib.function_base import median
 from sklearn.linear_model import LinearRegression
 
 
 def get_growth_rate(x, values_in_range, num_of_years, log_scale):
     """
+    This helper function calculates the annual growth rate implied by the input 
+    sequence of values, for a given number of years at a chosen scale.
+
+    The returned value is either a numeric value or None.
+
+    Inputs:
+        'values_in_range': a sequence of numeric values, used to calculate the 
+                           annual growth rate.
+        'num_of_years': an integer value, and the growth rate to be calculated 
+                        is for this same time window.
+        'log_scale': a boolean value. If True, the growth rate will be at the 
+                     exponential scale; otherwise at the linear scale.
+
     """
 
     # only compute the growth rate if the number of values is 
@@ -61,7 +76,7 @@ class Metric(object):
 
     def __init__(self, name, timestamps, values, start_date, 
                  input_timestamps_format='%Y-%m', convert_to_numeric=True,
-                 str_defaulted_to=0):
+                 str_defaulted_to=0, scale_factor=1.0):
         """
         Constructor.
         
@@ -84,6 +99,9 @@ class Metric(object):
             - 'str_defaulted_to': the default value to default an input string 
                                   value to, when trying to convert values in 
                                   the input 'values' to numeric values.
+            - 'scale_factor': a float value, defaulted to 1.0. The sequence of 
+                              input values will be multiplied by this factor 
+                              when converted to numeric values.
         """
 
         # raise an error if the length of input timestamps is different from 
@@ -100,7 +118,7 @@ class Metric(object):
             _values = []
             for value in values:
                 try:
-                    _values.append(float(value))
+                    _values.append(float(value) * scale_factor)
                 except:
                     _values.append(str_defaulted_to)
         else:
@@ -164,8 +182,11 @@ class Metric(object):
         else:
             name_division = '{} / {}'.format(self.name, other.name)
             timestamps_division = self.get_timestamps_str()
+            a = np.array(self.values)
+            b = np.array(other.values)
             values_division = list(
-                np.array(self.values) / np.array(other.values))
+                np.divide(a, b, out=np.zeros_like(a, dtype=float), where=(b!=0))
+                )
             division = Metric(name=name_division, 
                               timestamps=timestamps_division,
                               values=values_division,
@@ -201,11 +222,72 @@ class Metric(object):
 
         return rate
 
-    def percentile_rank(self, target_value, num_of_years=10, 
-                        disregarded_values=[0, np.nan]):
+    def get_growth_metric(self, num_of_years=3, log_scale=True):
         """
-        This method calculates and returns the percentile rank of the target 
-        value during the pre-specified time window. 
+        This method creates a new object of the Metric class, where each value 
+        (associated with a particular timestamp) of this new 'metric' 
+        represents of the N-year annual growth rate (associated with the same 
+        timestamp) of the current metric.
+
+        The returned object is an instance of this same Metric class.
+
+        Inputs:
+            'num_of_years': an integer value, defaulted to 3. When equal to N, 
+                            the N-year annual growth rate will be calculated 
+                            for each timestamp when creating the new metric.
+            'log_scale': a boolean value, defaulted to True. When True, the 
+                         growth rate will be calculated for the exponential 
+                         scale; otherwise at the linear scale.
+        """
+
+        # prep x for the input data of a potential downstream linear regression
+        x = np.array(range(num_of_years + 1)).reshape((-1, 1))
+
+        # initialize the list of growth rate values
+        values_growth_rate = []
+
+        # loop through all timestamps of the current metric, and append the 
+        # growth rate of each corresponding timestamp to the list of growth 
+        # rates.
+        for i in range(len(self.timestamps)):
+
+            # get the start and end position (in the current metric's value 
+            # sequence) of the proper subset of values to be used for growth 
+            # rate calculations
+            start_position = max(0, (i + 1 - (num_of_years + 1)))
+            end_position = i + 1
+
+            # for the current timestamp, retrieve the proper subset of values 
+            # and calcuate the growth rate
+            values_in_range = np.array(
+                self.values[start_position:end_position])
+            current_growth_rate = get_growth_rate(
+                x=x, values_in_range=values_in_range, 
+                num_of_years=num_of_years, log_scale=log_scale
+                )
+
+            values_growth_rate.append(current_growth_rate)
+
+        # creates and returns the new metric
+        name = str(num_of_years) + '-Year ' + self.name + ' Growth'
+        timestamps = [
+            timestamp.strftime('%Y-%m') for timestamp in self.timestamps]
+        start_date = datetime(1900, 1, 1)
+        metric = Metric(name=name, timestamps=timestamps, 
+                        values=values_growth_rate, start_date=start_date)
+        metric.TTM_value = metric.values[-1]
+        return metric
+
+    def get_valid_values(self, num_of_years=10, disregarded_values=[0, np.nan]):
+        """
+        This method returns a list of 'valid' values within the given time 
+        window.
+
+        Inputs:
+            'num_of_years': an integer object defaulted to 10.
+            'disregarded_values': a list object defaulted to [0, np.nan]. 
+                                  Values that fall into this list will NOT be 
+                                  considered 'valid'.
         """
 
         # calculate the start date of the time window to be considered
@@ -215,8 +297,22 @@ class Metric(object):
         # get all metric values within the specified time window, except 
         # pre-specified values that need to be dropped
         values = np.array([self.data[timestamp] for timestamp in self.data 
-                           if timestamp > start_date and 
+                           if timestamp >= start_date and 
                               self.data[timestamp] not in disregarded_values])
+
+        return values
+
+    def percentile_rank(self, target_value, num_of_years=10, 
+                        disregarded_values=[0, np.nan]):
+        """
+        This method calculates and returns the percentile rank of the target 
+        value during the pre-specified time window. 
+        """
+
+        # get all metric values within the specified time window, except 
+        # pre-specified values that need to be dropped
+        values = self.get_valid_values(num_of_years=num_of_years, 
+                                       disregarded_values=disregarded_values)
         
         # return the percentile rank of the target value, given the sequence of 
         # all qualified values.
@@ -225,8 +321,62 @@ class Metric(object):
             if len(values) > 0 else 50
         return rank 
 
+    def pctrank_of_latest(self, latest='TTM', num_of_years=10):
+        """
+        This method calculates and returns the percentile rank of the 'latest' 
+        value of the metric, within the pre-specified time window. 
+
+        The returned value will be normalized to be between 0 and 1.
+
+        Inputs:
+            'latest': a string object defaulted to 'TTM'. 
+            'num_of_years': an integer object defaulted to 10. 
+        """
+
+        if latest == 'TTM':
+            latest_value = self.TTM_value
+        else:
+            latest_value = self.values[-1]
+        
+        return self.percentile_rank(
+            target_value=latest_value, 
+            num_of_years=num_of_years
+            ) / 100, latest_value
+
+    def get_range_info(self, latest='TTM', number_of_years=10, 
+                       disregarded_values=[0, np.nan]):
+        """
+        This method derives the min, max, and median value of the metric within 
+        the given time window, as well as the percentile rank of the given 
+        latest value within the same time window.
+
+        The derived values will be returned.
+
+        Inputs:
+            'latest': a string object defaulted to 'TTM'. 
+            'num_of_years': an integer object defaulted to 10. 
+        """
+
+        # get valid values within range
+        values = self.get_valid_values(num_of_years=number_of_years, 
+                                       disregarded_values=disregarded_values)
+
+        # get range statistics of all valid values
+        if len(values) > 0:
+            min_value, max_value = min(values), max(values)
+            median_value = statistics.median(values)
+        else:
+            min_value, max_value, median_value = None, None, None
+
+        # get the percentile rank for the 'latest' metric value
+        pctrank_of_latest = self.pctrank_of_latest(latest=latest, 
+                                                   num_of_years=number_of_years)
+
+        return min_value, max_value, median_value, pctrank_of_latest
+
     def rating(self, benchmark_value=None, trend_interval=3, reverse=False, 
-               latest='TTM', debug=False):
+               latest='TTM', debug=False, wgt_benchmark=1/3, wgt_pctrank=1/3,
+               wgt_trend=1/3):
         """
         This helper function calculates the rating for the given metric, based 
         on a benchmark value if pre-specified, whether the metric has been 
@@ -249,25 +399,22 @@ class Metric(object):
 
         # get the percentile rank based rating of the latest value, a value 
         # between 0 and 1
-        if latest == 'TTM':
-            latest_value = self.TTM_value
-        else:
-            latest_value = self.values[-1]
-        percentile_rank_pct = \
-            self.percentile_rank(target_value=latest_value) / 100
+        percentile_rank_pct, latest_value = \
+            self.pctrank_of_latest(latest=latest)
         rating_per_percentile_rank = \
             percentile_rank_pct if not reverse else (1 - percentile_rank_pct)
 
         # get the trend of recent values and the related rating, either 0 or 1
-        trend_values = \
-            self.growth_rate(num_of_years=trend_interval, log_scale=False) > 0
+        trend = self.growth_rate(num_of_years=trend_interval, log_scale=False)
+        trend_values = trend > 0
         if not trend_values and reverse:
             rating_per_trend_values = 1
         else:
             rating_per_trend_values = trend_values * (not reverse)
 
         # get the benchmark value based rating, a value between 0 and 1
-        if benchmark_value:
+        if benchmark_value is not None:
+            wgt_bmnew = wgt_benchmark
             ratio_vs_benchmark = latest_value / benchmark_value
             if (ratio_vs_benchmark <= 1) and reverse:
                 rating_per_benchmark_value = 1
@@ -275,17 +422,32 @@ class Metric(object):
                 rating_per_benchmark_value = (ratio_vs_benchmark > 1) * \
                     (not reverse)
         else:
+            wgt_bmnew = 0
             rating_per_benchmark_value = 0
 
         # calculate and return the weighted average rating
-        average_rating = ((1/3) * rating_per_percentile_rank + \
-                          (1/3) * rating_per_trend_values + \
-                          (1/3) * rating_per_benchmark_value) / \
-                          ((2/3) + (1/3)*(benchmark_value is not None))
+        average_rating = (wgt_pctrank * rating_per_percentile_rank + 
+                          wgt_trend * rating_per_trend_values + 
+                          wgt_bmnew * rating_per_benchmark_value) / \
+                          (wgt_pctrank + wgt_trend + wgt_bmnew)
 
         if debug:
-            return average_rating, rating_per_percentile_rank, \
-                   rating_per_trend_values, rating_per_benchmark_value
+            return {
+                'object': self,
+                'reverse': reverse,
+                'latest_value': latest_value,
+                'benchmark_value': benchmark_value,
+                'rating_per_benchmark_value': rating_per_benchmark_value,
+                'wgt_bmnew': wgt_bmnew,
+                'pctrank': percentile_rank_pct,
+                'rating_per_percentile_rank': rating_per_percentile_rank,
+                'wgt_pctrank': wgt_pctrank,
+                'trend': trend,
+                'rating_per_trend_values': rating_per_trend_values,
+                'wgt_trend': wgt_trend,
+                'wgt_total': wgt_bmnew + wgt_pctrank + wgt_trend,
+                'rating': average_rating
+            }
         else:
             return average_rating
 

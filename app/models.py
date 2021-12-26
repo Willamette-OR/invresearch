@@ -164,6 +164,38 @@ class Stock(db.Model):
 
         return json.loads(self.financials_history_payload)
     
+    def get_last_financials_report_date(self, type='annuals'):
+        """
+        This method gets the date of the last financials report in the saved 
+        financials history data.
+
+        The returned date will be a Python datetime object.
+
+        Inputs:
+            'type': a string object, defaulted to be 'annuals';
+                    when equals to 'annuals', annual reports are considered;
+                    when equals to 'quarterly', quarterly reports are considered
+        """
+
+        # validate inputs
+        if type not in ['annuals', 'quarterly']:
+            raise ValueError(
+                "The input value must be either 'annuals' or 'quarterly'.")
+
+        # get the saved financials history data
+        data = self.get_financials_history_data()
+
+        # find the appropriate "latest" date given the report type requested
+        dates_list = data['financials'][type]['Fiscal Year']
+        while True:
+            latest_date = dates_list[-1]
+            if latest_date == 'TTM':
+                dates_list.remove('TTM')
+            else:
+                break
+
+        return datetime.strptime(latest_date, '%Y-%m')
+
     def get_analyst_estimates_data(self, update_interval_days=30):
         """
         This method returns the analyst estimates data in a dictionary.
@@ -252,7 +284,8 @@ class Stock(db.Model):
 
         return json.loads(self.quote_details_paylod)
 
-    def get_fundamental_indicator_data(self, start_date='01-01-1900'):
+    def get_fundamental_indicator_data(self, start_date='01-01-1900', 
+                                       debug=False):
         """
         This method gets/calculates fundamental indicators from the saved 
         financials history payload, and returns them in a nested dictionary 
@@ -268,7 +301,8 @@ class Stock(db.Model):
         
         return get_fundamental_indicators(
             financials_history=self.get_financials_history_data(), 
-            start_date=datetime.strptime(start_date, '%m-%d-%Y')
+            start_date=datetime.strptime(start_date, '%m-%d-%Y'),
+            debug=debug
         )
 
 

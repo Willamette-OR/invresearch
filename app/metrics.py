@@ -182,8 +182,11 @@ class Metric(object):
         else:
             name_division = '{} / {}'.format(self.name, other.name)
             timestamps_division = self.get_timestamps_str()
+            a = np.array(self.values)
+            b = np.array(other.values)
             values_division = list(
-                np.array(self.values) / np.array(other.values))
+                np.divide(a, b, out=np.zeros_like(a, dtype=float), where=(b!=0))
+                )
             division = Metric(name=name_division, 
                               timestamps=timestamps_division,
                               values=values_division,

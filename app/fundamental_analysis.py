@@ -246,6 +246,40 @@ def get_fundamental_start_date(num_of_years=20, last_report_date=None):
     return datetime(start_year, 1, 1)
 
 
+def _get_average_rating(data_indicators, debug=False):
+    """
+    This helper function calculates the average rating of ratings included in 
+    the input dictionary.
+
+    It returns the average rating as a float number.
+
+    Inputs:
+        'data_indicators': a dictionary object. The 'value' should also be a 
+                           dictionary object, with an attribute for 'Rating'.
+        'debug': a boolean value, defaulted to False. When 'debug' is False, 
+                 <value['Rating']> should contain a numeric value; if not, 
+                 <value['Rating']['rating']> should contain a numeric value 
+                 instead.
+    """
+
+    # initialize
+    sum_of_ratings = 0.0
+    num_of_ratings = 0
+
+    # loop through all items in the input dictionary
+    for key in data_indicators:
+        rating = data_indicators[key]['Rating'] if not debug else \
+            data_indicators[key]['Rating']['rating']
+
+        # only accumulate values of rating when not None
+        if rating is not None:
+            sum_of_ratings += rating
+            num_of_ratings += 1
+
+    # return the average rating, and if there were no valid ratings, return None
+    return sum_of_ratings / num_of_ratings if num_of_ratings > 0 else None
+
+
 def get_fundamental_indicators(financials_history, 
                                start_date=datetime(1900, 1, 1),
                                financial_strength_name='Financial Strength',
@@ -287,6 +321,11 @@ def get_fundamental_indicators(financials_history,
                                         reverse=item['reverse'],
                                         debug=debug)
             }
+    
+    # get the average rating
+    data_indicators[financial_strength_name]['Average Rating'] = \
+        _get_average_rating(
+            data_indicators[financial_strength_name], debug=debug)
 
     ############
     #  Growth  #
@@ -313,6 +352,11 @@ def get_fundamental_indicators(financials_history,
                     debug=debug, latest='Other')
             }
 
+    # get the average rating
+    data_indicators[growth_name]['Average Rating'] = \
+        _get_average_rating(
+            data_indicators[growth_name], debug=debug)
+
     #################
     # Profitability #
     #################
@@ -334,6 +378,10 @@ def get_fundamental_indicators(financials_history,
                                         reverse=item['reverse'],
                                         debug=debug)
             }
+    # get the average rating
+    data_indicators[profitability_name]['Average Rating'] = \
+        _get_average_rating(
+            data_indicators[profitability_name], debug=debug)
 
     # return the constructed dictionary
     return data_indicators

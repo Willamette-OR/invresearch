@@ -1,10 +1,17 @@
 <table class="table table-hover">
+    {% set indicators = fundamental_indicators[table_header] %}
     <thead>
         <tr>
             <td style="border: 0px;">
                 <h4 style="font-weight: bold;">{{ table_header }}</h4>
             </td>
             <td style="border: 0px;"></td>
+            <td style="border: 0px; text-align: right;">
+                <h4>
+                    {% set value = indicators['Average Rating'] %}
+                    {% include 'stocks/_percent.html' %}
+                </h4>
+            </td>
         </tr>
         <tr>
             <td></td>
@@ -13,8 +20,8 @@
         </tr>
     </thead>
     <tbody>
-        {% set indicators = fundamental_indicators[table_header] %}
-        {% for indicator in indicators %}
+        
+        {% for indicator in indicators if indicator != 'Average Rating' %}
             <tr>
                 <td>
                     <a href="{{ url_for('stocks.metric_profile', symbol=stock.symbol, indicator_name=indicator) }}">

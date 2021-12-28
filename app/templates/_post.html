@@ -13,7 +13,7 @@
             </span>
             said {{ moment(post.timestamp).fromNow() }}:<br> 
             <span id="post{{ post.id }}">
-                {{ post.body }}
+                {{ post.body | urlize(40, true) }}
             </span>
             {% if post.language and post.language not in g.locale %}
             <br><br>

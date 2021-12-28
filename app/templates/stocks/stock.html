@@ -285,10 +285,18 @@
 
         {# The My Notes Tab #}
         <div id="mynotes" class="tab-pane fade">
+            <h3>{{ current_user.username }}'s notes on {{ stock.name }}</h3>
+            <br>
+
+            {# a form for new notes #}
             <form action="" method="post">
                 {{ wtf.quick_form(note_form) }}
             </form>
+            {{ ckeditor.load(pkg_type='standard') }}
+            {{ ckeditor.config(name='body') }}
             <br>
+
+            {# show past notes #}
             <h3>(past notes placeholder)</h3>
         </div>
     </div>

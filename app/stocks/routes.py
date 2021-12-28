@@ -15,6 +15,7 @@ from app.stocks import bp
 from app.stocks.plot import get_valplot_dates, get_durations, \
                             get_normal_price, stock_valuation_plot, \
                             timeseries_plot
+from app.stocks.forms import NoteForm
 
 
 @bp.before_request
@@ -66,6 +67,9 @@ def stock(symbol):
     # watching/unwatching stocks
     form = EmptyForm()
 
+    # initialize a form for user notes
+    note_form = NoteForm()
+
     # get the quote history, the financials history, the analyst estimates, and 
     # quote details
     start_date_quote_history, start_date_financials_history, end_date = \
@@ -110,7 +114,7 @@ def stock(symbol):
             'stocks/stock.html', title="Stock - {}".format(stock.symbol), 
             stock=stock, quote=json.loads(stock.quote_payload), form=form, 
             quote_details=quote_details, 
-            fundamental_indicators=fundamental_indicators
+            fundamental_indicators=fundamental_indicators, note_form=note_form
         )
 
     # get the plot payload 
@@ -137,7 +141,7 @@ def stock(symbol):
         plot=plot, durations=durations, 
         valuation_metric=_valuation_metric, quote_details=quote_details,
         fundamental_indicators=fundamental_indicators,
-        estimated_return=estimated_return
+        estimated_return=estimated_return, note_form=note_form
     )
 
 

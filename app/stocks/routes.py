@@ -67,6 +67,10 @@ def stock(symbol):
     # watching/unwatching stocks
     form = EmptyForm()
 
+    # get existing notes
+    current_note = StockNote.query.filter_by(
+        user=current_user, stock=stock).first()
+
     # form logic for user notes
     note_form = NoteForm()
     if note_form.validate_on_submit():
@@ -78,10 +82,9 @@ def stock(symbol):
         db.session.commit()
         flash("Your notes have been saved/updated successfully!")
         return redirect(url_for('stocks.stock', symbol=symbol))
-
-    # get existing notes
-    current_note = StockNote.query.filter_by(
-        user=current_user, stock=stock).first()
+    elif request.method == 'GET':
+        note_form.body.data = \
+            current_note.body if current_note is not None else None
 
     # get the quote history, the financials history, the analyst estimates, and 
     # quote details

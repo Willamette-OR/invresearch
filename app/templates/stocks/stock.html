@@ -54,6 +54,19 @@
             });  
         };
     </script>
+
+    {# scripts to save the current tab locally and get the last active tab on reload #}
+    <script>
+        $(document).ready(function() {
+            $('a[data-toggle="tab"]').on('show.bs.tab', function(e) {
+                localStorage.setItem('activeTab', $(e.target).attr('href'));
+            });
+            var activeTab = localStorage.getItem('activeTab');
+            if (activeTab) {
+                $('#main-tabs a[href="' + activeTab + '"]').tab('show')
+            }
+        });
+    </script>
 {% endblock %}
 
 
@@ -111,7 +124,7 @@
     <br>
 
     {# Tabs #}
-    <ul class="nav nav-tabs">
+    <ul class="nav nav-tabs" id="main-tabs">
         <li class="active"><a data-toggle="tab" href="#summary">Summary</a></li>
         <li><a data-toggle="tab" href="#fundamentals">Fundamentals</a></li>
         <li><a data-toggle="tab" href="#mynotes">My Notes</a></li>
@@ -295,7 +308,10 @@
                 <form action="" method="post">
                     {{ note_form.hidden_tag() }}
                     <div class="form-group">
-                        {{ note_form.body(class="form-control", placeholder="Enter notes...") }}
+                        {{ note_form.body(class="form-control", placeholder="Enter notes...") }}<br>
+                        {% for error in note_form.body.errors %}
+                            <span style="color: red;">[{{ error }}]</span>
+                        {% endfor %}
                     </div>
                     <div class="form-group">
                         {{ note_form.submit() }}

@@ -1,4 +1,5 @@
 from datetime import date, datetime
+from sqlalchemy.orm import backref
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask import current_app
 from flask_login import UserMixin
@@ -120,6 +121,9 @@ class Stock(db.Model):
     quote_details_paylod = db.Column(db.Text)
     last_quote_details_update = db.Column(db.DateTime, index=True, default=None)
     dividend_yield = db.Column(db.Float, index=True)
+    stock_notes = db.relationship(
+        'StockNote', foreign_keys='StockNote.stock_id', backref='stock', 
+        lazy='dynamic')
 
     def __repr__(self):
         return "<Stock: {}>".format(self.symbol)
@@ -339,6 +343,9 @@ class User(UserMixin, db.Model):
                               secondaryjoin=(Stock.id==watchers.c.watched_id),
                               backref=db.backref('watchers', lazy='dynamic'),
                               lazy='dynamic')
+    stock_notes = db.relationship(
+        'StockNote', foreign_keys='StockNote.user_id', backref='user', 
+        lazy='dynamic')
 
     def __repr__(self):
         """This method defines the string repr of user objects."""
@@ -594,3 +601,19 @@ class Task(db.Model):
 
         job = self.get_rq_job()
         return job.meta.get('progress', 0) if job is not None else 100
+
+
+class StockNote(db.Model):
+    """
+    This class implements a data model for stock notes, derived from the parent 
+    class SQLAlchemy.Model.
+
+    The implemented StockNote model has a Many-to-One relationship with both 
+    the User and the Stock model.
+    """
+
+    id = db.Column(db.Integer, primary_key=True)
+    timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
+    body = db.Column(db.Text)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    stock_id = db.Column(db.Integer, db.ForeignKey('stock.id'))

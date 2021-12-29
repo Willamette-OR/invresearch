@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% import 'bootstrap/wtf.html' as wtf %}
 
 
 {% block scripts %}
@@ -113,6 +114,7 @@
     <ul class="nav nav-tabs">
         <li class="active"><a data-toggle="tab" href="#summary">Summary</a></li>
         <li><a data-toggle="tab" href="#fundamentals">Fundamentals</a></li>
+        <li><a data-toggle="tab" href="#mynotes">My Notes</a></li>
     </ul>
 
     {# Define different tab panes #}
@@ -279,6 +281,48 @@
                     {% include 'stocks/_indicators.html' %}
                 </div>
             </div>
+        </div>
+
+        {# The My Notes Tab #}
+        <div id="mynotes" class="tab-pane fade">
+            <h3>{{ current_user.username }}'s notes on {{ stock.name }}</h3>
+
+            {# collapse a text editor #}
+            <button type="button" class="btn btn-primary" data-toggle="collapse" data-target="#edit-notes">Edit</button>
+            <br><br>
+            <div id="edit-notes" class="collapse">
+                {# a form for new notes #}
+                <form action="" method="post">
+                    {{ note_form.hidden_tag() }}
+                    <div class="form-group">
+                        {{ note_form.body(class="form-control", placeholder="Enter notes...") }}
+                    </div>
+                    <div class="form-group">
+                        {{ note_form.submit() }}
+                    </div>
+                </form>
+                {{ ckeditor.load(pkg_type='standard') }}
+                {{ ckeditor.config(name='body') }}
+                <br>
+            </div>
+
+            {# show existing notes #}
+            {% if current_note %}
+                <div class="panel panel-info">
+                    <div class="panel-heading">
+                        Last updated on {{ moment(current_note.timestamp).format('llll') }}
+                    </div>
+                    <div class="panel-body">
+                        {{ current_note.body | safe | urlize(40, True) }}
+                    </div>
+                </div>
+            {% else %}
+            <div class="panel panel-info">
+                <div class="panel-body">
+                    There are currently no notes available.
+                </div>
+            </div>
+            {% endif %}
         </div>
     </div>
 {% endblock %}

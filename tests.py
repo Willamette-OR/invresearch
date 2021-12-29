@@ -3,7 +3,7 @@ import numpy as np
 from datetime import datetime, timedelta
 from config import Config
 from app import create_app, db
-from app.models import User, Post, Message, Stock
+from app.models import User, Post, Message, Stock, StockNote
 from app.metrics import Metric, TotalMetric
 
 
@@ -460,6 +460,27 @@ class UserTestCase(unittest.TestCase):
         self.assertAlmostEqual(revenue_3ygrowth.values[-2], 0)
         self.assertAlmostEqual(revenue_3ygrowth.values[-3], -0.229155775)
         self.assertAlmostEqual(revenue_3ygrowth.values[0], 0)
+
+    def test_stock_notes(self):
+        """
+        This method tests the database mechanics of stock notes.
+        """
+
+        # set up
+        user = User(username='bob')
+        stock = Stock(symbol='APPL')
+        note = StockNote(body='foo', user=user, stock=stock)
+        db.session.add_all([user, stock, note])
+        db.session.commit()
+
+        # test case 1
+        first_note = StockNote.query.filter_by(user=user).first()
+        self.assertEqual(first_note.id, note.id)
+        self.assertEqual(first_note.stock_id, stock.id)
+        self.assertEqual(first_note.body, 'foo')
+        note_1 = user.stock_notes.first()
+        note_2 = stock.stock_notes.first()
+        self.assertEqual(note_1.id, note_2.id)
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

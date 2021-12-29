@@ -62,14 +62,16 @@
             var currentURL = window.location.href;
             var previousURL = localStorage.getItem('previousURL');
 
-            // show the saved last active tab if the request was just a page 
-            // reload
             if (currentURL == previousURL) {
+                // show the saved last active tab if the request was just a 
+                // page reload
                 var activeTab = localStorage.getItem('activeTab');
                 if (activeTab) {
                     $('#main-tabs a[href="' + activeTab + '"]').tab('show');
                 };
 
+                // also show/hide the collapsable content based on the page 
+                // state before the reload/form submission
                 var collapseItem = localStorage.getItem('collapseItem');
                 var collapseShow = localStorage.getItem('collapseShow');
                 if (collapseItem && (collapseShow == 1)) {
@@ -85,13 +87,20 @@
                 localStorage.setItem('activeTab', $(e.target).attr('href'));
             });
 
+            // save the collapsable item once the button is clicked
             $('button[data-toggle="collapse"]').click(function(e) {
                 localStorage.setItem('collapseItem', $(e.target).attr('data-target'));
-                if (localStorage.getItem('collapseShow') == 0) {
-                    localStorage.setItem('collapseShow', 1);
-                } else {
-                    localStorage.setItem('collapseShow', 0)
-                }
+                var collapseItem = localStorage.getItem('collapseItem');
+            });
+
+            // update the collapse state once shown
+            $(collapseItem).on('show.bs.collapse', function() {
+                localStorage.setItem('collapseShow', 1);
+            });
+
+            // update the collapse state once hidden
+            $(collapseItem).on('hide.bs.collapse', function() {
+                localStorage.setItem('collapseShow', 0);
             });
         });
     </script>

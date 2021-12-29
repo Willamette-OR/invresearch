@@ -5,7 +5,7 @@ from flask import flash, redirect, url_for, render_template, request, \
                   current_app, g, jsonify
 from flask_login import login_required, current_user
 from app import db
-from app.models import Stock
+from app.models import Stock, StockNote
 from app.main.forms import EmptyForm, SearchForm
 from app.stocksdata import get_company_profile, search_stocks_by_symbol, \
                            section_lookup_by_metric
@@ -34,7 +34,7 @@ def before_request():
     g.locale = request.accept_languages.best
 
 
-@bp.route('/stock/<symbol>')
+@bp.route('/stock/<symbol>', methods=['GET', 'POST'])
 @login_required
 def stock(symbol):
     """
@@ -67,8 +67,21 @@ def stock(symbol):
     # watching/unwatching stocks
     form = EmptyForm()
 
-    # initialize a form for user notes
+    # form logic for user notes
     note_form = NoteForm()
+    if note_form.validate_on_submit():
+        # delete the existing note first if any
+        StockNote.query.filter_by(user=current_user, stock=stock).delete()
+        note = StockNote(body=note_form.body.data, user=current_user, 
+                         stock=stock)
+        db.session.add(note)
+        db.session.commit()
+        flash("Your notes have been saved/updated successfully!")
+        return redirect(url_for('stocks.stock', symbol=symbol))
+
+    # get existing notes
+    current_note = StockNote.query.filter_by(
+        user=current_user, stock=stock).first()
 
     # get the quote history, the financials history, the analyst estimates, and 
     # quote details
@@ -114,7 +127,8 @@ def stock(symbol):
             'stocks/stock.html', title="Stock - {}".format(stock.symbol), 
             stock=stock, quote=json.loads(stock.quote_payload), form=form, 
             quote_details=quote_details, 
-            fundamental_indicators=fundamental_indicators, note_form=note_form
+            fundamental_indicators=fundamental_indicators, note_form=note_form,
+            current_note=current_note
         )
 
     # get the plot payload 
@@ -141,7 +155,8 @@ def stock(symbol):
         plot=plot, durations=durations, 
         valuation_metric=_valuation_metric, quote_details=quote_details,
         fundamental_indicators=fundamental_indicators,
-        estimated_return=estimated_return, note_form=note_form
+        estimated_return=estimated_return, note_form=note_form,
+        current_note=current_note
     )
 
 

@@ -297,7 +297,9 @@
             <br>
 
             {# show past notes #}
-            <h3>(past notes placeholder)</h3>
+            <h3>Current Notes</h3>
+            <p>Last updated on {{ moment(current_note.timestamp).format('llll') }}</p>
+            <p>{{ current_note.body | safe | urlize(40, True) }}</p>
         </div>
     </div>
 {% endblock %}

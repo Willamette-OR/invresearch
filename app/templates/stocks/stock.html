@@ -58,15 +58,69 @@
     {# scripts to save the current tab locally and get the last active tab on reload #}
     <script>
         $(document).ready(function() {
-            $('a[data-toggle="tab"]').on('show.bs.tab', function(e) {
+            // get the current and previous urls
+            var currentURL = window.location.href;
+            var previousURL = localStorage.getItem('previousURL');
+
+            // show the saved last active tab if the request was just a page 
+            // reload
+            if (currentURL == previousURL) {
+                var activeTab = localStorage.getItem('activeTab');
+                if (activeTab) {
+                    $('#main-tabs a[href="' + activeTab + '"]').tab('show');
+                };
+
+                var collapseItem = localStorage.getItem('collapseItem');
+                var collapseShow = localStorage.getItem('collapseShow');
+                if (collapseItem && (collapseShow == 1)) {
+                    $(collapseItem).collapse('show');
+                };
+            } else {
+                localStorage.setItem('previousURL', currentURL);
+                localStorage.setItem('collapseShow', 0);
+            };
+            
+            // save the active tab in local storage
+            $('a[data-toggle="tab"]').on('shown.bs.tab', function(e) {
                 localStorage.setItem('activeTab', $(e.target).attr('href'));
             });
-            var activeTab = localStorage.getItem('activeTab');
-            if (activeTab) {
-                $('#main-tabs a[href="' + activeTab + '"]').tab('show')
-            }
+
+            $('button[data-toggle="collapse"]').click(function(e) {
+                localStorage.setItem('collapseItem', $(e.target).attr('data-target'));
+                if (localStorage.getItem('collapseShow') == 0) {
+                    localStorage.setItem('collapseShow', 1);
+                } else {
+                    localStorage.setItem('collapseShow', 0)
+                }
+            });
         });
     </script>
+
+    {#
+    <script>
+        $(document).ready(function() {
+            // get the current and previous urls
+            var currentURL = window.location.href;
+            var previousURL = localStorage.getItem('previousURL');
+
+            // show the saved last collapse state if the request was just a 
+            // page reload
+            if (currentURL == previousURL) {
+                var collapseItem = localStorage.getItem('collapseItem');
+                if (collapseItem) {
+                    $(collapseItem).collapse('show');
+                };
+            } else {
+                localStorage.setItem('previousURL', currentURL);
+            }
+
+            $('button[data-toggle="collapse"]').on('show.bs.collapse', function(e) {
+                localStorage.setItem('collapseItem', $(this).attr('data-target'));
+            });
+            
+        });
+    </script>
+    #}
 {% endblock %}
 
 

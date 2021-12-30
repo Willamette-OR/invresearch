@@ -2,5 +2,6 @@ venv/
 __pycache__/
 logs/
 temp/
+.vscode/
 app.db
 .env

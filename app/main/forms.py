@@ -12,12 +12,25 @@ class EditProfileForm(FlaskForm):
     about_me = TextAreaField('About Me', validators=[Length(min=1, max=140)])
     submit = SubmitField('Submit')
 
-    def validate_username(self, username):
-        """This method validates if the submitted username is already in use."""
+    def __init__(self, original_username, *args, **kwargs):
+        """
+        This constructor is overloaded in order to initialize the form instance 
+        with an original username.
+        """
 
-        user = User.query.filter_by(username=username.data).first()
-        if user:
-            raise ValidationError("Please use a different username.")
+        super().__init__(*args, **kwargs)
+        self.original_username = original_username
+
+    def validate_username(self, username):
+        """
+        This method validates if the submitted username is already used by 
+        someone else.
+        """
+
+        if username.data != self.original_username:
+            user = User.query.filter_by(username=username.data).first()
+            if user:
+                raise ValidationError("Please use a different username.")
 
 
 class EmptyForm(FlaskForm):

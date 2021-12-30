@@ -71,6 +71,10 @@ def create_app(config=Config):
     from app.main import bp as main_bp
     app.register_blueprint(main_bp)
 
+    # create the avatars folder if not existed already
+    if not os.path.exists('app/static/avatars'):
+        os.mkdir('app/static/avatars')
+
     # set up logging when the created app is not in debug or testing mode
     if not app.debug and not app.testing:
         # only enable error reports via email when MAIL_SERVER is configured.

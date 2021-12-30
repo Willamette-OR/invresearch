@@ -3,5 +3,6 @@ __pycache__/
 logs/
 temp/
 .vscode/
+app/static/avatars/
 app.db
 .env

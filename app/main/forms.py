@@ -1,5 +1,6 @@
-from flask import request
+from flask import request, current_app
 from flask_wtf import FlaskForm
+from flask_wtf.file import FileField, FileAllowed, FileSize
 from wtforms import StringField, SubmitField, TextAreaField
 from wtforms.validators import DataRequired, ValidationError, Length
 from app.models import User
@@ -9,6 +10,8 @@ class EditProfileForm(FlaskForm):
     """This class defines the profile editing form, derived from FlaskForm."""
 
     username = StringField('Username', validators=[DataRequired()])
+    avatar = FileField('Profile Photo', validators=[
+        FileAllowed(['jpg', 'jpeg', 'png', 'gif']), FileSize(1024 * 1024)])
     about_me = TextAreaField('About Me', validators=[Length(min=1, max=140)])
     submit = SubmitField('Submit')
 

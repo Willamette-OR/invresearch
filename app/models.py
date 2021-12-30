@@ -1,14 +1,15 @@
-from datetime import date, datetime
-from sqlalchemy.orm import backref
-from werkzeug.security import generate_password_hash, check_password_hash
-from flask import current_app
-from flask_login import UserMixin
-from hashlib import md5
-from time import time
+import os
 import jwt
 import json
 import rq
 import redis
+from datetime import datetime
+from sqlalchemy.orm import backref
+from werkzeug.security import generate_password_hash, check_password_hash
+from flask import current_app, url_for
+from flask_login import UserMixin
+from hashlib import md5
+from time import time
 from app import db, login 
 from app.search import query_index, add_to_index, remove_from_index
 from app.stocksdata import get_quote, get_quote_history, \
@@ -366,13 +367,26 @@ class User(UserMixin, db.Model):
 
     def avatar(self, size):
         """
-        This method takes a given image size, hashes the user email address, 
-        and returns a Gravatar url.
+        This method first checks if an profile photo already exists. If not, it 
+        takes a given image size, hashes the user email address, and returns a 
+        Gravatar url.
         """
 
-        digest = md5(self.email.lower().encode('utf-8')).hexdigest()
-        return 'https://www.gravatar.com/avatar/{}?d=identicon&s={}'.format(
-                digest, size)
+        # get the server location of the static file
+        uploaded_avatar_loc = url_for('static', 
+                                      filename='avatars/' + str(self.id)) 
+        if os.path.isfile('app' + uploaded_avatar_loc):
+            # if a user uploaded avatar exists, return it;
+            # get the latest static file (instead of loading older images saved 
+            # in browser cache)
+            uploaded_avatar = url_for(
+                'static', filename='avatars/' + str(self.id), ts=int(time()))
+            return uploaded_avatar
+        else:
+            # if a user uploaded avatar does not exist, return a Gravatar image
+            digest = md5(self.email.lower().encode('utf-8')).hexdigest()
+            return 'https://www.gravatar.com/avatar/{}?d=identicon&s={}'.format(
+                    digest, size)
 
     def is_following(self, user):
         """This method checks if the object is following a given user."""

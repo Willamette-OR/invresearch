@@ -1,3 +1,4 @@
+import os
 from flask import render_template, flash, redirect, url_for, request, g, \
     jsonify, current_app
 from flask_login import login_required, current_user
@@ -88,6 +89,12 @@ def edit_profile():
     if form.validate_on_submit():
         current_user.username = form.username.data
         current_user.about_me = form.about_me.data
+
+        avatar_file = form.avatar.data
+        if avatar_file:
+            avatar_file.save(
+                os.path.join('app/static/avatars', current_user.get_id()))
+
         db.session.commit()
         flash("Your profile has been updated successfully!")
         return redirect(url_for('main.edit_profile'))

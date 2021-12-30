@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% import 'bootstrap/wtf.html' as wtf %}
 
 
 {% block scripts %}
@@ -53,6 +54,76 @@
             });  
         };
     </script>
+
+    {# scripts to save the current tab locally and get the last active tab on reload #}
+    <script>
+        $(document).ready(function() {
+            // get the current and previous urls
+            var currentURL = window.location.href;
+            var previousURL = localStorage.getItem('previousURL');
+            var collapseItem = '#edit-notes';
+
+            if (currentURL == previousURL) {
+                // show the saved last active tab if the request was just a 
+                // page reload
+                var activeTab = localStorage.getItem('activeTab');
+                if (activeTab) {
+                    $('#main-tabs a[href="' + activeTab + '"]').tab('show');
+                };
+
+                // also show/hide the collapsable content based on the page 
+                // state before the reload/form submission
+                var collapseShow = localStorage.getItem('collapseShow');
+                if (collapseShow == 1) {
+                    $(collapseItem).collapse('show');
+                };
+            } else {
+                localStorage.setItem('previousURL', currentURL);
+                localStorage.setItem('collapseShow', 0);
+            };
+            
+            // save the active tab in local storage
+            $('a[data-toggle="tab"]').on('shown.bs.tab', function(e) {
+                localStorage.setItem('activeTab', $(e.target).attr('href'));
+            });
+
+            // update the collapse state once shown
+            $(collapseItem).on('show.bs.collapse', function() {
+                localStorage.setItem('collapseShow', 1);
+            });
+
+            // update the collapse state once hidden
+            $(collapseItem).on('hide.bs.collapse', function() {
+                localStorage.setItem('collapseShow', 0);
+            });
+        });
+    </script>
+
+    {#
+    <script>
+        $(document).ready(function() {
+            // get the current and previous urls
+            var currentURL = window.location.href;
+            var previousURL = localStorage.getItem('previousURL');
+
+            // show the saved last collapse state if the request was just a 
+            // page reload
+            if (currentURL == previousURL) {
+                var collapseItem = localStorage.getItem('collapseItem');
+                if (collapseItem) {
+                    $(collapseItem).collapse('show');
+                };
+            } else {
+                localStorage.setItem('previousURL', currentURL);
+            }
+
+            $('button[data-toggle="collapse"]').on('show.bs.collapse', function(e) {
+                localStorage.setItem('collapseItem', $(this).attr('data-target'));
+            });
+            
+        });
+    </script>
+    #}
 {% endblock %}
 
 
@@ -110,9 +181,10 @@
     <br>
 
     {# Tabs #}
-    <ul class="nav nav-tabs">
+    <ul class="nav nav-tabs" id="main-tabs">
         <li class="active"><a data-toggle="tab" href="#summary">Summary</a></li>
         <li><a data-toggle="tab" href="#fundamentals">Fundamentals</a></li>
+        <li><a data-toggle="tab" href="#mynotes">My Notes</a></li>
     </ul>
 
     {# Define different tab panes #}
@@ -216,7 +288,7 @@
                 {# display quote details here #}
                 <div class="col-sm-4">
                     <table class="table table-hover">
-                        <thread>
+                        <thead>
                             <tr>
                                 <th style="border: 0px;">
                                     <h4>
@@ -225,7 +297,7 @@
                                 </th>
                                 <th style="border: 0px;"></th>
                             </tr>
-                        </thread>
+                        </thead>
                         <tbody>
                             {% for field in quote_details %}
                                 <tr>
@@ -279,6 +351,51 @@
                     {% include 'stocks/_indicators.html' %}
                 </div>
             </div>
+        </div>
+
+        {# The My Notes Tab #}
+        <div id="mynotes" class="tab-pane fade">
+            <h3>{{ current_user.username }}'s notes on {{ stock.name }}</h3>
+
+            {# collapse a text editor #}
+            <button type="button" class="btn btn-primary" data-toggle="collapse" data-target="#edit-notes">Edit</button>
+            <br><br>
+            <div id="edit-notes" class="collapse">
+                {# a form for new notes #}
+                <form action="" method="post">
+                    {{ note_form.hidden_tag() }}
+                    <div class="form-group">
+                        {{ note_form.body(class="form-control", placeholder="Enter notes...") }}<br>
+                        {% for error in note_form.body.errors %}
+                            <span style="color: red;">[{{ error }}]</span>
+                        {% endfor %}
+                    </div>
+                    <div class="form-group">
+                        {{ note_form.submit() }}
+                    </div>
+                </form>
+                {{ ckeditor.load(pkg_type='standard') }}
+                {{ ckeditor.config(name='body') }}
+                <br>
+            </div>
+
+            {# show existing notes #}
+            {% if current_note %}
+                <div class="panel panel-info">
+                    <div class="panel-heading">
+                        Last updated on {{ moment(current_note.timestamp).format('llll') }}
+                    </div>
+                    <div class="panel-body">
+                        {{ current_note.body | safe | urlize(40, True) }}
+                    </div>
+                </div>
+            {% else %}
+            <div class="panel panel-info">
+                <div class="panel-body">
+                    There are currently no notes available.
+                </div>
+            </div>
+            {% endif %}
         </div>
     </div>
 {% endblock %}

@@ -1,8 +1,10 @@
+import itertools
 from datetime import datetime
 from bokeh.plotting import figure
 from bokeh.embed import components
 from bokeh.resources import CDN
-from bokeh.models import HoverTool, Band
+from bokeh.models import HoverTool
+from bokeh.palettes import Dark2_5 as palette, PaletteCollection
 from app.metrics import Metric, TotalMetric
 
 def example_plot():
@@ -350,3 +352,85 @@ def get_durations(quote_history, financials_history, min_years=3, max_years=20):
     else:
         return [(value + 1) for value in \
             range(max_years_plotting_history) if (value + 1) >= min_years]
+
+
+def timeseries_plot(name, data_list, symbols, 
+                    start_date=datetime(1900, 1, 1)):
+    """
+    This function constructs a time-series plot for data included in the input 
+    list, for timestamps after the given start date.
+    It returns a payload for rendering, as well as the first data object in the 
+    input sequence.
+
+    Inputs:
+        'name': a string object, and the name of the metric/data to be plotted.
+        'data_list': a sequence of dictionary objects, where each dictionary 
+                     consists of pairs of <'timestamp': value>.
+        'symbols': a sequence of symbols, where each symbol corresponds to 
+                   the dictionary object in the same location from 'data_list'.
+        'start_date': a Python datetime object. Only data after this date will 
+                      be used for plotting.
+    """
+
+    # validate inputs
+    if len(data_list) != len(symbols):
+        raise ValueError('The lengths of data_list and symbols must be equal.')
+
+    # set up tooltips & formats
+    hover_tool = HoverTool(
+        tooltips = [
+            ('Date',  '@x{%F}'),
+            ('Value', '@y{%0.2f}')
+        ],
+        formatters = {
+            '@x' : 'datetime',
+            '@y' : 'printf'
+        }
+    )
+
+    # initiate a Bokeh figure object
+    p = figure(x_axis_type='datetime',
+               x_axis_label='Time',
+               y_axis_label='Value',
+               tools=[hover_tool])
+
+    # creates a color iterator
+    colors = itertools.cycle(palette)
+
+    # add a line for each set of data in the input list
+    for i, color in zip(range(len(data_list)), colors):
+        data = {
+            timestamp: data_list[i][timestamp] for timestamp in data_list[i] 
+            if timestamp >= start_date
+        }
+
+        # save the first data object for output
+        if i == 0:
+            output_data = data
+
+        # add a line for quote history
+        p.line(list(data.keys()),
+               list(data.values()),
+               legend_label=symbols[i] + ': ' + name,
+               color=color,
+               line_width=2)
+
+        # add markers on top of the line
+        p.dot(list(data.keys()), list(data.values()), size=25, color=color)
+
+    # customizations
+    p.toolbar_location = None
+    p.legend.location = 'top_left'
+    p.sizing_mode = 'scale_width'
+    p.plot_height = 200
+
+    # get the javascript for loading BokehJS remotely from a CDN
+    payload = {}
+    payload['resources'] = CDN.render()
+
+    # get the HTML components to be rendered by BokehJS
+    script, div = components(p)
+    payload['script'] = script
+    payload['div'] = div
+
+    return payload, output_data

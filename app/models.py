@@ -1,4 +1,5 @@
 from datetime import date, datetime
+from sqlalchemy.orm import backref
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask import current_app
 from flask_login import UserMixin
@@ -120,6 +121,9 @@ class Stock(db.Model):
     quote_details_paylod = db.Column(db.Text)
     last_quote_details_update = db.Column(db.DateTime, index=True, default=None)
     dividend_yield = db.Column(db.Float, index=True)
+    stock_notes = db.relationship(
+        'StockNote', foreign_keys='StockNote.stock_id', backref='stock', 
+        lazy='dynamic')
 
     def __repr__(self):
         return "<Stock: {}>".format(self.symbol)
@@ -164,6 +168,38 @@ class Stock(db.Model):
 
         return json.loads(self.financials_history_payload)
     
+    def get_last_financials_report_date(self, type='annuals'):
+        """
+        This method gets the date of the last financials report in the saved 
+        financials history data.
+
+        The returned date will be a Python datetime object.
+
+        Inputs:
+            'type': a string object, defaulted to be 'annuals';
+                    when equals to 'annuals', annual reports are considered;
+                    when equals to 'quarterly', quarterly reports are considered
+        """
+
+        # validate inputs
+        if type not in ['annuals', 'quarterly']:
+            raise ValueError(
+                "The input value must be either 'annuals' or 'quarterly'.")
+
+        # get the saved financials history data
+        data = self.get_financials_history_data()
+
+        # find the appropriate "latest" date given the report type requested
+        dates_list = data['financials'][type]['Fiscal Year']
+        while True:
+            latest_date = dates_list[-1]
+            if latest_date == 'TTM':
+                dates_list.remove('TTM')
+            else:
+                break
+
+        return datetime.strptime(latest_date, '%Y-%m')
+
     def get_analyst_estimates_data(self, update_interval_days=30):
         """
         This method returns the analyst estimates data in a dictionary.
@@ -252,7 +288,8 @@ class Stock(db.Model):
 
         return json.loads(self.quote_details_paylod)
 
-    def get_fundamental_indicator_data(self, start_date='01-01-1900'):
+    def get_fundamental_indicator_data(self, start_date='01-01-1900', 
+                                       debug=False):
         """
         This method gets/calculates fundamental indicators from the saved 
         financials history payload, and returns them in a nested dictionary 
@@ -268,7 +305,8 @@ class Stock(db.Model):
         
         return get_fundamental_indicators(
             financials_history=self.get_financials_history_data(), 
-            start_date=datetime.strptime(start_date, '%m-%d-%Y')
+            start_date=datetime.strptime(start_date, '%m-%d-%Y'),
+            debug=debug
         )
 
 
@@ -305,6 +343,9 @@ class User(UserMixin, db.Model):
                               secondaryjoin=(Stock.id==watchers.c.watched_id),
                               backref=db.backref('watchers', lazy='dynamic'),
                               lazy='dynamic')
+    stock_notes = db.relationship(
+        'StockNote', foreign_keys='StockNote.user_id', backref='user', 
+        lazy='dynamic')
 
     def __repr__(self):
         """This method defines the string repr of user objects."""
@@ -560,3 +601,19 @@ class Task(db.Model):
 
         job = self.get_rq_job()
         return job.meta.get('progress', 0) if job is not None else 100
+
+
+class StockNote(db.Model):
+    """
+    This class implements a data model for stock notes, derived from the parent 
+    class SQLAlchemy.Model.
+
+    The implemented StockNote model has a Many-to-One relationship with both 
+    the User and the Stock model.
+    """
+
+    id = db.Column(db.Integer, primary_key=True)
+    timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
+    body = db.Column(db.Text)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    stock_id = db.Column(db.Integer, db.ForeignKey('stock.id'))

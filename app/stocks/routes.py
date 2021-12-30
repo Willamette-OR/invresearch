@@ -5,14 +5,17 @@ from flask import flash, redirect, url_for, render_template, request, \
                   current_app, g, jsonify
 from flask_login import login_required, current_user
 from app import db
-from app.models import Stock
+from app.models import Stock, StockNote
 from app.main.forms import EmptyForm, SearchForm
 from app.stocksdata import get_company_profile, search_stocks_by_symbol, \
                            section_lookup_by_metric
-from app.fundamental_analysis import get_estimated_return
+from app.fundamental_analysis import get_estimated_return, \
+                                     get_fundamental_start_date
 from app.stocks import bp
 from app.stocks.plot import get_valplot_dates, get_durations, \
-                            get_normal_price, stock_valuation_plot
+                            get_normal_price, stock_valuation_plot, \
+                            timeseries_plot
+from app.stocks.forms import NoteForm
 
 
 @bp.before_request
@@ -31,7 +34,7 @@ def before_request():
     g.locale = request.accept_languages.best
 
 
-@bp.route('/stock/<symbol>')
+@bp.route('/stock/<symbol>', methods=['GET', 'POST'])
 @login_required
 def stock(symbol):
     """
@@ -63,6 +66,25 @@ def stock(symbol):
     # define an empty Flask form to validate post requests for 
     # watching/unwatching stocks
     form = EmptyForm()
+
+    # get existing notes
+    current_note = StockNote.query.filter_by(
+        user=current_user, stock=stock).first()
+
+    # form logic for user notes
+    note_form = NoteForm()
+    if note_form.validate_on_submit():
+        # delete the existing note first if any
+        StockNote.query.filter_by(user=current_user, stock=stock).delete()
+        note = StockNote(body=note_form.body.data, user=current_user, 
+                         stock=stock)
+        db.session.add(note)
+        db.session.commit()
+        flash("Your notes have been saved/updated successfully!")
+        return redirect(url_for('stocks.stock', symbol=symbol))
+    elif request.method == 'GET':
+        note_form.body.data = \
+            current_note.body if current_note is not None else None
 
     # get the quote history, the financials history, the analyst estimates, and 
     # quote details
@@ -108,7 +130,8 @@ def stock(symbol):
             'stocks/stock.html', title="Stock - {}".format(stock.symbol), 
             stock=stock, quote=json.loads(stock.quote_payload), form=form, 
             quote_details=quote_details, 
-            fundamental_indicators=fundamental_indicators
+            fundamental_indicators=fundamental_indicators, note_form=note_form,
+            current_note=current_note
         )
 
     # get the plot payload 
@@ -135,7 +158,8 @@ def stock(symbol):
         plot=plot, durations=durations, 
         valuation_metric=_valuation_metric, quote_details=quote_details,
         fundamental_indicators=fundamental_indicators,
-        estimated_return=estimated_return
+        estimated_return=estimated_return, note_form=note_form,
+        current_note=current_note
     )
 
 
@@ -393,3 +417,72 @@ def update_valuation_plot():
 
     # return a json payload for Ajax requests
     return jsonify(plot)
+
+
+@bp.route('/stock/<symbol>/metric_profile/<indicator_name>')
+@login_required
+def metric_profile(symbol, indicator_name):
+    """
+    This view function handles requests to view the profile of a given 
+    financial metric for a pre-specified stock.
+    """
+
+    # retrieve the stock database object
+    stock = Stock.query.filter_by(symbol=symbol).first_or_404()
+
+    # get request arguments
+    payload_only = request.args.get('payload_only', 0, type=int)
+    num_of_years = request.args.get('num_of_years', 20, type=int)
+
+    # get all fundamental indicators filtered by dates, defaulted to 
+    # considering 20 years of financials history
+    start_date = get_fundamental_start_date(
+        num_of_years=num_of_years, 
+        last_report_date=stock.get_last_financials_report_date())
+    indicators_data = stock.get_fundamental_indicator_data(
+        start_date=start_date.strftime('%m-%d-%Y'), debug=True)
+    
+    # get the payload of the pre-specified indicator
+    try:
+        indicator_data = [
+            indicators_data[section][name]
+            for section in indicators_data 
+            for name in indicators_data[section] 
+            if name==indicator_name
+        ][0]
+    except IndexError:
+        flash('Unable to find metric: {}.'.format(indicator_name))
+        return redirect(url_for('stocks.stock', symbol=stock.symbol))
+
+    # get data of the underlying metric out of the indicator payload
+    metric = indicator_data['Object']
+
+    # get data of the metric used for 'rating" calculations, in case this 
+    # metric is different from the underlying metric
+    rated_metric = indicator_data['Rating']['object']
+
+    # get some basic statistics of the underlying metric
+    rated_metric.min_10y, rated_metric.max_10y, rated_metric.median_10y, \
+        rated_metric.pctrank_of_latest_10y = rated_metric.get_range_info()
+
+    # prepare for plotting
+    plot_dict = dict(zip(metric.timestamps, metric.values))
+    plot, table_data = timeseries_plot(
+        name=metric.name, 
+        data_list=[plot_dict], 
+        symbols=[stock.symbol], 
+        start_date=start_date
+    )
+
+    if payload_only:
+        # TODO - add the table data to this payload, after converting the 
+        # format of timestamps to strings
+        payload = {'plot': plot}
+        return jsonify(payload)
+    else:
+        return render_template(
+            'stocks/metric.html', title=stock.symbol + ': '+ metric.name, 
+            stock=stock, metric=metric, rated_metric=rated_metric, 
+            indicator_data=indicator_data, indicator_name=indicator_name, 
+            format_type=indicator_data['Type'], plot=plot, table_data=table_data
+        )

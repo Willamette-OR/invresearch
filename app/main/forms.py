@@ -1,6 +1,7 @@
+import os
 from flask import request, current_app
 from flask_wtf import FlaskForm
-from flask_wtf.file import FileField, FileAllowed, FileSize
+from flask_wtf.file import FileField
 from wtforms import StringField, SubmitField, TextAreaField
 from wtforms.validators import DataRequired, ValidationError, Length
 from app.models import User
@@ -10,8 +11,7 @@ class EditProfileForm(FlaskForm):
     """This class defines the profile editing form, derived from FlaskForm."""
 
     username = StringField('Username', validators=[DataRequired()])
-    avatar = FileField('Profile Photo', validators=[
-        FileAllowed(['jpg', 'jpeg', 'png', 'gif']), FileSize(1024 * 1024)])
+    avatar = FileField('Profile Photo')
     about_me = TextAreaField('About Me', validators=[Length(min=1, max=140)])
     submit = SubmitField('Submit')
 
@@ -34,6 +34,29 @@ class EditProfileForm(FlaskForm):
             user = User.query.filter_by(username=username.data).first()
             if user:
                 raise ValidationError("Please use a different username.")
+
+    def validate_avatar(self, avatar):
+        """
+        This method validates if the uploaded file:
+            1. has a proper file extension;
+            2. is not too large;
+            3. has a byte content consistent with the given file extension
+        """
+
+        # validate the file extension
+        file_ext = os.path.splitext(avatar.data.filename)[1].lower()
+        if file_ext not in current_app.config['UPLOAD_EXTENSIONS']:
+            raise ValidationError(
+                "Invalid file type. Only these files are accepted: " + 
+                ", ".join(current_app.config['UPLOAD_EXTENSIONS']))
+
+        # validate the file size
+        file_size = len(avatar.data.read())
+        avatar.data.seek(0)
+        if file_size >= current_app.config['MAX_UPLOAD_SIZE']:
+            raise ValidationError(
+                "The uploaded file has to be less than: {:.1f} MB.".format(
+                    current_app.config['MAX_UPLOAD_SIZE'] / 1024**2))
 
 
 class EmptyForm(FlaskForm):

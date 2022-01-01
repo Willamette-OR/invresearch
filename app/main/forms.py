@@ -1,8 +1,9 @@
 import os
+import imghdr
 from flask import request, current_app
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField
-from wtforms import StringField, SubmitField, TextAreaField
+from wtforms import StringField, SubmitField, TextAreaField, form
 from wtforms.validators import DataRequired, ValidationError, Length
 from app.models import User
 
@@ -57,6 +58,19 @@ class EditProfileForm(FlaskForm):
             raise ValidationError(
                 "The uploaded file has to be less than: {:.1f} MB.".format(
                     current_app.config['MAX_UPLOAD_SIZE'] / 1024**2))
+
+        # validate the file content
+        file_header = avatar.data.read(500)
+        avatar.data.seek(0)
+        file_format = imghdr.what(None, file_header)
+        if file_format is None:
+            detected_ext = None
+        else:
+            detected_ext = \
+                "." + (file_format if file_format != 'jpeg' else 'jpg')
+        if detected_ext != file_ext:
+            raise ValidationError("The detected file content ({}) does not "
+            "match the file extension ({}).".format(detected_ext, file_ext))
 
 
 class EmptyForm(FlaskForm):

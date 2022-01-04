@@ -1,6 +1,9 @@
-from flask import request
+import os
+import imghdr
+from flask import request, current_app
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField, TextAreaField
+from flask_wtf.file import FileField
+from wtforms import StringField, SubmitField, TextAreaField, form
 from wtforms.validators import DataRequired, ValidationError, Length
 from app.models import User
 
@@ -9,15 +12,65 @@ class EditProfileForm(FlaskForm):
     """This class defines the profile editing form, derived from FlaskForm."""
 
     username = StringField('Username', validators=[DataRequired()])
+    avatar = FileField('Profile Photo')
     about_me = TextAreaField('About Me', validators=[Length(min=1, max=140)])
     submit = SubmitField('Submit')
 
-    def validate_username(self, username):
-        """This method validates if the submitted username is already in use."""
+    def __init__(self, original_username, *args, **kwargs):
+        """
+        This constructor is overloaded in order to initialize the form instance 
+        with an original username.
+        """
 
-        user = User.query.filter_by(username=username.data).first()
-        if user:
-            raise ValidationError("Please use a different username.")
+        super().__init__(*args, **kwargs)
+        self.original_username = original_username
+
+    def validate_username(self, username):
+        """
+        This method validates if the submitted username is already used by 
+        someone else.
+        """
+
+        if username.data != self.original_username:
+            user = User.query.filter_by(username=username.data).first()
+            if user:
+                raise ValidationError("Please use a different username.")
+
+    def validate_avatar(self, avatar):
+        """
+        This method validates if the uploaded file:
+            1. has a proper file extension;
+            2. is not too large;
+            3. has a byte content consistent with the given file extension
+        """
+
+        # validate the file extension
+        file_ext = os.path.splitext(avatar.data.filename)[1].lower()
+        if file_ext not in current_app.config['UPLOAD_EXTENSIONS']:
+            raise ValidationError(
+                "Invalid file type. Only these files are accepted: " + 
+                ", ".join(current_app.config['UPLOAD_EXTENSIONS']))
+
+        # validate the file size
+        file_size = len(avatar.data.read())
+        avatar.data.seek(0)
+        if file_size >= current_app.config['MAX_UPLOAD_SIZE']:
+            raise ValidationError(
+                "The uploaded file has to be less than: {:.1f} MB.".format(
+                    current_app.config['MAX_UPLOAD_SIZE'] / 1024**2))
+
+        # validate the file content
+        file_header = avatar.data.read(500)
+        avatar.data.seek(0)
+        file_format = imghdr.what(None, file_header)
+        if file_format is None:
+            detected_ext = None
+        else:
+            detected_ext = \
+                "." + (file_format if file_format != 'jpeg' else 'jpg')
+        if detected_ext != file_ext:
+            raise ValidationError("The detected file content ({}) does not "
+            "match the file extension ({}).".format(detected_ext, file_ext))
 
 
 class EmptyForm(FlaskForm):

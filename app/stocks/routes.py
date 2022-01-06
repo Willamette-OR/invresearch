@@ -42,7 +42,11 @@ def stock(symbol):
     symbol.
     """
 
-    # look up the symbol in the app database
+    ######################
+    # Retrieve the stock #
+    ######################
+
+    # look up the symbol in the stock database
     symbol_upper = symbol.upper()
     stock = Stock.query.filter_by(symbol=symbol_upper).first()
 
@@ -59,10 +63,10 @@ def stock(symbol):
             db.session.add(stock)
             db.session.commit()
 
-    # update the quote
-    stock.update_quote()
-    db.session.commit()
-    
+    ################
+    # Handle forms #
+    ################
+
     # define an empty Flask form to validate post requests for 
     # watching/unwatching stocks
     form = EmptyForm()
@@ -86,10 +90,27 @@ def stock(symbol):
         note_form.body.data = \
             current_note.body if current_note is not None else None
 
-    # get the quote history, the financials history, the analyst estimates, and 
-    # quote details
+    #############################
+    # Process request arguments #
+    #############################
+
+    # get input parameters from the request
+    num_of_years = request.args.get('num_of_years', 20, type=int)
+    valuation_metric = request.args.get(
+        'valuation_metric', 
+        current_app.config['STOCK_VALUATION_METRIC_DEFAULT'], 
+        type=str)
+    payload_only = request.args.get('payload_only', 0, type=int)
+
+    #######################################################################
+    # Prep for valuation plotting, quote details and fundamental analysis #
+    #######################################################################
+
+    # get dates needed for valuation plotting
     start_date_quote_history, start_date_financials_history, end_date = \
-        get_valplot_dates()
+        get_valplot_dates(num_of_years=num_of_years)
+
+    # get stock data needed for valuation plotting
     quote_history_data = \
         stock.get_quote_history_data(start_date=start_date_quote_history, 
                                      end_date=end_date)
@@ -99,24 +120,11 @@ def stock(symbol):
     fundamental_indicators = stock.get_fundamental_indicator_data(
         start_date=start_date_financials_history)
 
-
-    #######################################
-    # Set up for stock valuation plotting #
-    #######################################
-
-
-    # get acceptable durations for stock valuation plotting;
-    durations = get_durations(quote_history=quote_history_data, 
-                              financials_history=financials_history)
-
     # get the historical average price multiple with respect to the chosen 
-    # metric, and the associated normal prices;
-    # the default metric to be used for valuation plotting can be changed in 
-    # the app config file
-    _valuation_metric = current_app.config['STOCK_VALUATION_METRIC_DEFAULT']
+    # metric, and the associated normal prices
     average_price_multiple, normal_price_data = get_normal_price(
-        metric_name=_valuation_metric,
-        section_name=section_lookup_by_metric[_valuation_metric],
+        metric_name=valuation_metric,
+        section_name=section_lookup_by_metric[valuation_metric],
         start_date=start_date_financials_history,
         quote_history_data=quote_history_data,
         financials_history=financials_history,
@@ -139,26 +147,45 @@ def stock(symbol):
                                 normal_price_data=normal_price_data,
                                 average_price_multiple=average_price_multiple)
 
-
-    # add "estimated annual return" to the quote details dictionary, based on 
-    # the quote history data and the normal price data
-    estimated_return = \
+    # add to the paylod the updated estimated return, specific to the updated 
+    # valuation plot 
+    plot['estimated_return'] = \
         get_estimated_return(quote_history_data=quote_history_data, 
                              normal_price_data=normal_price_data, 
                              dividend_yield=stock.dividend_yield)
-        
-    ###################################
-    # End of Valuation Plotting Setup #
-    ###################################
 
+    #################################################
+    # Return only the plot payload for if requested #
+    #################################################
+    
+    if payload_only:
+        return jsonify(plot)
+
+    ####################
+    # Update the quote #
+    ####################
+
+    stock.update_quote()
+    db.session.commit()
+
+    #########################################################
+    # Get acceptable durations for stock valuation plotting #
+    #########################################################
+
+    durations = get_durations(quote_history=quote_history_data, 
+                              financials_history=financials_history)
+
+    ############################
+    # Return the full template #
+    ############################
 
     return render_template(
         'stocks/stock.html', title="Stock - {}".format(stock.symbol), 
         stock=stock, quote=json.loads(stock.quote_payload), form=form, 
         plot=plot, durations=durations, 
-        valuation_metric=_valuation_metric, quote_details=quote_details,
+        valuation_metric=valuation_metric, quote_details=quote_details,
         fundamental_indicators=fundamental_indicators,
-        estimated_return=estimated_return, note_form=note_form,
+        note_form=note_form,
         current_note=current_note
     )
 
@@ -362,61 +389,6 @@ def refresh_quote_polling():
 
     # return an "empty" response for the request
     return ('', 204)
-
-
-@bp.route('/update_valuation_plot')
-@login_required
-def update_valuation_plot():
-    """
-    This view function gets an updated stock valuation plot with pre-specified 
-    input parameters, and returns scripts needed for plot rendering in a json 
-    payload
-    """
-
-    # get input parameters from the request
-    symbol = request.args.get('symbol').upper()
-    num_of_years = request.args.get('num_of_years', 20, type=int)
-    valuation_metric = request.args.get('valuation_metric', 'EBITDA', type=str)
-
-    # query the stock object
-    stock = Stock.query.filter_by(symbol=symbol).first_or_404()
-
-    # get dates needed for valuation plotting
-    start_date_quote_history, start_date_financials_history, end_date = \
-        get_valplot_dates(num_of_years=num_of_years)
-
-    # get stock data needed for valuation plotting
-    quote_history_data = \
-        stock.get_quote_history_data(start_date=start_date_quote_history, 
-                                     end_date=end_date)
-    financials_history = stock.get_financials_history_data()
-    analyst_estimates = stock.get_analyst_estimates_data()
-
-    # get the historical average price multiple with respect to the chosen 
-    # metric, and the associated normal prices
-    average_price_multiple, normal_price_data = get_normal_price(
-        metric_name=valuation_metric,
-        section_name=section_lookup_by_metric[valuation_metric],
-        start_date=start_date_financials_history,
-        quote_history_data=quote_history_data,
-        financials_history=financials_history,
-        analyst_estimates=analyst_estimates
-    )
-
-    # get the plot payload 
-    plot = stock_valuation_plot(quote_history_data=quote_history_data,
-                                normal_price_data=normal_price_data,
-                                average_price_multiple=average_price_multiple)
-
-    # add to the paylod the updated estimated return, specific to the updated 
-    # valuation plot 
-    plot['estimated_return'] = \
-        get_estimated_return(quote_history_data=quote_history_data, 
-                             normal_price_data=normal_price_data, 
-                             dividend_yield=stock.dividend_yield)
-
-    # return a json payload for Ajax requests
-    return jsonify(plot)
 
 
 @bp.route('/stock/<symbol>/metric_profile/<indicator_name>')

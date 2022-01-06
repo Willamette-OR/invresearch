@@ -40,7 +40,7 @@
             };
 
             $.ajax(
-                '/update_valuation_plot?symbol=' + symbol + 
+                '/stock/' + symbol + '?payload_only=1' + 
                 '&num_of_years=' + num_of_years + '&valuation_metric=' + 
                 current_metric
             ).done(function(plot) {
@@ -309,6 +309,7 @@
                             {# add another row for estimated annual returns #}
                             <tr>
                                 <td>Estimated Annual Return</td>
+                                {% set estimated_return = plot['estimated_return'] if plot else None %}
                                 {% if estimated_return %}
                                     <td>
                                         <span id="estimated_return" 

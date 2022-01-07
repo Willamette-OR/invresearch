@@ -91,6 +91,31 @@
                 {{ plot.div|safe }}
             </span>
 
+            <!-- render the data table of the related valuation metric -->
+            {% set data_table = plot['valuation_metric_data'] %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <td>Date</td>
+                            {% for timestamp in data_table.keys() %}
+                                <td>{{ timestamp }}</td>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>{{ valuation_metric }}</td>
+                            {% for value in data_table.values() %}
+                                <td>
+                                    {% include 'stocks/_float.html' %}
+                                </td>
+                            {% endfor %}
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
         <!-- if the payload of the plot is NOT available -->
         {% else %}
             <h3>

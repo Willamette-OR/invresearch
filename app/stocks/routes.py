@@ -122,14 +122,15 @@ def stock(symbol):
 
     # get the historical average price multiple with respect to the chosen 
     # metric, and the associated normal prices
-    average_price_multiple, normal_price_data = get_normal_price(
-        metric_name=valuation_metric,
-        section_name=section_lookup_by_metric[valuation_metric],
-        start_date=start_date_financials_history,
-        quote_history_data=quote_history_data,
-        financials_history=financials_history,
-        analyst_estimates=analyst_estimates
-    )
+    average_price_multiple, normal_price_data, valuation_metric_data = \
+        get_normal_price(
+            metric_name=valuation_metric,
+            section_name=section_lookup_by_metric[valuation_metric],
+            start_date=start_date_financials_history,
+            quote_history_data=quote_history_data,
+            financials_history=financials_history,
+            analyst_estimates=analyst_estimates
+        )
 
     # return if not enough data was available to calculate the average 
     # historical price multiple
@@ -153,6 +154,11 @@ def stock(symbol):
         get_estimated_return(quote_history_data=quote_history_data, 
                              normal_price_data=normal_price_data, 
                              dividend_yield=stock.dividend_yield)
+
+    # add to the paylod the data of the associated valuation metric
+    plot['valuation_metric_data'] = {
+        timestamp.strftime('%m%y'): valuation_metric_data[timestamp] 
+        for timestamp in valuation_metric_data}
 
     #################################################
     # Return only the plot payload for if requested #

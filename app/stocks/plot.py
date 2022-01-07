@@ -213,7 +213,7 @@ def get_normal_price(metric_name, section_name, start_date, quote_history_data,
 
     return average_price_multiple, {timestamp: max(0, average_price_multiple * \
         metric_combined_per_share_data[timestamp]) for timestamp in \
-        metric_combined_per_share_data}
+        metric_combined_per_share_data}, metric_combined_per_share_data
 
 
 def stock_valuation_plot(quote_history_data, normal_price_data, 

@@ -99,31 +99,60 @@
         });
     </script>
 
-    {#
+    <!-- load data tables with proper formatting -->
+    <script>
+        // function to format values in data tables
+        function formatValue(val) {
+            let codeFormatted = '<span style="font-weight: bold; color: ';
+            let color = (val>=0 ? 'black' : 'red');
+            codeFormatted += color + '">' + val.toFixed(2) + '</span>';
+            return codeFormatted;
+        };
+
+        // function to load data tables
+        function loadTable(tableID, rowNames, data) {
+            // construct the code for the table head
+            let thead = '<thead><tr><td>Date</td>';
+            $.each(data, function(key, val) {
+                thead += '<td>' + key + '</td>';
+            });
+            thead += '</tr></thead>';
+
+            // construct the code for the table body
+            let tbody = '<tbody><tr><td>' + rowNames[0] + '</td>';
+            $.each(data, function(key, val) {
+                tbody += '<td>' + formatValue(val) + '</td>';
+            });
+            tbody += '</tr></tbody>';
+
+            // render the complete html code for the given table
+            let tableCode = thead + tbody;
+            $('#' + tableID).html(tableCode);
+        };
+    </script>
+
+    <!-- Load the metric data table -->
     <script>
         $(document).ready(function() {
-            // get the current and previous urls
-            var currentURL = window.location.href;
-            var previousURL = localStorage.getItem('previousURL');
+            // initialization
+            let tableID = 'valplot-datatable';
+            symbol = $('.stock-symbol').text();
 
-            // show the saved last collapse state if the request was just a 
-            // page reload
-            if (currentURL == previousURL) {
-                var collapseItem = localStorage.getItem('collapseItem');
-                if (collapseItem) {
-                    $(collapseItem).collapse('show');
-                };
-            } else {
-                localStorage.setItem('previousURL', currentURL);
-            }
-
-            $('button[data-toggle="collapse"]').on('show.bs.collapse', function(e) {
-                localStorage.setItem('collapseItem', $(this).attr('data-target'));
-            });
-            
+            // get data via Ajax and load the table on the page
+            $.ajax('/stock/' + symbol + '?payload_only=1'
+            ).done(function(response) {
+                let data = response.valuation_metric_data;
+                //let data = {'x': 1, 'y': 2};
+                let rowNames = [$('.current_valuation_metric').text().trim()];
+                loadTable(tableID, rowNames, data);
+            }).fail(function() {
+                $('#' + tableID).html(
+                    '<thead><tr><td>Error: data retrival failed.</td></tr> ' + 
+                    ' </thead>'
+                );
+            });            
         });
     </script>
-    #}
 {% endblock %}
 
 

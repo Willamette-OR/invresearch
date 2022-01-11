@@ -63,6 +63,13 @@ def stock(symbol):
             db.session.add(stock)
             db.session.commit()
 
+    ####################
+    # Update the quote #
+    ####################
+
+    stock.update_quote()
+    db.session.commit()
+
     ################
     # Handle forms #
     ################
@@ -166,13 +173,6 @@ def stock(symbol):
     
     if payload_only:
         return jsonify(plot)
-
-    ####################
-    # Update the quote #
-    ####################
-
-    stock.update_quote()
-    db.session.commit()
 
     #########################################################
     # Get acceptable durations for stock valuation plotting #

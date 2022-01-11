@@ -44,7 +44,7 @@
             thead += '</tr></thead>';
 
             // construct the code for the table body
-            let tbody = '<tbody><tr><td>' + rowNames[0] + '</td>';
+            let tbody = '<tbody><tr class="info"><td>' + rowNames[0] + '</td>';
             $.each(data, function(key, val) {
                 tbody += '<td>' + formatValue(val) + '</td>';
             });

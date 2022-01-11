@@ -23,6 +23,58 @@
 
     {# script to update stock valuation graph on the page #}
     <script>
+        // global variables
+        var valuationTableID = 'valplot-datatable';
+
+        // function to format values in data tables
+        function formatValue(val) {
+            let codeFormatted = '<span style="font-weight: bold; color: ';
+            let color = (val>=0 ? 'black' : 'red');
+            codeFormatted += color + '">' + val.toFixed(2) + '</span>';
+            return codeFormatted;
+        };
+
+        // function to load data tables
+        function loadTable(tableID, rowNames, data) {
+            // construct the code for the table head
+            let thead = '<thead><tr><td>Date</td>';
+            $.each(data, function(key, val) {
+                thead += '<td>' + key + '</td>';
+            });
+            thead += '</tr></thead>';
+
+            // construct the code for the table body
+            let tbody = '<tbody><tr><td>' + rowNames[0] + '</td>';
+            $.each(data, function(key, val) {
+                tbody += '<td>' + formatValue(val) + '</td>';
+            });
+            tbody += '</tr></tbody>';
+
+            // render the complete html code for the given table
+            let tableCode = thead + tbody;
+            $('#' + tableID).html(tableCode);
+        };
+
+        // render the data table of the underlying metric after loading the page
+        $(document).ready(function() {
+            // initialization
+            symbol = $('.stock-symbol').text();
+
+            // get data via Ajax and load the table on the page
+            $.ajax('/stock/' + symbol + '?payload_only=1'
+            ).done(function(response) {
+                let data = response.valuation_metric_data;
+                let rowNames = [$('.current_valuation_metric').text().trim()];
+                loadTable(valuationTableID, rowNames, data);
+            }).fail(function() {
+                $('#' + valuationTableID).html(
+                    '<thead><tr><td>Error: data retrival failed.</td></tr> ' + 
+                    ' </thead>'
+                );
+            });            
+        });
+
+        // function to set the estimated return value on the page
         function set_estimated_return(r) {
             $('#estimated_return').text(r);
             $('#estimated_return').css('color', r>=15 ? 'green' : r>=0 ? 'black' : 'red')
@@ -44,11 +96,21 @@
                 '&num_of_years=' + num_of_years + '&valuation_metric=' + 
                 current_metric
             ).done(function(plot) {
+                // render the valuation plot
                 $(dest_elem).html(plot.resources);
                 $(dest_elem).html(plot.script);
                 $(dest_elem).html(plot.div);
+
+                // update the name of the underlying metric for the valuation 
+                // plot
                 $(metric_elem).text(current_metric);
+
+                // set the estimated return implied by the valuation plot
                 set_estimated_return(plot.estimated_return);
+
+                // load the data table used for the valuation plot
+                loadTable(valuationTableID, [current_metric], 
+                          plot.valuation_metric_data);
             }).fail(function() {
                 $(dest_elem).text('Error: unable to update plot.')
             });  
@@ -96,61 +158,6 @@
             $(collapseItem).on('hide.bs.collapse', function() {
                 localStorage.setItem('collapseShow', 0);
             });
-        });
-    </script>
-
-    <!-- load data tables with proper formatting -->
-    <script>
-        // function to format values in data tables
-        function formatValue(val) {
-            let codeFormatted = '<span style="font-weight: bold; color: ';
-            let color = (val>=0 ? 'black' : 'red');
-            codeFormatted += color + '">' + val.toFixed(2) + '</span>';
-            return codeFormatted;
-        };
-
-        // function to load data tables
-        function loadTable(tableID, rowNames, data) {
-            // construct the code for the table head
-            let thead = '<thead><tr><td>Date</td>';
-            $.each(data, function(key, val) {
-                thead += '<td>' + key + '</td>';
-            });
-            thead += '</tr></thead>';
-
-            // construct the code for the table body
-            let tbody = '<tbody><tr><td>' + rowNames[0] + '</td>';
-            $.each(data, function(key, val) {
-                tbody += '<td>' + formatValue(val) + '</td>';
-            });
-            tbody += '</tr></tbody>';
-
-            // render the complete html code for the given table
-            let tableCode = thead + tbody;
-            $('#' + tableID).html(tableCode);
-        };
-    </script>
-
-    <!-- Load the metric data table -->
-    <script>
-        $(document).ready(function() {
-            // initialization
-            let tableID = 'valplot-datatable';
-            symbol = $('.stock-symbol').text();
-
-            // get data via Ajax and load the table on the page
-            $.ajax('/stock/' + symbol + '?payload_only=1'
-            ).done(function(response) {
-                let data = response.valuation_metric_data;
-                //let data = {'x': 1, 'y': 2};
-                let rowNames = [$('.current_valuation_metric').text().trim()];
-                loadTable(tableID, rowNames, data);
-            }).fail(function() {
-                $('#' + tableID).html(
-                    '<thead><tr><td>Error: data retrival failed.</td></tr> ' + 
-                    ' </thead>'
-                );
-            });            
         });
     </script>
 {% endblock %}

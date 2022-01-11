@@ -168,7 +168,7 @@ def get_normal_price(metric_name, section_name, start_date, quote_history_data,
     # return special values if the average price multiple calculations did not 
     # return valid values
     if not average_price_multiple:
-        return None, {}
+        return None, {}, None
 
     # get the per share data of analyst estimates
     field_lookup = {

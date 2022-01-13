@@ -324,34 +324,69 @@ def get_durations(quote_history, financials_history, min_years=3, max_years=20):
     plotting.
 
     Each acceptable duration refers to a value for # of years of financials 
-    history to be used in calculating the historical average price multiple.
+    history & quote history to be used together in calculating the historical 
+    average price multiple.
+
+    As an example, if 3 years is an "acceptible time window", it implies a 3.x 
+    years overlap of the quote history data and financials history data is 
+    available to used for the calculation of average price multiple of that 
+    same time window.
+
+    Inputs:
+        'quote_history': a dictionary object, and each item in it looks like 
+                         "<timestamp>: <price>".
+        'financials_history': a dictionary object, which for now holds the 
+                              payload data returned by the GuruFocus API for 
+                              historical financials .
+        'min_years': an integer defaulted to be 3, the minimum number of years 
+                     allowed for the average price multiple calculation.
+        'max_years': an integer defaulted to be 20, the maximum number of years 
+                     allowed for the average price multiple calculation.
     """
 
-    # get the maximum of number of years available in the financials history 
-    # payload
-    # Hardcoded for now assuming the payload is from GuruFocus API
-    _num_of_shares = \
+    # get the earliest and latest dates in the quote history data
+    earliest_quote_date = min(quote_history.keys())
+    latest_quote_date = max(quote_history.keys())
+
+    # get the earliest and latest dates in the financial history data
+
+    # in order to properly preprocess the payload data returned by the 
+    # financials API, create a metric object using the payload, and then get 
+    # the timestamps from the metric object
+    num_of_shares = \
         Metric(name='Shares Outstanding (Diluted Average)',
                timestamps=financials_history['financials']['annuals']\
                    ['Fiscal Year'],
                values=financials_history['financials']['annuals']\
                    ['income_statement']['Shares Outstanding (Diluted Average)'],
                start_date=datetime(1900, 1, 1))
+    earliest_financials_date = min(num_of_shares.timestamps)
+    latest_financials_date = max(num_of_shares.timestamps)
 
-    max_years_quote_history = max(quote_history.keys()).year - \
-        min(quote_history.keys()).year + 1
-    max_years_financials_history = len(_num_of_shares.timestamps)
+    # get the maximum number of years of overlap between the quote and the 
+    # financials history data, which is an integer and the floor of the years 
+    # delta 
+    max_years_overlap = int(
+        (
+            min(latest_financials_date, latest_quote_date) - 
+            max(earliest_financials_date, earliest_quote_date)
+        ).days / 365.2425
+    )
 
-    # get the maximum number of years acceptible for valuation plotting
-    max_years_plotting_history = \
-        min(max_years_quote_history, max_years_financials_history, max_years) \
-        - 1
+    # get the maximum number of years allowed for average price multiple 
+    # calculation, which is the lesser of the two below:
+    #   (1) the max # years overlap between the quote and the financials history
+    #   (2) the max # years allowed passed as an input
+    max_duration = min(max_years_overlap, max_years)
 
-    if max_years_plotting_history < min_years:
+    # return None if the maximum number of years allowed derived above is less 
+    # than the minimum number of years allowed passed as an input
+    if max_duration < min_years:
         return None
-    else:
-        return [(value + 1) for value in \
-            range(max_years_plotting_history) if (value + 1) >= min_years]
+
+    # return all allowed durations (in years) in a list
+    return [(value + 1) for value in \
+            range(max_duration) if (value + 1) >= min_years]
 
 
 def timeseries_plot(name, data_list, symbols, 

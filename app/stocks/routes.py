@@ -113,19 +113,28 @@ def stock(symbol):
     # Prep for valuation plotting, quote details and fundamental analysis #
     #######################################################################
 
-    # get dates needed for valuation plotting
-    start_date_quote_history, start_date_financials_history, end_date = \
-        get_valplot_dates(num_of_years=num_of_years)
-
     # get stock data needed for valuation plotting
-    quote_history_data = \
-        stock.get_quote_history_data(start_date=start_date_quote_history, 
-                                     end_date=end_date)
+    quote_history = stock.get_quote_history_data(
+        start_date='01-01-1800', end_date='01-01-9999')
     financials_history = stock.get_financials_history_data()
     analyst_estimates = stock.get_analyst_estimates_data()
     quote_details = stock.get_quote_details_data()
-    fundamental_indicators = stock.get_fundamental_indicator_data(
-        start_date=start_date_financials_history)
+
+    # get dates needed for valuation plotting, the subset of quote history data 
+    # to be used for plotting
+    start_date_quote_history, start_date_financials_history, end_date, _ = \
+        get_valplot_dates(
+            quote_history=quote_history, financials_history=financials_history, 
+            num_of_years=num_of_years)
+    quote_history_valplotting = \
+        stock.get_quote_history_data(start_date=start_date_quote_history, 
+                                     end_date=end_date)
+
+    # get fundamental indicators, using the financials history data from the 
+    # same time window as that used for valuation plotting
+    # TODO - check if a different start date for the financials history data 
+    # should be used when getting fundamental indicators
+    fundamental_indicators = stock.get_fundamental_indicator_data()
 
     # get the historical average price multiple with respect to the chosen 
     # metric, and the associated normal prices
@@ -134,7 +143,7 @@ def stock(symbol):
             metric_name=valuation_metric,
             section_name=section_lookup_by_metric[valuation_metric],
             start_date=start_date_financials_history,
-            quote_history_data=quote_history_data,
+            quote_history_data=quote_history_valplotting,
             financials_history=financials_history,
             analyst_estimates=analyst_estimates
         )
@@ -151,14 +160,14 @@ def stock(symbol):
         )
 
     # get the plot payload 
-    plot = stock_valuation_plot(quote_history_data=quote_history_data,
+    plot = stock_valuation_plot(quote_history_data=quote_history_valplotting,
                                 normal_price_data=normal_price_data,
                                 average_price_multiple=average_price_multiple)
 
     # add to the paylod the updated estimated return, specific to the updated 
     # valuation plot 
     plot['estimated_return'] = \
-        get_estimated_return(quote_history_data=quote_history_data, 
+        get_estimated_return(quote_history_data=quote_history_valplotting, 
                              normal_price_data=normal_price_data, 
                              dividend_yield=stock.dividend_yield)
 
@@ -178,7 +187,7 @@ def stock(symbol):
     # Get acceptable durations for stock valuation plotting #
     #########################################################
 
-    durations = get_durations(quote_history=quote_history_data, 
+    durations = get_durations(quote_history=quote_history, 
                               financials_history=financials_history)
 
     ############################

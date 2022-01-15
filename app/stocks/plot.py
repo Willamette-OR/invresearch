@@ -168,7 +168,7 @@ def get_normal_price(metric_name, section_name, start_date, quote_history_data,
     # return special values if the average price multiple calculations did not 
     # return valid values
     if not average_price_multiple:
-        return None, {}
+        return None, {}, None
 
     # get the per share data of analyst estimates
     field_lookup = {
@@ -213,7 +213,7 @@ def get_normal_price(metric_name, section_name, start_date, quote_history_data,
 
     return average_price_multiple, {timestamp: max(0, average_price_multiple * \
         metric_combined_per_share_data[timestamp]) for timestamp in \
-        metric_combined_per_share_data}
+        metric_combined_per_share_data}, metric_combined_per_share_data
 
 
 def stock_valuation_plot(quote_history_data, normal_price_data, 
@@ -291,23 +291,66 @@ def stock_valuation_plot(quote_history_data, normal_price_data,
     return payload
 
 
-def get_valplot_dates(num_of_years=20):
+def get_valplot_dates(quote_history, financials_history, num_of_years=20):
     """
     This function calculates and returns dates needed to filter the quote 
-    history and the financials history for stock valuation plotting.
+    history and the financials history for stock valuation plotting, as well as 
+    the total number of years that can possibly be used for plotting. 
+
+    if the total # of overlapping years, N, between the input quote history data 
+    and the input financials history, is less than the input num_of_years, M, 
+    then dates needed for valuation plotting will be based off the number N. 
+    Otherwise dates will be based off the number M.
 
     Inputs:
-        'num_of_years': # of years of quote history to be included in 
-                        valuation plotting
+        'quote_history': a dictionary object, and each item in it looks like 
+                         "<timestamp>: <price>".
+        'financials_history': a dictionary object, which for now holds the 
+                              payload data returned by the GuruFocus API for 
+                              historical financials .
+        'num_of_years': # of years of quote history intended to be included in 
+                        valuation plotting. But the actual # of years available 
+                        for valuation plotting might be less than this number.
     """
+
+    # get the earliest and latest dates in the quote history data
+    earliest_date_quote = min(quote_history.keys())
+    latest_date_quote = max(quote_history.keys())
+
+    # get the earliest and latest dates in the financial history data
+
+    # in order to properly preprocess the payload data returned by the 
+    # financials API, create a metric object using the payload, and then get 
+    # the timestamps from the metric object
+    num_of_shares = \
+        Metric(name='Shares Outstanding (Diluted Average)',
+               timestamps=financials_history['financials']['annuals']\
+                   ['Fiscal Year'],
+               values=financials_history['financials']['annuals']\
+                   ['income_statement']['Shares Outstanding (Diluted Average)'],
+               start_date=datetime(1900, 1, 1))
+    earliest_date_financials = min(num_of_shares.timestamps)
+    latest_date_financials = max(num_of_shares.timestamps)
+
+    # get the maximum number of years of overlap between the quote and the 
+    # financials history data, which is an integer and the floor of the years 
+    # delta 
+    earliest_date_overlap = max(earliest_date_financials, earliest_date_quote)
+    latest_date_overlap = min(latest_date_financials, latest_date_quote)
+    max_years_overlap = int(
+        (latest_date_overlap - earliest_date_overlap).days / 365.2425)
 
     # set the end date to utcnow, in the format of '%m-%d-%Y'
     now = datetime.utcnow()
     end_date = now.strftime('%m-%d-%Y')
 
-    # set the start date of quote history 
-    start_year = now.year - num_of_years
-    start_date_quote_history = '01-01-{}'.format(start_year)
+    # set the start date of quote history
+    if max_years_overlap < num_of_years:
+        start_year = earliest_date_quote.year
+        start_date_quote_history = earliest_date_overlap.strftime('%m-%d-%Y')
+    else:
+        start_year = latest_date_overlap.year - num_of_years
+        start_date_quote_history = '01-01-{}'.format(start_year)
 
     # set the start date of financials history to be a year ahead of that of 
     # quote history;
@@ -315,7 +358,8 @@ def get_valplot_dates(num_of_years=20):
     # interpolations when computing average price multiples
     start_date_financials_history = '01-01-{}'.format(start_year - 1)
 
-    return start_date_quote_history, start_date_financials_history, end_date
+    return start_date_quote_history, start_date_financials_history, end_date, \
+           max_years_overlap
 
 
 def get_durations(quote_history, financials_history, min_years=3, max_years=20):
@@ -324,34 +368,46 @@ def get_durations(quote_history, financials_history, min_years=3, max_years=20):
     plotting.
 
     Each acceptable duration refers to a value for # of years of financials 
-    history to be used in calculating the historical average price multiple.
+    history & quote history to be used together in calculating the historical 
+    average price multiple.
+
+    As an example, if 3 years is an "acceptible time window", it implies a 3.x 
+    years overlap of the quote history data and financials history data is 
+    available to used for the calculation of average price multiple of that 
+    same time window.
+
+    Inputs:
+        'quote_history': a dictionary object, and each item in it looks like 
+                         "<timestamp>: <price>".
+        'financials_history': a dictionary object, which for now holds the 
+                              payload data returned by the GuruFocus API for 
+                              historical financials .
+        'min_years': an integer defaulted to be 3, the minimum number of years 
+                     allowed for the average price multiple calculation.
+        'max_years': an integer defaulted to be 20, the maximum number of years 
+                     allowed for the average price multiple calculation.
     """
 
-    # get the maximum of number of years available in the financials history 
-    # payload
-    # Hardcoded for now assuming the payload is from GuruFocus API
-    _num_of_shares = \
-        Metric(name='Shares Outstanding (Diluted Average)',
-               timestamps=financials_history['financials']['annuals']\
-                   ['Fiscal Year'],
-               values=financials_history['financials']['annuals']\
-                   ['income_statement']['Shares Outstanding (Diluted Average)'],
-               start_date=datetime(1900, 1, 1))
+    # get the total number of years that can possibly be used for valuation 
+    # plotting, based on the input quote history and the input financials 
+    # history data
+    _, _, _, max_years_overlap = get_valplot_dates(
+        quote_history=quote_history, financials_history=financials_history)   
 
-    max_years_quote_history = max(quote_history.keys()).year - \
-        min(quote_history.keys()).year + 1
-    max_years_financials_history = len(_num_of_shares.timestamps)
+    # get the maximum number of years allowed for average price multiple 
+    # calculation, which is the lesser of the two below:
+    #   (1) the max # years overlap between the quote and the financials history
+    #   (2) the max # years allowed passed as an input
+    max_duration = min(max_years_overlap, max_years)
 
-    # get the maximum number of years acceptible for valuation plotting
-    max_years_plotting_history = \
-        min(max_years_quote_history, max_years_financials_history, max_years) \
-        - 1
-
-    if max_years_plotting_history < min_years:
+    # return None if the maximum number of years allowed derived above is less 
+    # than the minimum number of years allowed passed as an input
+    if max_duration < min_years:
         return None
-    else:
-        return [(value + 1) for value in \
-            range(max_years_plotting_history) if (value + 1) >= min_years]
+
+    # return all allowed durations (in years) in a list
+    return [(value + 1) for value in \
+            range(max_duration) if (value + 1) >= min_years]
 
 
 def timeseries_plot(name, data_list, symbols, 

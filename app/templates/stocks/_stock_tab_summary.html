@@ -1,0 +1,158 @@
+<div class="row">
+    <div class="col-sm-8">
+
+        <!-- tab title -->
+
+        <h3 style="color:orangered">
+            Price Correlated w/ Fundamentals:  
+            <mark>
+                <span class="current_valuation_metric">
+                    {{ valuation_metric }}
+                </span>
+            </mark>
+        </h3>
+        <br>
+    
+        <!-- rendering the valuation plot -->
+
+        <!-- if the paylod of the plot is available -->
+        {% if plot %}
+
+            <!-- display a dropdown of different metrics for price correlations -->
+            <div class="dropdown">
+                <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">
+                    Price Correlations
+                    <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu">
+                    <!-- Earnings Correlations -->
+                    <li class="dropdown-header">
+                        Earnings Correlations
+                    </li>
+                    <li>
+                        <a href="javascript:plot_valuation(
+                                    '{{ stock.symbol }}',
+                                    null,
+                                    'Net Income',
+                                    '.valuation-plot'
+                                )">
+                            Diluted Earnings (GAAP)
+                        </a>
+                    </li>
+                    <li class="divider"></li>
+                    <!-- Intrinsic Value Correlations -->
+                    <li class="dropdown-header">
+                        Intrinsic Value Correlations
+                    </li>
+                    <li>
+                        <a href="javascript:plot_valuation(
+                                    '{{ stock.symbol }}',
+                                    null,
+                                    'EBITDA',
+                                    '.valuation-plot'
+                                )">
+                            EBITDA
+                        </a>
+                    </li>
+                    <li>
+                        <a href="javascript:plot_valuation(
+                                    '{{ stock.symbol }}',
+                                    null,
+                                    'EBIT',
+                                    '.valuation-plot'
+                                )">
+                            EBIT
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            <br>
+    
+            <!-- display links of all acceptible durations for valuation plotting -->
+            <div class="btn-group btn-group-sm">
+                {% for num_of_years in durations %}
+                    <a href="javascript:plot_valuation(
+                                '{{ stock.symbol }}',
+                                '{{ num_of_years }}',
+                                null,
+                                '.valuation-plot'
+                            )" class="btn btn-default">
+                        {{ num_of_years }}Y
+                    </a>
+                {% endfor %}
+            </div>
+            <br>
+            <br>
+            
+            <!-- render the plot by loading the prepared BokehJS scripts -->
+            <span class="valuation-plot">
+                {{ plot.resources|safe }}
+                {{ plot.script|safe }}
+                {{ plot.div|safe }}
+            </span>
+
+            <!-- render the data table of the related valuation metric -->
+            <br>
+            <div class="table-responsive">
+                <table id="valplot-datatable" class="table table-hover">
+                </table>
+            </div>
+
+        <!-- if the payload of the plot is NOT available -->
+        {% else %}
+            <h3>
+                <span style="color: red;">
+                    (The stock valuation plot is not available for 
+                    {{ stock.symbol }}, due to lack of historical data)
+                </span>
+            </h3>
+        {% endif %}
+    </div>
+
+    {# display quote details here #}
+    <div class="col-sm-4">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th style="border: 0px;">
+                        <h4>
+                            Quote Details
+                        </h4>
+                    </th>
+                    <th style="border: 0px;"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for field in quote_details %}
+                    <tr>
+                        <td>{{ field }}</td>
+                        <td style="font-weight:bold">{{ quote_details[field] }}</td>
+                    </tr>
+                {% endfor %}
+
+                {# add another row for estimated annual returns #}
+                <tr>
+                    <td>Estimated Annual Return</td>
+                    {% set estimated_return = plot['estimated_return'] if plot else None %}
+                    {% if estimated_return %}
+                        <td>
+                            <span id="estimated_return" 
+                                style="font-weight: bold; 
+                                       color: {% if estimated_return>=15 %}green
+                                              {% elif estimated_return>=0 %}black
+                                              {% else %}red
+                                              {% endif %};">
+                                {{ estimated_return }}
+                            </span>%
+                        </td>
+                    {% else %}
+                        <td id="estimated_return" 
+                            style="font-weight: bold;">
+                            N/A
+                        </td>
+                    {% endif %}
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>

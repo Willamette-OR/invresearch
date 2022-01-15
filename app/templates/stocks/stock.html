@@ -23,6 +23,58 @@
 
     {# script to update stock valuation graph on the page #}
     <script>
+        // global variables
+        var valuationTableID = 'valplot-datatable';
+
+        // function to format values in data tables
+        function formatValue(val) {
+            let codeFormatted = '<span style="font-weight: bold; color: ';
+            let color = (val>=0 ? 'black' : 'red');
+            codeFormatted += color + '">' + val.toFixed(2) + '</span>';
+            return codeFormatted;
+        };
+
+        // function to load data tables
+        function loadTable(tableID, rowNames, data) {
+            // construct the code for the table head
+            let thead = '<thead><tr><td>Date</td>';
+            $.each(data, function(key, val) {
+                thead += '<td>' + key + '</td>';
+            });
+            thead += '</tr></thead>';
+
+            // construct the code for the table body
+            let tbody = '<tbody><tr class="info"><td>' + rowNames[0] + '</td>';
+            $.each(data, function(key, val) {
+                tbody += '<td>' + formatValue(val) + '</td>';
+            });
+            tbody += '</tr></tbody>';
+
+            // render the complete html code for the given table
+            let tableCode = thead + tbody;
+            $('#' + tableID).html(tableCode);
+        };
+
+        // render the data table of the underlying metric after loading the page
+        $(document).ready(function() {
+            // initialization
+            symbol = $('.stock-symbol').text();
+
+            // get data via Ajax and load the table on the page
+            $.ajax('/stock/' + symbol + '?payload_only=1'
+            ).done(function(response) {
+                let data = response.valuation_metric_data;
+                let rowNames = [$('.current_valuation_metric').text().trim()];
+                loadTable(valuationTableID, rowNames, data);
+            }).fail(function() {
+                $('#' + valuationTableID).html(
+                    '<thead><tr><td>Error: data retrival failed.</td></tr> ' + 
+                    ' </thead>'
+                );
+            });            
+        });
+
+        // function to set the estimated return value on the page
         function set_estimated_return(r) {
             $('#estimated_return').text(r);
             $('#estimated_return').css('color', r>=15 ? 'green' : r>=0 ? 'black' : 'red')
@@ -40,15 +92,25 @@
             };
 
             $.ajax(
-                '/update_valuation_plot?symbol=' + symbol + 
+                '/stock/' + symbol + '?payload_only=1' + 
                 '&num_of_years=' + num_of_years + '&valuation_metric=' + 
                 current_metric
             ).done(function(plot) {
+                // render the valuation plot
                 $(dest_elem).html(plot.resources);
                 $(dest_elem).html(plot.script);
                 $(dest_elem).html(plot.div);
+
+                // update the name of the underlying metric for the valuation 
+                // plot
                 $(metric_elem).text(current_metric);
+
+                // set the estimated return implied by the valuation plot
                 set_estimated_return(plot.estimated_return);
+
+                // load the data table used for the valuation plot
+                loadTable(valuationTableID, [current_metric], 
+                          plot.valuation_metric_data);
             }).fail(function() {
                 $(dest_elem).text('Error: unable to update plot.')
             });  
@@ -98,32 +160,6 @@
             });
         });
     </script>
-
-    {#
-    <script>
-        $(document).ready(function() {
-            // get the current and previous urls
-            var currentURL = window.location.href;
-            var previousURL = localStorage.getItem('previousURL');
-
-            // show the saved last collapse state if the request was just a 
-            // page reload
-            if (currentURL == previousURL) {
-                var collapseItem = localStorage.getItem('collapseItem');
-                if (collapseItem) {
-                    $(collapseItem).collapse('show');
-                };
-            } else {
-                localStorage.setItem('previousURL', currentURL);
-            }
-
-            $('button[data-toggle="collapse"]').on('show.bs.collapse', function(e) {
-                localStorage.setItem('collapseItem', $(this).attr('data-target'));
-            });
-            
-        });
-    </script>
-    #}
 {% endblock %}
 
 
@@ -190,147 +226,8 @@
     {# Define different tab panes #}
     <div class="tab-content">
         <div id="summary" class="tab-pane fade in active">
-            <div class="row">
-                <div class="col-sm-8">
-                    <h3 style="color:orangered">
-                        Price Correlated w/ Fundamentals:  
-                        <mark>
-                            <span class="current_valuation_metric">
-                                {{ valuation_metric }}
-                            </span>
-                        </mark>
-                    </h3>
-                    <br>
-                
-                    {# scripts to load BokehJS and plot scripts #}
-                    {% if plot %}
-                        {# display a dropdown of different metrics for price correlations #}
-                        <div class="dropdown">
-                            <button class="btn btn-primary dropdown-toggle" type="button" 
-                                    data-toggle="dropdown">
-                                Price Correlations
-                                <span class="caret"></span>
-                            </button>
-                            <ul class="dropdown-menu">
-                                <li class="dropdown-header">
-                                    Earnings Correlations
-                                </li>
-                                <li>
-                                    <a href="javascript:plot_valuation(
-                                        '{{ stock.symbol }}',
-                                        null,
-                                        'Net Income',
-                                        '.valuation-plot'
-                                    )">
-                                        Diluted Earnings (GAAP)
-                                    </a>
-                                </li>
-                                <li class="divider"></li>
-                                <li class="dropdown-header">
-                                    Intrinsic Value Correlations
-                                </li>
-                                <li>
-                                    <a href="javascript:plot_valuation(
-                                        '{{ stock.symbol }}',
-                                        null,
-                                        'EBITDA',
-                                        '.valuation-plot'
-                                    )">
-                                        EBITDA
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="javascript:plot_valuation(
-                                        '{{ stock.symbol }}',
-                                        null,
-                                        'EBIT',
-                                        '.valuation-plot'
-                                    )">
-                                        EBIT
-                                    </a>
-                                </li>
-                            </ul>
-                        </div>
-                        <br>
-                
-                        {# display links of all acceptible durations for valuation plotting #}
-                        <div class="btn-group btn-group-sm">
-                            {% for num_of_years in durations %}
-                                <a href="javascript:plot_valuation(
-                                    '{{ stock.symbol }}',
-                                    '{{ num_of_years }}',
-                                    null,
-                                    '.valuation-plot'
-                                )" class="btn btn-default">
-                                    {{ num_of_years }}Y
-                                </a>
-                            {% endfor %}
-                        </div>
-                        <br>
-                        <br>
-                        
-                        {# render the plot #}
-                        <span class="valuation-plot">
-                            {{ plot.resources|safe }}
-                            {{ plot.script|safe }}
-                            {{ plot.div|safe }}
-                        </span>
-                    {% else %}
-                        <h3>
-                            <span style="color: red;">
-                                (The stock valuation plot is not available for 
-                                {{ stock.symbol }}, due to lack of historical data)
-                            </span>
-                        </h3>
-                    {% endif %}
-                </div>
-        
-                {# display quote details here #}
-                <div class="col-sm-4">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th style="border: 0px;">
-                                    <h4>
-                                        Quote Details
-                                    </h4>
-                                </th>
-                                <th style="border: 0px;"></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for field in quote_details %}
-                                <tr>
-                                    <td>{{ field }}</td>
-                                    <td style="font-weight:bold">{{ quote_details[field] }}</td>
-                                </tr>
-                            {% endfor %}
-
-                            {# add another row for estimated annual returns #}
-                            <tr>
-                                <td>Estimated Annual Return</td>
-                                {% if estimated_return %}
-                                    <td>
-                                        <span id="estimated_return" 
-                                            style="font-weight: bold; 
-                                                   color: {% if estimated_return>=15 %}green
-                                                          {% elif estimated_return>=0 %}black
-                                                          {% else %}red
-                                                          {% endif %};">
-                                            {{ estimated_return }}
-                                        </span>%
-                                    </td>
-                                {% else %}
-                                    <td id="estimated_return" 
-                                        style="font-weight: bold;">
-                                        N/A
-                                    </td>
-                                {% endif %}
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+            <!--- code for the summary tab ---> 
+            {% include 'stocks/_stock_tab_summary.html' %}
         </div>
 
         {# The Fundamentals Tab #}

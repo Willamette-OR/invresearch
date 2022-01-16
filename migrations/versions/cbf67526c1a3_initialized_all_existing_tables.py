@@ -1,8 +1,8 @@
-"""Initialized the database with many data models
+"""Initialized all existing tables
 
-Revision ID: 183ae645c852
+Revision ID: cbf67526c1a3
 Revises: 
-Create Date: 2021-09-26 21:27:23.783569
+Create Date: 2022-01-16 10:22:31.195130
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '183ae645c852'
+revision = 'cbf67526c1a3'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -24,8 +24,22 @@ def upgrade():
     sa.Column('name', sa.String(length=128), nullable=True),
     sa.Column('last_quote_update', sa.Float(), nullable=True),
     sa.Column('quote_payload', sa.Text(), nullable=True),
+    sa.Column('last_financials_history_update', sa.DateTime(), nullable=True),
+    sa.Column('financials_history_payload', sa.Text(length=16777215), nullable=True),
+    sa.Column('last_quote_history_update', sa.DateTime(), nullable=True),
+    sa.Column('analyst_estimates_payload', sa.Text(), nullable=True),
+    sa.Column('last_analyst_estimates_update', sa.DateTime(), nullable=True),
+    sa.Column('quote_history_payload', sa.Text(), nullable=True),
+    sa.Column('quote_details_paylod', sa.Text(), nullable=True),
+    sa.Column('last_quote_details_update', sa.DateTime(), nullable=True),
+    sa.Column('dividend_yield', sa.Float(), nullable=True),
     sa.PrimaryKeyConstraint('id')
     )
+    op.create_index(op.f('ix_stock_dividend_yield'), 'stock', ['dividend_yield'], unique=False)
+    op.create_index(op.f('ix_stock_last_analyst_estimates_update'), 'stock', ['last_analyst_estimates_update'], unique=False)
+    op.create_index(op.f('ix_stock_last_financials_history_update'), 'stock', ['last_financials_history_update'], unique=False)
+    op.create_index(op.f('ix_stock_last_quote_details_update'), 'stock', ['last_quote_details_update'], unique=False)
+    op.create_index(op.f('ix_stock_last_quote_history_update'), 'stock', ['last_quote_history_update'], unique=False)
     op.create_index(op.f('ix_stock_last_quote_update'), 'stock', ['last_quote_update'], unique=False)
     op.create_index(op.f('ix_stock_symbol'), 'stock', ['symbol'], unique=True)
     op.create_table('user',
@@ -78,6 +92,17 @@ def upgrade():
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_post_timestamp'), 'post', ['timestamp'], unique=False)
+    op.create_table('stock_note',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('timestamp', sa.DateTime(), nullable=True),
+    sa.Column('body', sa.Text(), nullable=True),
+    sa.Column('user_id', sa.Integer(), nullable=True),
+    sa.Column('stock_id', sa.Integer(), nullable=True),
+    sa.ForeignKeyConstraint(['stock_id'], ['stock.id'], ),
+    sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_stock_note_timestamp'), 'stock_note', ['timestamp'], unique=False)
     op.create_table('task',
     sa.Column('id', sa.String(length=36), nullable=False),
     sa.Column('name', sa.String(length=128), nullable=True),
@@ -102,6 +127,8 @@ def downgrade():
     op.drop_table('watchers')
     op.drop_index(op.f('ix_task_name'), table_name='task')
     op.drop_table('task')
+    op.drop_index(op.f('ix_stock_note_timestamp'), table_name='stock_note')
+    op.drop_table('stock_note')
     op.drop_index(op.f('ix_post_timestamp'), table_name='post')
     op.drop_table('post')
     op.drop_index(op.f('ix_notification_timestamp'), table_name='notification')
@@ -115,5 +142,10 @@ def downgrade():
     op.drop_table('user')
     op.drop_index(op.f('ix_stock_symbol'), table_name='stock')
     op.drop_index(op.f('ix_stock_last_quote_update'), table_name='stock')
+    op.drop_index(op.f('ix_stock_last_quote_history_update'), table_name='stock')
+    op.drop_index(op.f('ix_stock_last_quote_details_update'), table_name='stock')
+    op.drop_index(op.f('ix_stock_last_financials_history_update'), table_name='stock')
+    op.drop_index(op.f('ix_stock_last_analyst_estimates_update'), table_name='stock')
+    op.drop_index(op.f('ix_stock_dividend_yield'), table_name='stock')
     op.drop_table('stock')
     # ### end Alembic commands ###

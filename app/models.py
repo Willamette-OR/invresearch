@@ -111,7 +111,7 @@ class Stock(db.Model):
     quote_payload = db.Column(db.Text)
     last_financials_history_update = db.Column(db.DateTime, index=True, 
                                                default=None)
-    financials_history_payload = db.Column(db.Text)
+    financials_history_payload = db.Column(db.Text(length=16777215))
     last_quote_history_update = db.Column(db.DateTime, index=True, 
                                           default=None)
     analyst_estimates_payload = db.Column(db.Text)

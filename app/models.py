@@ -545,6 +545,14 @@ class Post(SearchableMixin, db.Model):
 
         return "<Post: {}>".format(self.body)
 
+    def get_replies(self):
+        """
+        This method returns the direct replies of the current post sorted from 
+        latest to earliest. 
+        """
+
+        return self.children.order_by(Post.timestamp.desc())
+
 
 class Message(db.Model):
     """

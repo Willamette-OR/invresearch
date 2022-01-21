@@ -492,9 +492,11 @@ class UserTestCase(unittest.TestCase):
 
         # set up
         user = User(username='alice')
-        post = Post(body='parent', author=user)
+        db.session.add(user)
+        db.session.commit()
 
-        # test case
+        # basic reply querying
+        post = Post(body='parent', author=user)
         self.assertIsNone(post.parent)
         child_1 = Post(body='child 1', author=user, parent=post)
         child_2 = Post(body='child 2', author=user, parent=post)
@@ -503,6 +505,22 @@ class UserTestCase(unittest.TestCase):
         grandchild_11 = Post(body='grandchild 1-1', author=user, parent=child_1)
         self.assertListEqual(child_1.children.all(), [grandchild_11])
         self.assertEqual(grandchild_11.parent, child_1)
+
+        # query ordered replies
+        post = Post(body='another parent', author=user)
+        db.session.add(post)
+        db.session.commit()
+        now = datetime.utcnow()
+        second = Post(
+            body='second', author=user, parent=post, 
+            timestamp=now + timedelta(3))
+        third = Post(
+            body='third', author=user, parent=post, 
+            timestamp=now + timedelta(10))
+        first = Post(
+            body='first', author=user, parent=post, 
+            timestamp=now)
+        self.assertListEqual(post.get_replies().all(), [third, second, first])
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

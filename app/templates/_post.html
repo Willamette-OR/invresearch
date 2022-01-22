@@ -40,10 +40,36 @@
             </span>
         {% endif %}
 
-        <!-- nested posts -->
-        {% set replies = post.get_replies() %}
+        <!-- link for reply form -->
+        {% if form %}
+            <a data-toggle="collapse" href="#reply-form-{{ post.id }}">Reply</a>
+        {% endif %}
+
+        <!-- link for nested posts -->
         <a data-toggle="collapse" href="#replies-{{ post.id }}">Replies</a>
+
+        <!-- reply form -->
+        <div id="reply-form-{{ post.id }}" class="collapse">
+            <form action="" method="post">
+                {{ form.hidden_tag() }}
+                <div class="form-group">
+                    {{ form.post(cols=50, rows=4, id="comment", class="form-control") }}<br>
+                    {% for error in form.post.errors %}
+                        <span style="color: red;">{{ error }}</span>
+                    {% endfor %}
+                </div>
+                <div class="form-group">
+                    {{ form.parent_id(type="hidden", value=post.id) }}
+                </div>
+                <div class="form-group">
+                    {{ form.submit() }}
+                </div>
+            </form>
+        </div>
+
+        <!-- nested posts -->
         <div id="replies-{{ post.id }}" class="collapse">
+            {% set replies = post.get_replies() %}
             {% if replies %}
                 {% for post in replies %}
                     <br>

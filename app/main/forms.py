@@ -3,7 +3,7 @@ import imghdr
 from flask import request, current_app
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField
-from wtforms import StringField, SubmitField, TextAreaField, form
+from wtforms import StringField, SubmitField, TextAreaField
 from wtforms.validators import DataRequired, ValidationError, Length
 from app.models import User
 
@@ -90,6 +90,7 @@ class SubmitPostForm(FlaskForm):
 
     post = TextAreaField(
         'Say something', validators=[DataRequired(), Length(min=1, max=140)])
+    parent_id = StringField()
     submit = SubmitField('Submit')
 
 

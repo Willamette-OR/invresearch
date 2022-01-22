@@ -42,6 +42,7 @@ def index():
     prev_url = url_for('main.index', page=posts.prev_num) \
         if posts.has_prev else None
 
+    # forms for posts
     form = SubmitPostForm()
     if form.validate_on_submit():
         try:
@@ -50,6 +51,8 @@ def index():
             language = ''
         post = Post(body=form.post.data, author=current_user, 
                     language=language)
+        if form.parent_id.data:
+            post.parent_id = int(form.parent_id.data)
         db.session.add(post)
         db.session.commit()
         flash("Your new post is now live!")

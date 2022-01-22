@@ -26,6 +26,18 @@
             </span>
         </p>
 
+        <!-- link for nested posts -->
+        <a data-toggle="collapse" href="#replies-{{ post.id }}" class="btn btn-default btn-xs">
+            <span class="glyphicon glyphicon-comment"></span> Comments
+        </a>
+
+        <!-- link for reply form -->
+        {% if form %}
+            <a data-toggle="collapse" href="#reply-form-{{ post.id }}" class="btn btn-default btn-xs">
+                <span class="glyphicon glyphicon-pencil"></span> Reply
+            </a>
+        {% endif %}
+
         <!-- link for Ajax translation when needed -->
         {% if post.language and post.language not in g.locale %}
             <span id="translation{{ post.id }}">
@@ -34,22 +46,15 @@
                     '{{ g.locale }}',
                     '#post{{ post.id }}',
                     '#translation{{ post.id }}'
-                )">
-                    Translate
+                )" class="btn btn-default btn-xs">
+                    <span class="glyphicon glyphicon-transfer"></span> Translate
                 </a>
             </span>
         {% endif %}
 
-        <!-- link for reply form -->
-        {% if form %}
-            <a data-toggle="collapse" href="#reply-form-{{ post.id }}">Reply</a>
-        {% endif %}
-
-        <!-- link for nested posts -->
-        <a data-toggle="collapse" href="#replies-{{ post.id }}">Replies</a>
-
         <!-- reply form -->
         <div id="reply-form-{{ post.id }}" class="collapse">
+            <br>
             <form action="" method="post">
                 {{ form.hidden_tag() }}
                 <div class="form-group">

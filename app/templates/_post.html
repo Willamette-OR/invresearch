@@ -1,22 +1,33 @@
-<table class="table table-hover">
-    <tr>
-        <td width="70px">
-            <a href="{{ url_for('main.user', username=post.author.username) }}">
-                <img src="{{ post.author.avatar(size=70) }}" class="img-responsive img-circle">
-            </a>
-        </td>
-        <td>
+<div class="media">
+    <div class="media-left">
+        <a href="{{ url_for('main.user', username=post.author.username) }}">
+            <img src="{{ post.author.avatar(size=70) }}" class="media-object" style="width: 70px;">
+        </a>
+    </div>
+    <div class="media-body">
+        <!-- post header -->
+        <h4>
             <span class="user_popup">
                 <a href="{{ url_for('main.user', username=post.author.username) }}">
                     {{ post.author.username }}
                 </a>
             </span>
-            said {{ moment(post.timestamp).fromNow() }}:<br> 
+            <small>
+                <i>
+                    said {{ moment(post.timestamp).fromNow() }}:
+                </i>
+            </small>
+        </h4>
+
+        <!-- post body -->
+        <p>
             <span id="post{{ post.id }}">
                 {{ post.body | urlize(40, true) }}
             </span>
-            {% if post.language and post.language not in g.locale %}
-            <br><br>
+        </p>
+
+        <!-- link for Ajax translation when needed -->
+        {% if post.language and post.language not in g.locale %}
             <span id="translation{{ post.id }}">
                 <a href="javascript:translate(
                     '{{ post.language }}',
@@ -27,7 +38,14 @@
                     Translate
                 </a>
             </span>
-            {% endif %}
-        </td>
-    </tr>
-</table>
+        {% endif %}
+
+        <!-- nested posts -->
+        {% set replies = post.get_replies() %}
+        {% if replies %}
+            {% for post in replies %}
+                {% include '_post.html' %}
+            {% endfor %}
+        {% endif %}
+    </div>
+</div>

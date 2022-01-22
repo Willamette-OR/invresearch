@@ -551,7 +551,8 @@ class Post(SearchableMixin, db.Model):
         latest to earliest. 
         """
 
-        return self.children.order_by(Post.timestamp.desc())
+        replies = self.children.order_by(Post.timestamp.desc()).all()
+        return replies if len(replies) > 0 else None
 
 
 class Message(db.Model):

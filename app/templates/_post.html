@@ -42,10 +42,14 @@
 
         <!-- nested posts -->
         {% set replies = post.get_replies() %}
-        {% if replies %}
-            {% for post in replies %}
-                {% include '_post.html' %}
-            {% endfor %}
-        {% endif %}
+        <a data-toggle="collapse" href="#replies-{{ post.id }}">Replies</a>
+        <div id="replies-{{ post.id }}" class="collapse">
+            {% if replies %}
+                {% for post in replies %}
+                    <br>
+                    {% include '_post.html' %}
+                {% endfor %}
+            {% endif %}
+        </div>
     </div>
 </div>

@@ -69,7 +69,7 @@ def user(username):
     """This view function implements the logic to display user profiles."""
 
     user = User.query.filter_by(username=username).first_or_404()
-    form = EmptyForm()
+    empty_form = EmptyForm()
 
     page = request.args.get('page', 1, type=int)
     posts = user.posts.order_by(Post.timestamp.desc()).paginate(
@@ -78,10 +78,26 @@ def user(username):
         if posts.has_next else None
     prev_url = url_for('main.user', username=username, page=posts.prev_num) \
         if posts.has_prev else None
+
+    # forms for posts
+    form = SubmitPostForm()
+    if form.validate_on_submit():
+        try:
+            language = detect(form.post.data)
+        except LangDetectException:
+            language = ''
+        post = Post(body=form.post.data, author=current_user, 
+                    language=language)
+        if form.parent_id.data:
+            post.parent_id = int(form.parent_id.data)
+        db.session.add(post)
+        db.session.commit()
+        flash("Your new post is now live!")
+        return redirect(url_for('main.index'))
     
     return render_template('user.html', title='User Profile', user=user, 
-                           form=form, posts=posts.items, next_url=next_url,
-                           prev_url=prev_url)
+                           empty_form=empty_form, posts=posts.items, 
+                           next_url=next_url, prev_url=prev_url, form=form)
 
 
 @bp.route('/edit_profile', methods=['GET', 'POST'])

@@ -52,7 +52,7 @@
         </tr>
     </table>
     <br>
-    {% for post in posts if not post.parent %}
+    {% for post in posts %}
         {% include '_post.html' %}
     {% endfor %}
     <nav aria-label="...">

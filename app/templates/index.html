@@ -4,7 +4,7 @@
 
 {% block app_content %}
     <h1>Hi, {{ current_user.username }}!</h1>
-    {% if form %}
+    {% if allow_new_op %}
         <form action="" method="post">
             {{ form.hidden_tag() }}
             <div class="form-group">

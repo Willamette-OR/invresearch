@@ -59,7 +59,8 @@ def index():
         return redirect(url_for('main.index'))
 
     return render_template('index.html', title='Home', posts=posts.items, 
-                           form=form, next_url=next_url, prev_url=prev_url)
+                           form=form, allow_new_op=True, next_url=next_url, 
+                           prev_url=prev_url)
 
 
 @bp.route('/user/<username>')
@@ -159,7 +160,7 @@ def unfollow(username):
         return redirect(url_for('main.index'))
 
 
-@bp.route('/explore')
+@bp.route('/explore', methods=['GET', 'POST'])
 @login_required
 def explore():
     """This view function handles requests to explore all user posts."""
@@ -172,8 +173,25 @@ def explore():
     prev_url = url_for('main.explore', page=posts.prev_num) \
         if posts.has_prev else None
 
+    # forms for posts
+    form = SubmitPostForm()
+    if form.validate_on_submit():
+        try:
+            language = detect(form.post.data)
+        except LangDetectException:
+            language = ''
+        post = Post(body=form.post.data, author=current_user, 
+                    language=language)
+        if form.parent_id.data:
+            post.parent_id = int(form.parent_id.data)
+        db.session.add(post)
+        db.session.commit()
+        flash("Your new reply is now live!")
+        return redirect(url_for('main.explore'))
+
     return render_template('index.html', title='Explore', posts=posts.items, 
-                           next_url=next_url, prev_url=prev_url)
+                           next_url=next_url, prev_url=prev_url, form=form, 
+                           allow_new_op=False)
 
 
 @bp.route('/translation', methods=['POST'])

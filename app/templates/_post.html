@@ -53,24 +53,26 @@
         {% endif %}
 
         <!-- reply form -->
-        <div id="reply-form-{{ post.id }}" class="collapse">
-            <br>
-            <form action="" method="post">
-                {{ form.hidden_tag() }}
-                <div class="form-group">
-                    {{ form.post(cols=50, rows=4, id="comment", class="form-control") }}<br>
-                    {% for error in form.post.errors %}
-                        <span style="color: red;">{{ error }}</span>
-                    {% endfor %}
-                </div>
-                <div class="form-group">
-                    {{ form.parent_id(type="hidden", value=post.id) }}
-                </div>
-                <div class="form-group">
-                    {{ form.submit() }}
-                </div>
-            </form>
-        </div>
+        {% if form %}
+            <div id="reply-form-{{ post.id }}" class="collapse">
+                <br>
+                <form action="" method="post">
+                    {{ form.hidden_tag() }}
+                    <div class="form-group">
+                        {{ form.post(cols=50, rows=4, id="comment", class="form-control") }}<br>
+                        {% for error in form.post.errors %}
+                            <span style="color: red;">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                    <div class="form-group">
+                        {{ form.parent_id(type="hidden", value=post.id) }}
+                    </div>
+                    <div class="form-group">
+                        {{ form.submit() }}
+                    </div>
+                </form>
+            </div>
+        {% endif %}
 
         <!-- nested posts -->
         <div id="replies-{{ post.id }}" class="collapse">

@@ -1,4 +1,5 @@
 import unittest
+from itsdangerous import timed
 import numpy as np
 from datetime import datetime, timedelta
 from config import Config
@@ -520,7 +521,44 @@ class UserTestCase(unittest.TestCase):
         first = Post(
             body='first', author=user, parent=post, 
             timestamp=now)
-        self.assertListEqual(post.get_replies().all(), [third, second, first])
+        self.assertListEqual(post.get_replies(), [third, second, first])
+
+    def test_stock_posts(self):
+        """
+        This method tests the database logic of posting for a given stock.
+        """
+
+        # mock up users and stocks
+        u1 = User(username='alice')
+        u2 = User(username='bob')
+        s1 = Stock(symbol='AAPL')
+        s2 = Stock(symbol='GOOGL')
+        db.session.add_all([u1, u2, s1, s2])
+        db.session.commit()
+
+        # mock up posts
+        now = datetime.utcnow()
+        p1 = Post(body='one', author=u1, stock=s1, timestamp=now+timedelta(3))
+        p2 = Post(body='two', author=u2, timestamp=now-timedelta(5))
+        p3 = Post(body='three', author=u2, stock=s2, timestamp=now+timedelta(7))
+        p4 = Post(body='four', author=u1, stock=s2, timestamp=now+timedelta(1))
+        p5 = Post(body='five', author=u1, stock=s1, timestamp=now+timedelta(4))
+        db.session.add_all([p1, p2, p3, p4, p5])
+        db.session.commit()
+
+        # mock up replies
+        r1 = Post(
+            body='one', author=u2, stock=s1, parent=p1, 
+            timestamp=now + timedelta(5))
+        r2 = Post(
+            body='two', author=u1, stock=s2, parent=p4, 
+            timestamp=now+timedelta(9))
+
+        # tests
+        self.assertListEqual(s1.posts.all(), [p1, p5, r1])
+        self.assertListEqual(s1.get_posts().all(), [p5, p1])
+        self.assertListEqual(s2.posts.all(), [p3, p4, r2])
+        self.assertListEqual(s2.get_posts().all(), [p3, p4])
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

@@ -1,0 +1,37 @@
+{% if allow_new_op %}
+    <div class="row">
+        <form action="" method="post">
+            {{ form.hidden_tag() }}
+            <div class="form-group">
+                {{ form.post.label }} <br>
+                {{ form.post(cols=50, rows=4, id="comment", class="form-control") }}<br>
+                {% for error in form.post.errors %}
+                    <span style="color: red;">{{ error }}</span>
+                {% endfor %}
+            </div>
+            <div class="form-group">
+                {{ form.submit() }}
+            </div>
+        </form>
+    </div>
+{% endif %}
+<br>
+<div class="row">
+    {% for post in posts if not post.parent %}
+        {% include '_post.html' %}
+    {% endfor %}
+</div>
+<nav aria-label="...">
+    <ul class="pager">
+        <li class="previous{% if not prev_url %} disabled{% endif %}">
+            <a href="{{ prev_url or '#' }}">
+                <span aria-hidden="true">&larr;</span> Newer Posts
+            </a>
+        </li>
+        <li class="next{% if not next_url %} disabled{% endif %}">
+            <a href="{{ next_url or '#' }}">
+                Older Posts <span aria-hidden="true">&rarr;</span>
+            </a>
+        </li>
+    </ul>
+</nav>

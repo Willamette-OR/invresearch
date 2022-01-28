@@ -175,13 +175,13 @@
                 <br>
                 {% if current_user.is_watching(stock) %}
                     <form action="{{ url_for('stocks.unwatch', symbol=stock.symbol) }}" method="POST">
-                        {{ form.hidden_tag() }}
-                        {{ form.submit(value='Unwatch')}}
+                        {{ empty_form.hidden_tag() }}
+                        {{ empty_form.submit(value='Unwatch')}}
                     </form>
                 {% else %}
                     <form action="{{ url_for('stocks.watch', symbol=stock.symbol) }}" method="POST">
-                        {{ form.hidden_tag() }}
-                        {{ form.submit(value='Watch')}}
+                        {{ empty_form.hidden_tag() }}
+                        {{ empty_form.submit(value='Watch')}}
                     </form>
                 {% endif %}
             </td>

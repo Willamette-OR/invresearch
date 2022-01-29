@@ -38,6 +38,30 @@
             </a>
         {% endif %}
 
+        <!-- link for deleting posts -->
+        <a data-toggle="modal" href="#delete-modal" class="btn btn-default btn-xs">
+            <span class="glyphicon glyphicon-trash"></span> Delete
+        </a>
+
+        <!-- modal for delete posts -->
+        <div id="delete-modal" class="modal fade" role="dialog">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                        <h4 class="modal-title">Delete Post</h4>
+                    </div>
+                    <div class="modal-body">
+                        <p>Are you sure?</p>
+                    </div>
+                    <div class="modal-footer">
+                        <a href="#" class="btn btn-default" role="button">Yes</a>
+                        <button type="button" class="btn btn-default" data-dismiss="modal">No</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- link for Ajax translation when needed -->
         {% if post.language and post.language not in g.locale %}
             <span id="translation{{ post.id }}">

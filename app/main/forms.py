@@ -79,6 +79,7 @@ class EmptyForm(FlaskForm):
     CSRF, derived from FlaskForm.
     """
 
+    current_url = StringField()
     submit = SubmitField('Submit')
 
 

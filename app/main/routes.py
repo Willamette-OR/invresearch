@@ -43,7 +43,7 @@ def index():
     prev_url = url_for('main.index', page=posts.prev_num) \
         if posts.has_prev else None
 
-    # forms for posts
+    # form for posts
     form = SubmitPostForm()
     if form.validate_on_submit():
         try:
@@ -59,9 +59,12 @@ def index():
         flash("Your new post is now live!")
         return redirect(url_for('main.index'))
 
+    # form for deleting posts
+    empty_form = EmptyForm()
+
     return render_template('index.html', title='Home', posts=posts.items, 
                            form=form, allow_new_op=True, next_url=next_url, 
-                           prev_url=prev_url)
+                           prev_url=prev_url, empty_form=empty_form)
 
 
 @bp.route('/user/<username>')
@@ -349,3 +352,27 @@ def export_posts():
         db.session.commit()
 
     return redirect(url_for('main.user', username=current_user.username))
+
+
+@bp.route('/delete_post/<post_id>', methods=['GET', 'POST'])
+@login_required
+def delete_post(post_id):
+    """
+    This view function handles requests to delete a pre-specified post.
+    """
+
+    _test_payload = {}
+    form = EmptyForm()
+    if form.validate_on_submit():
+        post = Post.query.get_or_404(int(post_id))
+        next = form.current_url.data
+        if post.author == current_user:
+            _test_payload['current_validation'] = True
+        else:
+            _test_payload['current_validation'] = False
+        _test_payload['post'] = str(post)
+        _test_payload['next'] = next
+    else:
+        return 'form validation failed'
+
+    return _test_payload

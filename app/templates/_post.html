@@ -58,7 +58,7 @@
                         <form class="form-inline" action="{{ url_for('main.delete_post', post_id=post.id) }}" method="post">
                             {{ empty_form.hidden_tag() }}
                             <div class="form-group">
-                                {{ empty_form.current_url(type="hidden", value=url_for(request.endpoint)) }}
+                                {{ empty_form.current_url(type="hidden", value=request.path) }}
                             </div>
                             <div class="form-group">
                                 {{ empty_form.submit(value="Yes", class="btn btn-default") }}

@@ -361,18 +361,12 @@ def delete_post(post_id):
     This view function handles requests to delete a pre-specified post.
     """
 
-    _test_payload = {}
     form = EmptyForm()
     if form.validate_on_submit():
         post = Post.query.get_or_404(int(post_id))
         next = form.current_url.data
         if post.author == current_user:
-            _test_payload['current_validation'] = True
-        else:
-            _test_payload['current_validation'] = False
-        _test_payload['post'] = str(post)
-        _test_payload['next'] = next
-    else:
-        return 'form validation failed'
-
-    return _test_payload
+            db.session.delete(post)
+            db.session.commit()
+            flash("Your post has been deleted.")
+            return redirect(next)

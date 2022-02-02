@@ -210,9 +210,12 @@ def explore():
         flash("Your new reply is now live!")
         return redirect(url_for('main.explore'))
 
+    # empty form for post deletion
+    empty_form = EmptyForm()
+
     return render_template('index.html', title='Explore', posts=posts.items, 
                            next_url=next_url, prev_url=prev_url, form=form, 
-                           allow_new_op=False)
+                           allow_new_op=False, empty_form=empty_form)
 
 
 @bp.route('/translation', methods=['POST'])

@@ -192,7 +192,7 @@ def stock(symbol):
             fundamental_indicators=fundamental_indicators, note_form=note_form,
             current_note=current_note,
             allow_new_op=True, form=form, posts=posts.items, next_url=next_url, 
-            prev_url=prev_url 
+            prev_url=prev_url, post_links=True 
         )
 
     # get the plot payload 
@@ -240,7 +240,7 @@ def stock(symbol):
         note_form=note_form,
         current_note=current_note,
         allow_new_op=True, form=form, posts=posts.items, next_url=next_url, 
-        prev_url=prev_url 
+        prev_url=prev_url, post_links=True
     )
 
 

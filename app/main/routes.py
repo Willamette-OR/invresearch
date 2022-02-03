@@ -64,10 +64,11 @@ def index():
 
     return render_template('index.html', title='Home', posts=posts.items, 
                            form=form, allow_new_op=True, next_url=next_url, 
-                           prev_url=prev_url, empty_form=empty_form)
+                           prev_url=prev_url, empty_form=empty_form, 
+                           post_links=True)
 
 
-@bp.route('/user/<username>')
+@bp.route('/user/<username>', methods=['GET', 'POST'])
 @login_required
 def user(username):
     """This view function implements the logic to display user profiles."""
@@ -97,11 +98,12 @@ def user(username):
         db.session.add(post)
         db.session.commit()
         flash("Your new post is now live!")
-        return redirect(url_for('main.index'))
+        return redirect(url_for('main.user', username=username))
     
     return render_template('user.html', title='User Profile', user=user, 
                            empty_form=empty_form, posts=posts.items, 
-                           next_url=next_url, prev_url=prev_url, form=form)
+                           next_url=next_url, prev_url=prev_url, form=form,
+                           post_links=True)
 
 
 @bp.route('/edit_profile', methods=['GET', 'POST'])
@@ -215,7 +217,8 @@ def explore():
 
     return render_template('index.html', title='Explore', posts=posts.items, 
                            next_url=next_url, prev_url=prev_url, form=form, 
-                           allow_new_op=False, empty_form=empty_form)
+                           allow_new_op=False, empty_form=empty_form, 
+                           post_links=True)
 
 
 @bp.route('/translation', methods=['POST'])

@@ -30,7 +30,7 @@
 
             <!-- link for nested posts -->
             <a data-toggle="collapse" href="#replies-{{ post.id }}" class="btn btn-default btn-xs">
-                <span class="glyphicon glyphicon-comment"></span> Comments
+                <span class="glyphicon glyphicon-comment"></span> {{ post.children.count() }} Comments
             </a>
 
             <!-- link for reply form -->

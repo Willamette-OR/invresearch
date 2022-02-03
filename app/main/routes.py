@@ -376,3 +376,7 @@ def delete_post(post_id):
             db.session.commit()
             flash("Your post has been deleted.")
             return redirect(next)
+        else:
+            flash("No post was deleted - only deleting your own posts is "
+                  "allowed.")
+            return redirect(next)

@@ -124,6 +124,7 @@ class Stock(db.Model):
     stock_notes = db.relationship(
         'StockNote', foreign_keys='StockNote.stock_id', backref='stock', 
         lazy='dynamic')
+    posts = db.relationship('Post', backref='stock', lazy='dynamic')
 
     def __repr__(self):
         return "<Stock: {}>".format(self.symbol)
@@ -308,6 +309,14 @@ class Stock(db.Model):
             start_date=datetime.strptime(start_date, '%m-%d-%Y'),
             debug=debug
         )
+
+    def get_posts(self):
+        """
+        This method returns all original posts associated with the stock 
+        object, ordered in descending timestamps.
+        """
+
+        return self.posts.filter_by(parent=None).order_by(Post.timestamp.desc())
 
 
 class User(UserMixin, db.Model):
@@ -533,6 +542,10 @@ class Post(SearchableMixin, db.Model):
     timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     language = db.Column(db.String(5))
+    parent_id = db.Column(db.Integer, db.ForeignKey('post.id'))
+    children = db.relationship(
+        'Post', backref=db.backref('parent', remote_side=[id]), lazy='dynamic')
+    stock_id = db.Column(db.Integer, db.ForeignKey('stock.id'))
 
     # fields available for search
     __searchable__ = ['body']
@@ -541,6 +554,15 @@ class Post(SearchableMixin, db.Model):
         """This function defines the string repr of post objects."""
 
         return "<Post: {}>".format(self.body)
+
+    def get_replies(self):
+        """
+        This method returns the direct replies of the current post sorted from 
+        latest to earliest. 
+        """
+
+        replies = self.children.order_by(Post.timestamp.desc()).all()
+        return replies if len(replies) > 0 else None
 
 
 class Message(db.Model):

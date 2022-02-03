@@ -35,13 +35,15 @@ def index():
     """This function implements the view logic for the index page."""
 
     page = request.args.get('page', 1, type=int)
-    posts = current_user.followed_posts().paginate(
+    posts = current_user.followed_posts().filter(
+        Post.parent==None).filter(Post.stock==None).paginate(
         page, current_app.config['POSTS_PER_PAGE'], False)
     next_url = url_for('main.index', page=posts.next_num) \
         if posts.has_next else None
     prev_url = url_for('main.index', page=posts.prev_num) \
         if posts.has_prev else None
 
+    # form for posts
     form = SubmitPostForm()
     if form.validate_on_submit():
         try:
@@ -50,22 +52,29 @@ def index():
             language = ''
         post = Post(body=form.post.data, author=current_user, 
                     language=language)
+        if form.parent_id.data:
+            post.parent_id = int(form.parent_id.data)
         db.session.add(post)
         db.session.commit()
         flash("Your new post is now live!")
         return redirect(url_for('main.index'))
 
+    # form for deleting posts
+    empty_form = EmptyForm()
+
     return render_template('index.html', title='Home', posts=posts.items, 
-                           form=form, next_url=next_url, prev_url=prev_url)
+                           form=form, allow_new_op=True, next_url=next_url, 
+                           prev_url=prev_url, empty_form=empty_form, 
+                           post_links=True)
 
 
-@bp.route('/user/<username>')
+@bp.route('/user/<username>', methods=['GET', 'POST'])
 @login_required
 def user(username):
     """This view function implements the logic to display user profiles."""
 
     user = User.query.filter_by(username=username).first_or_404()
-    form = EmptyForm()
+    empty_form = EmptyForm()
 
     page = request.args.get('page', 1, type=int)
     posts = user.posts.order_by(Post.timestamp.desc()).paginate(
@@ -74,10 +83,27 @@ def user(username):
         if posts.has_next else None
     prev_url = url_for('main.user', username=username, page=posts.prev_num) \
         if posts.has_prev else None
+
+    # forms for posts
+    form = SubmitPostForm()
+    if form.validate_on_submit():
+        try:
+            language = detect(form.post.data)
+        except LangDetectException:
+            language = ''
+        post = Post(body=form.post.data, author=current_user, 
+                    language=language)
+        if form.parent_id.data:
+            post.parent_id = int(form.parent_id.data)
+        db.session.add(post)
+        db.session.commit()
+        flash("Your new post is now live!")
+        return redirect(url_for('main.user', username=username))
     
     return render_template('user.html', title='User Profile', user=user, 
-                           form=form, posts=posts.items, next_url=next_url,
-                           prev_url=prev_url)
+                           empty_form=empty_form, posts=posts.items, 
+                           next_url=next_url, prev_url=prev_url, form=form,
+                           post_links=True)
 
 
 @bp.route('/edit_profile', methods=['GET', 'POST'])
@@ -156,21 +182,43 @@ def unfollow(username):
         return redirect(url_for('main.index'))
 
 
-@bp.route('/explore')
+@bp.route('/explore', methods=['GET', 'POST'])
 @login_required
 def explore():
     """This view function handles requests to explore all user posts."""
 
     page = request.args.get('page', 1, type=int)
-    posts = Post.query.order_by(Post.timestamp.desc()).paginate(
+    posts = Post.query.filter(Post.parent==None).filter(Post.stock==None).\
+        order_by(Post.timestamp.desc()).paginate(
         page, current_app.config['POSTS_PER_PAGE'], False)
     next_url = url_for('main.explore', page=posts.next_num) \
         if posts.has_next else None
     prev_url = url_for('main.explore', page=posts.prev_num) \
         if posts.has_prev else None
 
+    # forms for posts
+    form = SubmitPostForm()
+    if form.validate_on_submit():
+        try:
+            language = detect(form.post.data)
+        except LangDetectException:
+            language = ''
+        post = Post(body=form.post.data, author=current_user, 
+                    language=language)
+        if form.parent_id.data:
+            post.parent_id = int(form.parent_id.data)
+        db.session.add(post)
+        db.session.commit()
+        flash("Your new reply is now live!")
+        return redirect(url_for('main.explore'))
+
+    # empty form for post deletion
+    empty_form = EmptyForm()
+
     return render_template('index.html', title='Explore', posts=posts.items, 
-                           next_url=next_url, prev_url=prev_url)
+                           next_url=next_url, prev_url=prev_url, form=form, 
+                           allow_new_op=False, empty_form=empty_form, 
+                           post_links=True)
 
 
 @bp.route('/translation', methods=['POST'])
@@ -310,3 +358,25 @@ def export_posts():
         db.session.commit()
 
     return redirect(url_for('main.user', username=current_user.username))
+
+
+@bp.route('/delete_post/<post_id>', methods=['GET', 'POST'])
+@login_required
+def delete_post(post_id):
+    """
+    This view function handles requests to delete a pre-specified post.
+    """
+
+    form = EmptyForm()
+    if form.validate_on_submit():
+        post = Post.query.get_or_404(int(post_id))
+        next = form.current_url.data
+        if post.author == current_user:
+            db.session.delete(post)
+            db.session.commit()
+            flash("Your post has been deleted.")
+            return redirect(next)
+        else:
+            flash("No post was deleted - only deleting your own posts is "
+                  "allowed.")
+            return redirect(next)

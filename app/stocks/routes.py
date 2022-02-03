@@ -1,12 +1,13 @@
 import json
 from time import time
 from datetime import datetime
+from langdetect import detect, LangDetectException
 from flask import flash, redirect, url_for, render_template, request, \
                   current_app, g, jsonify
 from flask_login import login_required, current_user
 from app import db
-from app.models import Stock, StockNote
-from app.main.forms import EmptyForm, SearchForm
+from app.models import Stock, StockNote, Post
+from app.main.forms import EmptyForm, SearchForm, SubmitPostForm
 from app.stocksdata import get_company_profile, search_stocks_by_symbol, \
                            section_lookup_by_metric
 from app.fundamental_analysis import get_estimated_return, \
@@ -76,7 +77,7 @@ def stock(symbol):
 
     # define an empty Flask form to validate post requests for 
     # watching/unwatching stocks
-    form = EmptyForm()
+    empty_form = EmptyForm()
 
     # get existing notes
     current_note = StockNote.query.filter_by(
@@ -108,6 +109,38 @@ def stock(symbol):
         current_app.config['STOCK_VALUATION_METRIC_DEFAULT'], 
         type=str)
     payload_only = request.args.get('payload_only', 0, type=int)
+
+    ###############
+    # Posts logic #
+    ###############
+
+    # get posts for the requested page
+    page = request.args.get('page', 1, type=int)
+    posts = stock.get_posts().paginate(
+        page, current_app.config['POSTS_PER_PAGE'], False)
+    next_url = url_for(
+        'stocks.stock', symbol=stock.symbol, page=posts.next_num) \
+        if posts.has_next else None
+    prev_url = url_for(
+        'stocks.stock', symbol=stock.symbol, page=posts.prev_num) \
+        if posts.has_prev else None
+
+    # handle the post form
+    form = SubmitPostForm()
+    if form.validate_on_submit():
+        try:
+            language = detect(form.post.data)
+        except LangDetectException:
+            language = ''
+        post = Post(
+            body=form.post.data, author=current_user, stock=stock, 
+            language=language)
+        if form.parent_id.data:
+            post.parent_id = int(form.parent_id.data)
+        db.session.add(post)
+        db.session.commit()
+        flash("Your new post for stock {} is now live!".format(stock.symbol))
+        return redirect(url_for('stocks.stock', symbol=stock.symbol))
 
     #######################################################################
     # Prep for valuation plotting, quote details and fundamental analysis #
@@ -153,10 +186,13 @@ def stock(symbol):
     if not average_price_multiple:
         return render_template(
             'stocks/stock.html', title="Stock - {}".format(stock.symbol), 
-            stock=stock, quote=json.loads(stock.quote_payload), form=form, 
+            stock=stock, quote=json.loads(stock.quote_payload), 
+            empty_form=empty_form, 
             quote_details=quote_details, 
             fundamental_indicators=fundamental_indicators, note_form=note_form,
-            current_note=current_note
+            current_note=current_note,
+            allow_new_op=True, form=form, posts=posts.items, next_url=next_url, 
+            prev_url=prev_url, post_links=True 
         )
 
     # get the plot payload 
@@ -196,12 +232,15 @@ def stock(symbol):
 
     return render_template(
         'stocks/stock.html', title="Stock - {}".format(stock.symbol), 
-        stock=stock, quote=json.loads(stock.quote_payload), form=form, 
+        stock=stock, quote=json.loads(stock.quote_payload), 
+        empty_form=empty_form, 
         plot=plot, durations=durations, 
         valuation_metric=valuation_metric, quote_details=quote_details,
         fundamental_indicators=fundamental_indicators,
         note_form=note_form,
-        current_note=current_note
+        current_note=current_note,
+        allow_new_op=True, form=form, posts=posts.items, next_url=next_url, 
+        prev_url=prev_url, post_links=True
     )
 
 

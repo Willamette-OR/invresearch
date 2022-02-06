@@ -27,7 +27,7 @@ class Config:
     FINNHUB_API_KEY = os.environ.get('FINNHUB_API_KEY')
     GURU_API_KEY = os.environ.get('GURU_API_KEY')
     STOCK_VALUATION_METRIC_DEFAULT = 'EBITDA'
-    EMAIL_LOGGING = False
+    EMAIL_LOGGING = os.environ.get('EMAIL_LOGGING') or False
     UPLOAD_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif']
     MAX_UPLOAD_SIZE = 1024 * 1024
     MAX_CONTENT_LENGTH = 20 * 1024 * 1024

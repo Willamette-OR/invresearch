@@ -44,6 +44,10 @@ class EditProfileForm(FlaskForm):
             3. has a byte content consistent with the given file extension
         """
 
+        # return None if the input data of avatar is None
+        if avatar.data is None:
+            return None
+
         # validate the file extension
         file_ext = os.path.splitext(avatar.data.filename)[1].lower()
         if file_ext not in current_app.config['UPLOAD_EXTENSIONS']:

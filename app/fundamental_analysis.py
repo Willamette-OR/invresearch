@@ -78,12 +78,31 @@ def get_metric(name, financials_history, start_date, convert_to_numeric=True,
     if derive:
         return derive(name, financials_history, start_date)
     else:
+        # get timestamps from the financials history payload
+        timestamps = financials_history['financials']['annuals']['Fiscal Year']
+
+        # get values from the financials history payload
+        values = financials_history['financials']['annuals']\
+                [section_lookup[name]].get(name)
+
+        # manage edge cases of financial values (for insurance companies)
+        fields_not_in_insurance = [
+            'Altman Z-Score',
+            'Operating Income',
+            'Gross Margin %',
+            'Operating Margin %'
+        ]
+        if name == 'Cash, Cash Equivalents, Marketable Securities' and values is None:
+            values = financials_history['financials']['annuals']\
+                     [section_lookup[name]].get(
+                     'Balance Statement Cash and cash equivalents')
+        elif name in fields_not_in_insurance and values is None:
+            values = [0] * len(timestamps)          
+
         return Metric(
             name=name, 
-            timestamps=financials_history['financials']['annuals']\
-                ['Fiscal Year'],
-            values=financials_history['financials']['annuals']\
-                [section_lookup[name]][name],
+            timestamps=timestamps,
+            values=values,
             start_date=start_date,
             convert_to_numeric=convert_to_numeric,
             scale_factor=scale_factor

@@ -334,7 +334,7 @@ def get_fundamental_indicators(financials_history,
         data_indicators[financial_strength_name][name] = \
             {
                 'Object': metric,
-                'Current': float("{:.2f}".format(metric.TTM_value)),
+                'Current': metric.TTM_value,
                 'Type': item['type'],
                 'Rating': metric.rating(benchmark_value=item['benchmark'], 
                                         reverse=item['reverse'],

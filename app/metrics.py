@@ -191,7 +191,11 @@ class Metric(object):
                               timestamps=timestamps_division,
                               values=values_division,
                               start_date=datetime(1900, 1, 1))
-            division.TTM_value = self.TTM_value / other.TTM_value
+            
+            # calculate the TTM value of the division, and assign a None value 
+            # if the denominator is zero
+            division.TTM_value = self.TTM_value / other.TTM_value \
+                if other.TTM_value!=0 else None
             
             return division
 
@@ -316,9 +320,10 @@ class Metric(object):
         
         # return the percentile rank of the target value, given the sequence of 
         # all qualified values.
-        # return 50 if 'values' is empty
+        # default the rank to 50 if 'values' is empty
+        # default the rank to 50 if the 'target_value' is None
         rank = 100 * (target_value > values).sum() / len(values) \
-            if len(values) > 0 else 50
+            if len(values) > 0 and target_value is not None else 50
         return rank 
 
     def pctrank_of_latest(self, latest='TTM', num_of_years=10):

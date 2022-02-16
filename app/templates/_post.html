@@ -1,125 +1,130 @@
-<div class="media">
-    <div class="media-left">
-        <a href="{{ url_for('main.user', username=post.author.username) }}">
-            <img src="{{ post.author.avatar(size=70) }}" class="media-object" style="width: 70px;">
-        </a>
-    </div>
-    <div class="media-body">
-        <!-- post header -->
-        <h4>
-            <span class="user_popup">
+<table class="table table-hover">
+    <tbody>
+        <tr>
+            <td width="110px">
                 <a href="{{ url_for('main.user', username=post.author.username) }}">
-                    {{ post.author.username }}
+                    <img src="{{ post.author.avatar(size=110) }}" class="img-fluid img-thumbnail">
                 </a>
-            </span>
-            <small>
-                <i>
-                    said {{ moment(post.timestamp).fromNow() }}:
-                </i>
-            </small>
-        </h4>
+            </td>
+            <td>
+                <!-- post header -->
+                <h6>
+                    <span class="user_popup">
+                        <a href="{{ url_for('main.user', username=post.author.username) }}">
+                            {{ post.author.username }}
+                        </a>
+                    </span>
+                    <small class="text-muted">
+                        <i>
+                            said {{ moment(post.timestamp).fromNow() }}:
+                        </i>
+                    </small>
+                </h6>
 
-        <!-- post body -->
-        <p>
-            <span id="post{{ post.id }}">
-                {{ post.body | urlize(40, true) }}
-            </span>
-        </p>
+                <!-- post body -->
+                <p>
+                    <span id="post{{ post.id }}">
+                        {{ post.body | urlize(40, true) }}
+                    </span>
+                </p>
+                
 
-        {% if post_links %}
+                {% if post_links %}
 
-            <!-- link for nested posts -->
-            <a data-toggle="collapse" href="#replies-{{ post.id }}" class="btn btn-default btn-xs">
-                <span class="glyphicon glyphicon-comment"></span> {{ post.children.count() }} Comments
-            </a>
-
-            <!-- link for reply form -->
-            {% if form %}
-                <a data-toggle="collapse" href="#reply-form-{{ post.id }}" class="btn btn-default btn-xs">
-                    <span class="glyphicon glyphicon-pencil"></span> Reply
-                </a>
-            {% endif %}
-
-            {% if post.author == current_user %}
-                <!-- link for deleting posts -->
-                <a data-toggle="modal" href="#delete-modal-{{ post.id }}" class="btn btn-default btn-xs">
-                    <span class="glyphicon glyphicon-trash"></span> Delete
-                </a>
-
-                <!-- modal for delete posts -->
-                <div id="delete-modal-{{ post.id }}" class="modal fade" role="dialog">
-                    <div class="modal-dialog">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <button type="button" class="close" data-dismiss="modal">&times;</button>
-                                <h4 class="modal-title">Delete Post</h4>
-                            </div>
-                            <div class="modal-body">
-                                <p>Are you sure?</p>
-                            </div>
-                            <div class="modal-footer">
-                                <form class="form-inline" action="{{ url_for('main.delete_post', post_id=post.id) }}" method="post">
-                                    {{ empty_form.hidden_tag() }}
-                                    <div class="form-group">
-                                        {{ empty_form.current_url(type="hidden", value=request.path) }}
-                                    </div>
-                                    <div class="form-group">
-                                        {{ empty_form.submit(value="Yes", class="btn btn-default") }}
-                                    </div>
-                                    <button type="button" class="btn btn-default" data-dismiss="modal">No</button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            {% endif %} {# if post.author == current_user #}
-
-            <!-- link for Ajax translation when needed -->
-            {% if post.language and post.language not in g.locale %}
-                <span id="translation{{ post.id }}">
-                    <a href="javascript:translate(
-                        '{{ post.language }}',
-                        '{{ g.locale }}',
-                        '#post{{ post.id }}',
-                        '#translation{{ post.id }}'
-                    )" class="btn btn-default btn-xs">
-                        <span class="glyphicon glyphicon-transfer"></span> Translate
+                    <!-- link for nested posts -->
+                    <a data-bs-toggle="collapse" href="#replies-{{ post.id }}" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi-chat-text-fill"></i> {{ post.children.count() }} Comments
                     </a>
-                </span>
-            {% endif %}
 
-            <!-- reply form -->
-            {% if form %}
-                <div id="reply-form-{{ post.id }}" class="collapse">
-                    <br>
-                    <form action="" method="post">
-                        {{ form.hidden_tag() }}
-                        <div class="form-group">
-                            {{ form.post(cols=50, rows=4, id="comment", class="form-control") }}<br>
-                            {% for error in form.post.errors %}
-                                <span style="color: red;">{{ error }}</span>
+                    <!-- link for reply form -->
+                    {% if form %}
+                        <a data-bs-toggle="collapse" href="#reply-form-{{ post.id }}" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi-reply-fill"></i> Reply
+                        </a>
+                    {% endif %}
+
+                    {% if post.author == current_user %}
+                        <!-- link for deleting posts -->
+                        <a data-bs-toggle="modal" href="#delete-modal-{{ post.id }}" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi-trash3-fill"></i> Delete
+                        </a>
+
+                        <!-- modal for delete posts -->
+                        <div id="delete-modal-{{ post.id }}" class="modal fade" role="dialog">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                                        <h4 class="modal-title">Delete Post</h4>
+                                    </div>
+                                    <div class="modal-body">
+                                        <p>Are you sure?</p>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <form class="form-inline" action="{{ url_for('main.delete_post', post_id=post.id) }}" method="post">
+                                            {{ empty_form.hidden_tag() }}
+                                            <div class="form-group">
+                                                {{ empty_form.current_url(type="hidden", value=request.path) }}
+                                            </div>
+                                            <div class="form-group">
+                                                {{ empty_form.submit(value="Yes", class="btn btn-default") }}
+                                            </div>
+                                            <button type="button" class="btn btn-default" data-dismiss="modal">No</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %} {# if post.author == current_user #}
+
+                    <!-- link for Ajax translation when needed -->
+                    {% if post.language and post.language not in g.locale %}
+                        <span id="translation{{ post.id }}">
+                            <a href="javascript:translate(
+                                '{{ post.language }}',
+                                '{{ g.locale }}',
+                                '#post{{ post.id }}',
+                                '#translation{{ post.id }}'
+                            )" class="btn btn-outline-secondary btn-sm">
+                                <i class="bi-translate"></i> Translate
+                            </a>
+                        </span>
+                    {% endif %}
+
+                    <!-- reply form -->
+                    {% if form %}
+                        <div id="reply-form-{{ post.id }}" class="collapse">
+                            <br>
+                            <form action="" method="post">
+                                {{ form.hidden_tag() }}
+                                <div class="form-group">
+                                    {{ form.post(cols=50, rows=4, id="comment", class="form-control") }}<br>
+                                    {% for error in form.post.errors %}
+                                        <span style="color: red;">{{ error }}</span>
+                                    {% endfor %}
+                                </div>
+                                <div class="form-group">
+                                    {{ form.parent_id(type="hidden", value=post.id) }}
+                                </div>
+                                <div class="form-group">
+                                    {{ form.submit() }}
+                                </div>
+                            </form>
+                        </div>
+                    {% endif %}
+
+                    <!-- nested posts -->
+                    <div id="replies-{{ post.id }}" class="collapse">
+                        {% set replies = post.get_replies() %}
+                        {% if replies %}
+                            {% for post in replies %}
+                                <br>
+                                {% include '_post.html' %}
                             {% endfor %}
-                        </div>
-                        <div class="form-group">
-                            {{ form.parent_id(type="hidden", value=post.id) }}
-                        </div>
-                        <div class="form-group">
-                            {{ form.submit() }}
-                        </div>
-                    </form>
-                </div>
-            {% endif %}
-
-            <!-- nested posts -->
-            <div id="replies-{{ post.id }}" class="collapse">
-                {% set replies = post.get_replies() %}
-                {% if replies %}
-                    {% for post in replies %}
-                        <br>
-                        {% include '_post.html' %}
-                    {% endfor %}
-                {% endif %}
-            </div>
-        {% endif %} {# if post_links #}
-    </div>
-</div>
+                        {% endif %}
+                    </div>
+                {% endif %} {# if post_links #}
+            </td>
+        </tr>
+    </tbody>
+</table>

@@ -15,19 +15,21 @@
     
         <!-- rendering the valuation plot -->
 
-        <!-- if the paylod of the plot is available -->
+        <!-- if the payload of the plot is available -->
         {% if plot %}
 
             <!-- display a dropdown of different metrics for price correlations -->
             <div class="dropdown">
-                <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">
+                <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
                     Price Correlations
-                    <span class="caret"></span>
                 </button>
                 <ul class="dropdown-menu">
+
                     <!-- Earnings Correlations -->
-                    <li class="dropdown-header">
-                        Earnings Correlations
+                    <li>
+                        <h5 class="dropdown-header">
+                            Earnings Correlations
+                        </h5>
                     </li>
                     <li>
                         <a href="javascript:plot_valuation(
@@ -35,14 +37,17 @@
                                     null,
                                     'Net Income',
                                     '.valuation-plot'
-                                )">
+                                )" class="dropdown-item">
                             Diluted Earnings (GAAP)
                         </a>
                     </li>
-                    <li class="divider"></li>
+                    <li><hr class="dropdown-divider"></hr></li>
+
                     <!-- Intrinsic Value Correlations -->
-                    <li class="dropdown-header">
-                        Intrinsic Value Correlations
+                    <li>
+                        <h5 class="dropdown-header">
+                            Intrinsic Value Correlations
+                        </h5>
                     </li>
                     <li>
                         <a href="javascript:plot_valuation(
@@ -50,7 +55,7 @@
                                     null,
                                     'EBITDA',
                                     '.valuation-plot'
-                                )">
+                                )" class="dropdown-item">
                             EBITDA
                         </a>
                     </li>
@@ -60,7 +65,7 @@
                                     null,
                                     'EBIT',
                                     '.valuation-plot'
-                                )">
+                                )" class="dropdown-item">
                             EBIT
                         </a>
                     </li>

@@ -1,5 +1,4 @@
 {% extends 'base.html' %}
-{% import 'bootstrap/wtf.html' as wtf %}
 
 
 {% block scripts %}
@@ -218,20 +217,20 @@
 
     {# Tabs #}
     <ul class="nav nav-tabs" id="main-tabs">
-        <li class="active"><a data-toggle="tab" href="#summary">Summary</a></li>
-        <li><a data-toggle="tab" href="#fundamentals">Fundamentals</a></li>
-        <li><a data-toggle="tab" href="#mynotes">My Notes</a></li>
+        <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#summary">Summary</a></li>
+        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#fundamentals">Fundamentals</a></li>
+        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#mynotes">My Notes</a></li>
     </ul>
 
     {# Define different tab panes #}
     <div class="tab-content">
-        <div id="summary" class="tab-pane fade in active">
+        <div id="summary" class="tab-pane container active">
             <!--- code for the summary tab ---> 
             {% include 'stocks/_stock_tab_summary.html' %}
         </div>
 
         {# The Fundamentals Tab #}
-        <div id="fundamentals" class="tab-pane fade">
+        <div id="fundamentals" class="tab-pane container fade">
             <div class="row">
                 <div class="col-sm-6">
                     {% set table_header = "Financial Strength" %}
@@ -251,7 +250,7 @@
         </div>
 
         {# The My Notes Tab #}
-        <div id="mynotes" class="tab-pane fade">
+        <div id="mynotes" class="tab-pane container fade">
             <h3>{{ current_user.username }}'s notes on {{ stock.name }}</h3>
 
             {# collapse a text editor #}

@@ -144,7 +144,7 @@
             };
             
             // save the active tab in local storage
-            $('a[data-toggle="tab"]').on('shown.bs.tab', function(e) {
+            $('a[data-bs-toggle="tab"]').on('shown.bs.tab', function(e) {
                 localStorage.setItem('activeTab', $(e.target).attr('href'));
             });
 

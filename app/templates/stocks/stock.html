@@ -251,11 +251,13 @@
 
         {# The My Notes Tab #}
         <div id="mynotes" class="tab-pane container fade">
-            <h3>{{ current_user.username }}'s notes on {{ stock.name }}</h3>
+            <br>
+            <h3>
+                {{ current_user.username }}'s notes on {{ stock.name }}
+                <button type="button" class="btn btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#edit-notes">Edit</button>
+            </h3>
 
             {# collapse a text editor #}
-            <button type="button" class="btn btn-primary" data-toggle="collapse" data-target="#edit-notes">Edit</button>
-            <br><br>
             <div id="edit-notes" class="collapse">
                 {# a form for new notes #}
                 <form action="" method="post">
@@ -279,8 +281,13 @@
             {% if current_note %}
                 <div class="panel panel-info">
                     <div class="panel-heading">
-                        Last updated on {{ moment(current_note.timestamp).format('llll') }}
+                        <small class="text-muted">
+                            <i>
+                                Last updated on {{ moment(current_note.timestamp).format('llll') }}
+                            </i>
+                        </small>
                     </div>
+                    <br>
                     <div class="panel-body">
                         {{ current_note.body | safe | urlize(40, True) }}
                     </div>

@@ -62,7 +62,7 @@
                                 <a class="nav-link" href="{{ url_for('main.messages') }}">
                                     Messages
                                     {% set new_messages = current_user.new_messages() %}
-                                    <span id="message_count" class="badge" 
+                                    <span id="message_count" class="badge bg-info" 
                                           style="visibility: {% if new_messages %}visible
                                                              {% else %}hidden{% endif %};">
                                         {{ new_messages }}

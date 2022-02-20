@@ -1,16 +1,37 @@
 {% extends 'base.html' %}
-{% import 'bootstrap/wtf.html' as wtf %}
 
 
 {% block app_content %}
 <h1>
     Login
 </h1>
-<div class="row">
-    <div class="col-md-4">
-        {{ wtf.quick_form(form) }}
+
+<!-- login form -->
+<form action="" method="post">
+    {{ form.hidden_tag() }}
+    <div class="mt-3 mb-3 col-sm-4 form-floating">
+        {{ form.username(class="form-control", id="floatingUsername", placeholder="username") }}
+        <label for="floatingUsername">{{ form.username.label }}</label>
+        {% for error in form.username.errors %}
+            <span style="color: red;">{{ error }}</span>
+        {% endfor %}
     </div>
-</div>
+    <div class="mb-3 col-sm-4 form-floating">
+        {{ form.password(class="form-control", id="floatingPassword", placeholder="password") }}
+        <label for="floatingPassword">{{ form.password.label }}</label>
+        {% for error in form.password.errors %}
+            <span style="color: red;">{{ error }}</span>
+        {% endfor %}
+    </div>
+    <div class="form-check form-switch mb-3">
+        {{ form.remember_me(class="form-check-input", id="rememberMe", role="switch") }} 
+        <label class="form-check-label" for="rememberMe">{{ form.remember_me.label }}</label>
+    </div>
+    <div class="mb-3">
+        {{ form.submit(class="btn btn-primary") }}
+    </div>
+</form>
+
 <br>
 <p>
     Not registered yet? Click <a href="{{ url_for('auth.register') }}">here</a> to register!

@@ -203,62 +203,65 @@
         </script>
 
         <!-- script to fetch notifications and update various page elements -->
-        <script>
-            // helper function to set message count for the designated DOM element
-            function set_message_count(n) {
-                $('#message_count').text(n);
-                $('#message_count').css('visibility', n ? 'visible' : 'hidden');
-            };
+        <!-- only active when the user is already logged in -->
+        {% if current_user.is_authenticated %}
+            <script>
+                // helper function to set message count for the designated DOM element
+                function set_message_count(n) {
+                    $('#message_count').text(n);
+                    $('#message_count').css('visibility', n ? 'visible' : 'hidden');
+                };
 
-            // helper function to set task progress for the designated DOM element
-            function set_task_progress(task_id, progress) {
-                $('#' + task_id + '-progress').text(progress);
-            };
+                // helper function to set task progress for the designated DOM element
+                function set_task_progress(task_id, progress) {
+                    $('#' + task_id + '-progress').text(progress);
+                };
 
-            // helper function to set stock quotes via straight polling
-            function set_quote(symbol, quote) {
-                $('#quote-' + symbol + '-c').text(quote.c.toFixed(2));
-                $('#quote-' + symbol + '-d').text((quote.d<0 ? '' : '+') + quote.d.toFixed(2));
-                $('#quote-' + symbol + '-d').css('color', quote.d<0 ? 'red' : 'green')
-                $('#quote-' + symbol + '-dp').text((quote.dp<0 ? '' : '+') + quote.dp.toFixed(2) + '%');
-                $('#quote-' + symbol + '-dp').css('color', quote.dp<0 ? 'red' : 'green')
-                $('#quote-' + symbol + '-t').text(quote.t)
-            };
+                // helper function to set stock quotes via straight polling
+                function set_quote(symbol, quote) {
+                    $('#quote-' + symbol + '-c').text(quote.c.toFixed(2));
+                    $('#quote-' + symbol + '-d').text((quote.d<0 ? '' : '+') + quote.d.toFixed(2));
+                    $('#quote-' + symbol + '-d').css('color', quote.d<0 ? 'red' : 'green')
+                    $('#quote-' + symbol + '-dp').text((quote.dp<0 ? '' : '+') + quote.dp.toFixed(2) + '%');
+                    $('#quote-' + symbol + '-dp').css('color', quote.dp<0 ? 'red' : 'green')
+                    $('#quote-' + symbol + '-t').text(quote.t)
+                };
 
-            $(function() {
-                var since = 0.0;
-                var elem = null;
-                var quote_task_desc = null;
-                setInterval(function() {
-                    // ajax request to fetch notifications and update corresponding page elements
-                    $.ajax('/notifications?since=' + since).done(function(notifications) {
-                        for (var i=0; i < notifications.length; i++) {
-                            switch(notifications[i].name) {
-                                case 'unread_message_count':
-                                    set_message_count(notifications[i].data);
-                                    break;
-                                case 'task_progress':
-                                    set_task_progress(notifications[i].data.task_id,
-                                                    notifications[i].data.progress);
-                                    break;
-                                case 'refresh_quote':
-                                    set_quote(notifications[i].data.symbol,
-                                            notifications[i].data.quote);
-                                    break;
+                $(function() {
+                    var since = 0.0;
+                    var elem = null;
+                    var quote_task_desc = null;
+                    setInterval(function() {
+                        // ajax request to fetch notifications and update corresponding page elements
+                        $.ajax('/notifications?since=' + since).done(function(notifications) {
+                            for (var i=0; i < notifications.length; i++) {
+                                switch(notifications[i].name) {
+                                    case 'unread_message_count':
+                                        set_message_count(notifications[i].data);
+                                        break;
+                                    case 'task_progress':
+                                        set_task_progress(notifications[i].data.task_id,
+                                                        notifications[i].data.progress);
+                                        break;
+                                    case 'refresh_quote':
+                                        set_quote(notifications[i].data.symbol,
+                                                notifications[i].data.quote);
+                                        break;
+                                };
+                                since = notifications[i].timestamp;
                             };
-                            since = notifications[i].timestamp;
-                        };
-                    });
+                        });
 
-                    // ajax request to tell server if the user is still active on certain pages
-                    watchlist_flag = $('.page-flag-watchlist').text();
-                    if (watchlist_flag) {
-                        quote_task_desc = 'watchlist';
-                        $.ajax('/refresh_quote_polling?task_desc=' + quote_task_desc);
-                    };
-                }, 5000);
-            });
-        </script>
+                        // ajax request to tell server if the user is still active on certain pages
+                        watchlist_flag = $('.page-flag-watchlist').text();
+                        if (watchlist_flag) {
+                            quote_task_desc = 'watchlist';
+                            $.ajax('/refresh_quote_polling?task_desc=' + quote_task_desc);
+                        };
+                    }, 5000);
+                });
+            </script>
+        {% endif %}
 
         {% block scripts %}{% endblock %}
 

@@ -103,18 +103,18 @@
                             <br>
                             <form action="" method="post">
                                 {{ form.hidden_tag() }}
-                                <div class="form-group">
-                                    {{ form.post(cols=50, rows=4, id="comment", class="form-control") }}<br>
+
+                                <div class="mb-3 col-sm-4">
+                                    {{ form.post(rows=4, id="comment", class="form-control", placeholder="Type in your reply here...") }}
                                     {% for error in form.post.errors %}
                                         <span style="color: red;">{{ error }}</span>
                                     {% endfor %}
                                 </div>
-                                <div class="form-group">
-                                    {{ form.parent_id(type="hidden", value=post.id) }}
-                                </div>
-                                <div class="form-group">
-                                    {{ form.submit() }}
-                                </div>
+
+                                <!-- add the post id to the form submission as a hidden field -->
+                                {{ form.parent_id(type="hidden", value=post.id) }}
+
+                                {{ form.submit(class="btn btn-primary") }}
                             </form>
                         </div>
                     {% endif %}

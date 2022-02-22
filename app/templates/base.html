@@ -173,6 +173,7 @@
                                                 html: true,
                                                 animation: false,
                                                 container: elem,
+                                                sanitize: false,
                                                 content: data
                                             }).popover('show');
                                             flask_moment_render_all();
@@ -195,9 +196,9 @@
                             xhr.abort();
                             xhr = null;
                         }
-                        // destroy popup here
+                        // dispose/destroy popup here
                         else {
-                            elem.popover('destroy');
+                            elem.popover('dispose');
                         };
                     }
                 );

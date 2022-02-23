@@ -1,28 +1,30 @@
-<div class="card mb-3" style="max-width: 540px;">
-    <div class="row g-0">
-        <div class="col-sm-4">
+<div class="card border-light mb-3" style="max-width: 540px;">
+    <div class="row align-items-center g-0">
+        <div class="col-md-4">
             <img src="{{ user.avatar(size=64) }}" class="img-fluid rounded-circle" alt="Profile Photo">
         </div>
-        <div class="col-sm-8">
+        <div class="col-md-8">
             <div class="card-body">
                 <h5 class="card-title">
                     <a href="{{ url_for('main.user', username=user.username) }}">
                         {{ user.username }}
                     </a>
                 </h5>
-                {% if user.about_me %}
-                    <p class="card-text">{{ user.about_me }}</p>
-                {% endif %}
                 {% if user.last_seen %}
-                    <p class="card-text">
-                        <small class="text-muted">
+                    <p class="card-subtitle text-muted mb-2">
+                        <small>
                             Last seen on {{ moment(user.last_seen).format('lll') }}
                         </small>
                     </p>
                 {% endif %}
+                {% if user.about_me %}
+                    <p class="card-text">{{ user.about_me }}</p>
+                {% endif %}
                 <p class="card-text">
-                    {{ user.followers.count() }} followers, 
-                    {{ user.followed.count() }} following
+                    <small>
+                        {{ user.followers.count() }} followers, 
+                        {{ user.followed.count() }} following
+                    </small>
                 </p>
                 {% if current_user != user %}
                     {% if current_user.is_following(user) %}

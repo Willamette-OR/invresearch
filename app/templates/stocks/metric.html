@@ -43,15 +43,15 @@
 
     {# render the time series plot #}
     <div class="container">
-        <div class="row">
-            <div class='btn-group'>
+        <div class="p-1 rounded">
+            <div class="btn-group btn-group-sm">
                 {% for num_of_years in [5, 10, 15, 20] %}
                     <a href="javascript:update_page(
                                 '{{ stock.symbol }}',
                                 '{{ indicator_name }}',
                                 '{{ num_of_years }}'
                             )" 
-                       class="btn btn-default" role="button">
+                       class="btn btn-outline-success">
                         {{ num_of_years }}Y
                     </a>
                 {% endfor %}

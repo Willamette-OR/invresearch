@@ -2,17 +2,19 @@
 
 
 {% block app_content %}
-<h1>
-    {% if stock_quotes %}
-        <span class="page-flag-watchlist">
-            {{ user.username }}'s Stock Watchlist:
-        </span>
-    {% else %}
-        {{ user.username }}'s Stock Watchlist: (not watching any currently)
-    {% endif %}
-    
-</h1>
-<br><br>
+<div class="py-5 rounded">
+    <h1>
+        {% if stock_quotes %}
+            <span class="page-flag-watchlist">
+                {{ user.username }}'s Stock Watchlist:
+            </span>
+        {% else %}
+            {{ user.username }}'s Stock Watchlist: (not watching any currently)
+        {% endif %}
+        
+    </h1>
+</div>
+
 <table class="table table-hover table-striped">
     <thead>
         <th scope="col">Symbol</th>

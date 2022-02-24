@@ -163,29 +163,32 @@
 
 
 {% block app_content %}
-    <table class="table">
-        <tr>
-            <td width="256px" style="border: 0px;">
-                <h3>
-                    {{ stock.name }} (<span class="stock-symbol">{{ stock.symbol }}</span>)
-                </h3>
-            </td>
-            <td style="border: 0px;">
-                <br>
-                {% if current_user.is_watching(stock) %}
-                    <form action="{{ url_for('stocks.unwatch', symbol=stock.symbol) }}" method="POST">
-                        {{ empty_form.hidden_tag() }}
-                        {{ empty_form.submit(value='Unwatch')}}
-                    </form>
-                {% else %}
-                    <form action="{{ url_for('stocks.watch', symbol=stock.symbol) }}" method="POST">
-                        {{ empty_form.hidden_tag() }}
-                        {{ empty_form.submit(value='Watch')}}
-                    </form>
-                {% endif %}
-            </td>
-        </tr>
-    </table>
+    <div class="pt-5 rounded">
+        <table class="table">
+            <tr>
+                <td width="256px" style="border: 0px;">
+                    <h3>
+                        {{ stock.name }} (<span class="stock-symbol">{{ stock.symbol }}</span>)
+                    </h3>
+                </td>
+                <td style="border: 0px;">
+                    <br>
+                    {% if current_user.is_watching(stock) %}
+                        <form action="{{ url_for('stocks.unwatch', symbol=stock.symbol) }}" method="POST">
+                            {{ empty_form.hidden_tag() }}
+                            {{ empty_form.submit(value='Unwatch')}}
+                        </form>
+                    {% else %}
+                        <form action="{{ url_for('stocks.watch', symbol=stock.symbol) }}" method="POST">
+                            {{ empty_form.hidden_tag() }}
+                            {{ empty_form.submit(value='Watch')}}
+                        </form>
+                    {% endif %}
+                </td>
+            </tr>
+        </table>
+    </div>
+    
     <h1>
         <span id="quote-{{ stock.symbol }}-c">
             {{ '{:.2f}'.format(quote.c) }}

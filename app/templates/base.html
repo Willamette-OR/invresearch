@@ -17,7 +17,7 @@
     <body>
 
         <!-- navbar -->
-        <nav class="navbar navbar-expand-sm bg-dark navbar-dark">
+        <nav class="navbar navbar-expand-sm bg-dark navbar-dark fixed-top">
             <div class="container">
                 <!-- logo -->
                 <a class="navbar-brand" href="{{ url_for('main.index') }}">
@@ -85,11 +85,11 @@
         <!-- end of navbar -->
 
         <!-- main contents -->
-        <div class="container">
+        <div class="container mt-5">
             {% with messages = get_flashed_messages() %}
                 {% if messages %}
                     {% for message in messages %}
-                        <div class="alert alert-info" role="alert">{{ message }}</div>
+                        <div class="alert alert-info pt-5 rounded" role="alert">{{ message }}</div>
                     {% endfor %}
                 {% endif %}
             {% endwith %}
@@ -100,7 +100,7 @@
                 {% if tasks %}
                     {% for task in tasks %}
                         {% if task.name != 'refresh_quotes' %}
-                            <div class="alert alert-success" role="alert">
+                            <div class="alert alert-success pt-5 rounded" role="alert">
                                 {{ task.description }}
                                 <span id="{{ task.id }}-progress">
                                     {{ task.get_progress() }}

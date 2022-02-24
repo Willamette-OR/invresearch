@@ -26,16 +26,18 @@
 
 
 {% block app_content %}
-    <h2>
-        <a href="{{ url_for('stocks.stock', symbol=stock.symbol) }}">
-            {{ stock.name }}
-        </a>
-        {{ indicator_name }} : 
-        <span style="color: steelblue;">
-            {% set value = indicator_data['Current'] %} {% include 'stocks/_autofmt.html' %}                
-            (as of {{ stock.get_last_financials_report_date(type='quarterly').strftime('%m-%Y') }})
-        </span>
-    </h2>
+    <div class="pt-5 rounded">
+        <h2>
+            <a href="{{ url_for('stocks.stock', symbol=stock.symbol) }}">
+                {{ stock.name }}
+            </a>
+            {{ indicator_name }} : 
+            <span style="color: steelblue;">
+                {% set value = indicator_data['Current'] %} {% include 'stocks/_autofmt.html' %}                
+                (as of {{ stock.get_last_financials_report_date(type='quarterly').strftime('%m-%Y') }})
+            </span>
+        </h2>
+    </div>
 
     <hr>
 

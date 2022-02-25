@@ -163,32 +163,29 @@
 
 
 {% block app_content %}
-    <div class="pt-5 rounded">
-        <table class="table">
-            <tr>
-                <td width="256px" style="border: 0px;">
-                    <h3>
-                        {{ stock.name }} (<span class="stock-symbol">{{ stock.symbol }}</span>)
-                    </h3>
-                </td>
-                <td style="border: 0px;">
-                    <br>
-                    {% if current_user.is_watching(stock) %}
-                        <form action="{{ url_for('stocks.unwatch', symbol=stock.symbol) }}" method="POST">
-                            {{ empty_form.hidden_tag() }}
-                            {{ empty_form.submit(value='Unwatch')}}
-                        </form>
-                    {% else %}
-                        <form action="{{ url_for('stocks.watch', symbol=stock.symbol) }}" method="POST">
-                            {{ empty_form.hidden_tag() }}
-                            {{ empty_form.submit(value='Watch')}}
-                        </form>
-                    {% endif %}
-                </td>
-            </tr>
-        </table>
+    <!-- stock name, symbol and watch/unwatch button -->
+    <div class="row align-items-center pt-5 mb-5 rounded">
+        <div class="col-sm-2">
+            <h3>
+                {{ stock.name }} (<span class="stock-symbol">{{ stock.symbol }}</span>)
+            </h3>
+        </div>
+        <div class="col-sm-2">
+            {% if current_user.is_watching(stock) %}
+                <form action="{{ url_for('stocks.unwatch', symbol=stock.symbol) }}" method="POST">
+                    {{ empty_form.hidden_tag() }}
+                    {{ empty_form.submit(value="Unwatch", class="btn btn-primary")}}
+                </form>
+            {% else %}
+                <form action="{{ url_for('stocks.watch', symbol=stock.symbol) }}" method="POST">
+                    {{ empty_form.hidden_tag() }}
+                    {{ empty_form.submit(value="Watch", class="btn btn-primary")}}
+                </form>
+            {% endif %}
+        </div>
     </div>
     
+    <!-- stock real time quote -->
     <h1>
         <span id="quote-{{ stock.symbol }}-c">
             {{ '{:.2f}'.format(quote.c) }}

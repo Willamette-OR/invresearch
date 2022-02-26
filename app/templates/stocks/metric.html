@@ -26,30 +26,32 @@
 
 
 {% block app_content %}
-    <h2>
-        <a href="{{ url_for('stocks.stock', symbol=stock.symbol) }}">
-            {{ stock.name }}
-        </a>
-        {{ indicator_name }} : 
-        <span style="color: steelblue;">
-            {% set value = indicator_data['Current'] %} {% include 'stocks/_autofmt.html' %}                
-            (as of {{ stock.get_last_financials_report_date(type='quarterly').strftime('%m-%Y') }})
-        </span>
-    </h2>
+    <div class="pt-5 rounded">
+        <h2>
+            <a href="{{ url_for('stocks.stock', symbol=stock.symbol) }}">
+                {{ stock.name }}
+            </a>
+            {{ indicator_name }} : 
+            <span style="color: steelblue;">
+                {% set value = indicator_data['Current'] %} {% include 'stocks/_autofmt.html' %}                
+                (as of {{ stock.get_last_financials_report_date(type='quarterly').strftime('%m-%Y') }})
+            </span>
+        </h2>
+    </div>
 
     <hr>
 
     {# render the time series plot #}
     <div class="container">
-        <div class="row">
-            <div class='btn-group'>
+        <div class="p-1 rounded">
+            <div class="btn-group btn-group-sm">
                 {% for num_of_years in [5, 10, 15, 20] %}
                     <a href="javascript:update_page(
                                 '{{ stock.symbol }}',
                                 '{{ indicator_name }}',
                                 '{{ num_of_years }}'
                             )" 
-                       class="btn btn-default" role="button">
+                       class="btn btn-outline-success">
                         {{ num_of_years }}Y
                     </a>
                 {% endfor %}

@@ -1,5 +1,4 @@
 {% extends 'base.html' %}
-{% import 'bootstrap/wtf.html' as wtf %}
 
 
 {% block scripts %}
@@ -145,7 +144,7 @@
             };
             
             // save the active tab in local storage
-            $('a[data-toggle="tab"]').on('shown.bs.tab', function(e) {
+            $('a[data-bs-toggle="tab"]').on('shown.bs.tab', function(e) {
                 localStorage.setItem('activeTab', $(e.target).attr('href'));
             });
 
@@ -164,29 +163,29 @@
 
 
 {% block app_content %}
-    <table class="table">
-        <tr>
-            <td width="256px" style="border: 0px;">
-                <h3>
-                    {{ stock.name }} (<span class="stock-symbol">{{ stock.symbol }}</span>)
-                </h3>
-            </td>
-            <td style="border: 0px;">
-                <br>
-                {% if current_user.is_watching(stock) %}
-                    <form action="{{ url_for('stocks.unwatch', symbol=stock.symbol) }}" method="POST">
-                        {{ empty_form.hidden_tag() }}
-                        {{ empty_form.submit(value='Unwatch')}}
-                    </form>
-                {% else %}
-                    <form action="{{ url_for('stocks.watch', symbol=stock.symbol) }}" method="POST">
-                        {{ empty_form.hidden_tag() }}
-                        {{ empty_form.submit(value='Watch')}}
-                    </form>
-                {% endif %}
-            </td>
-        </tr>
-    </table>
+    <!-- stock name, symbol and watch/unwatch button -->
+    <div class="row align-items-center pt-5 mb-5 rounded">
+        <div class="col-sm-2">
+            <h3>
+                {{ stock.name }} (<span class="stock-symbol">{{ stock.symbol }}</span>)
+            </h3>
+        </div>
+        <div class="col-sm-2">
+            {% if current_user.is_watching(stock) %}
+                <form action="{{ url_for('stocks.unwatch', symbol=stock.symbol) }}" method="POST">
+                    {{ empty_form.hidden_tag() }}
+                    {{ empty_form.submit(value="Unwatch", class="btn btn-primary")}}
+                </form>
+            {% else %}
+                <form action="{{ url_for('stocks.watch', symbol=stock.symbol) }}" method="POST">
+                    {{ empty_form.hidden_tag() }}
+                    {{ empty_form.submit(value="Watch", class="btn btn-primary")}}
+                </form>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- stock real time quote -->
     <h1>
         <span id="quote-{{ stock.symbol }}-c">
             {{ '{:.2f}'.format(quote.c) }}
@@ -218,45 +217,48 @@
 
     {# Tabs #}
     <ul class="nav nav-tabs" id="main-tabs">
-        <li class="active"><a data-toggle="tab" href="#summary">Summary</a></li>
-        <li><a data-toggle="tab" href="#fundamentals">Fundamentals</a></li>
-        <li><a data-toggle="tab" href="#mynotes">My Notes</a></li>
+        <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#summary">Summary</a></li>
+        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#fundamentals">Fundamentals</a></li>
+        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#mynotes">My Notes</a></li>
     </ul>
 
     {# Define different tab panes #}
     <div class="tab-content">
-        <div id="summary" class="tab-pane fade in active">
+        <div id="summary" class="tab-pane container active">
             <!--- code for the summary tab ---> 
             {% include 'stocks/_stock_tab_summary.html' %}
         </div>
 
         {# The Fundamentals Tab #}
-        <div id="fundamentals" class="tab-pane fade">
-            <div class="row">
-                <div class="col-sm-6">
+        <div id="fundamentals" class="tab-pane container fade">
+            <div class="row justify-content-around">
+                <div class="col-sm-5 shadow bg-light mt-3 mb-5 rounded">
                     {% set table_header = "Financial Strength" %}
                     {% include 'stocks/_indicators.html' %}
                 </div>
-                <div class="col-sm-6">
+                <div class="col-sm-5 shadow bg-light mt-3 mb-5 rounded">
                     {% set table_header = "Profitability" %}
                     {% include 'stocks/_indicators.html' %}
                 </div>
             </div>
-            <div class="row">
-                <div class="col-sm-6">
+            <div class="row justify-content-around">
+                <div class="col-sm-5 shadow bg-light mt-3 mb-5 rounded">
                     {% set table_header = "Business Growth" %}
                     {% include 'stocks/_indicators.html' %}
                 </div>
+                <div class="col-sm-5"></div>
             </div>
         </div>
 
         {# The My Notes Tab #}
-        <div id="mynotes" class="tab-pane fade">
-            <h3>{{ current_user.username }}'s notes on {{ stock.name }}</h3>
+        <div id="mynotes" class="tab-pane container fade">
+            <br>
+            <h3>
+                {{ current_user.username }}'s notes on {{ stock.name }}
+                <button type="button" class="btn btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#edit-notes">Edit</button>
+            </h3>
 
             {# collapse a text editor #}
-            <button type="button" class="btn btn-primary" data-toggle="collapse" data-target="#edit-notes">Edit</button>
-            <br><br>
             <div id="edit-notes" class="collapse">
                 {# a form for new notes #}
                 <form action="" method="post">
@@ -280,8 +282,13 @@
             {% if current_note %}
                 <div class="panel panel-info">
                     <div class="panel-heading">
-                        Last updated on {{ moment(current_note.timestamp).format('llll') }}
+                        <small class="text-muted">
+                            <i>
+                                Last updated on {{ moment(current_note.timestamp).format('llll') }}
+                            </i>
+                        </small>
                     </div>
+                    <br>
                     <div class="panel-body">
                         {{ current_note.body | safe | urlize(40, True) }}
                     </div>

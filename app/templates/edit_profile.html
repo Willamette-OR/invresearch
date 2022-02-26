@@ -1,14 +1,42 @@
 {% extends 'base.html' %}
-{% import 'bootstrap/wtf.html' as wtf %}
 
 
 {% block app_content %}
-    <h1>
-        Edit Profile
-    </h1>
-    <div class="row">
-        <div class="col-md-4">
-            {{ wtf.quick_form(form) }}
-        </div>
+    <div class="pt-5 rounded">
+        <h1>
+            Edit Profile
+        </h1>
     </div>
+
+    <form action="" method="post" enctype="multipart/form-data">
+        {{ form.hidden_tag() }}
+        <div class="mb-3 mt-3">
+            <label for="username" class="form-label">{{ form.username.label }}</label>
+            <div class="col-sm-4">
+                {{ form.username(class="form-control", id="username", ) }}
+            </div>
+            {% for error in form.username.errors %}
+                <span style="color: red;">{{ error }}</span>
+            {% endfor %}
+        </div>
+        <div class="mb-3">
+            <label for="avatar-file" class="form-label">{{ form.avatar.label }}</label>
+            <div class="col-sm-4">
+                {{ form.avatar(class="form-control", id="avatar-file") }}
+            </div>
+            {% for error in form.avatar.errors %}
+                <span style="color: red;">{{ error }}</span>
+            {% endfor %}
+        </div>
+        <div class="mb-3">
+            <label for="about-me" class="form-label">{{ form.about_me.label }}</label>
+            <div class="col-sm-4">
+                {{ form.about_me(class="form-control", rows="5", id="about_me") }}
+            </div>
+            {% for error in form.about_me.errors %}
+                <span style="color: red;">{{ error }}</span>
+            {% endfor %}
+        </div>
+        {{ form.submit(class="btn btn-primary") }}
+    </form>
 {% endblock %}

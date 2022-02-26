@@ -2,9 +2,12 @@
 
 
 {% block app_content %}
-    <h1>
-        Search results for "{{ g.search_form.q.data }}"":
-    </h1>
+    <div class="pt-5 rounded">
+        <h1>
+            Search results for "{{ g.search_form.q.data }}"":
+        </h1>
+    </div> 
+
     <hr>
     {% for stock in stocks %}
         <p>

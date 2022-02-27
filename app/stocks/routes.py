@@ -16,7 +16,7 @@ from app.stocks import bp
 from app.stocks.plot import get_valplot_dates, get_durations, \
                             get_normal_price, stock_valuation_plot, \
                             timeseries_plot
-from app.stocks.forms import NoteForm
+from app.stocks.forms import NoteForm, CompareForm
 
 
 @bp.before_request
@@ -480,6 +480,10 @@ def metric_profile(symbol, indicator_name):
         flash('Unable to find metric: {}.'.format(indicator_name))
         return redirect(url_for('stocks.stock', symbol=stock.symbol))
 
+    # initialize the form for comparing the values of the same metric of 
+    # different stocks
+    compare_form = CompareForm()
+
     # get data of the underlying metric out of the indicator payload
     metric = indicator_data['Object']
 
@@ -509,6 +513,7 @@ def metric_profile(symbol, indicator_name):
         return render_template(
             'stocks/metric.html', title=stock.symbol + ': '+ metric.name, 
             stock=stock, metric=metric, rated_metric=rated_metric, 
+            compare_form = compare_form,
             indicator_data=indicator_data, indicator_name=indicator_name, 
             format_type=indicator_data['Type'], plot=plot, table_data=table_data
         )

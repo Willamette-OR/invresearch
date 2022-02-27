@@ -75,8 +75,10 @@
             </div>
             <div class="col-sm-4 ms-5">
                 <form action="" method="post" class="d-flex" id="compare-symbols">
-                    <input type="text" class="form-control-sm me-2" id="symbols" placeholder="Enter stock symbols" name="symbols">
-                    <button type="submit" class="btn btn-primary btn-sm">Compare</button>
+                    {{ compare_form.hidden_tag() }}
+
+                    {{ compare_form.symbols(class="form-control-sm me-2", placeholder="Enter stock symbols") }}
+                    {{ compare_form.submit(class="btn btn-primary btn-sm") }}
                 </form>
             </div>
         </div>

@@ -1,5 +1,5 @@
 import json
-from time import time
+from time import time, sleep
 from datetime import datetime
 from langdetect import detect, LangDetectException
 from flask import flash, redirect, url_for, render_template, request, \
@@ -445,7 +445,8 @@ def refresh_quote_polling():
     return ('', 204)
 
 
-@bp.route('/stock/<symbol>/metric_profile/<indicator_name>')
+@bp.route('/stock/<symbol>/metric_profile/<indicator_name>', 
+          methods=['GET', 'POST'])
 @login_required
 def metric_profile(symbol, indicator_name):
     """
@@ -458,7 +459,7 @@ def metric_profile(symbol, indicator_name):
 
     # get request arguments
     payload_only = request.args.get('payload_only', 0, type=int)
-    num_of_years = request.args.get('num_of_years', 20, type=int)
+    num_of_years = request.args.get('num_of_years', 20, type=int) 
 
     # get all fundamental indicators filtered by dates, defaulted to 
     # considering 20 years of financials history
@@ -483,6 +484,9 @@ def metric_profile(symbol, indicator_name):
     # initialize the form for comparing the values of the same metric of 
     # different stocks
     compare_form = CompareForm()
+    if compare_form.validate_on_submit():
+        sleep(5)
+        payload_only = 1
 
     # get data of the underlying metric out of the indicator payload
     metric = indicator_data['Object']

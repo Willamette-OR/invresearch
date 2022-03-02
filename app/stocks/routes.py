@@ -445,66 +445,98 @@ def refresh_quote_polling():
     return ('', 204)
 
 
-@bp.route('/stock/<symbol>/metric_profile/<indicator_name>', 
+@bp.route('/stock/<main_symbol>/metric_profile/<indicator_name>', 
           methods=['GET', 'POST'])
 @login_required
-def metric_profile(symbol, indicator_name):
+def metric_profile(main_symbol, indicator_name):
     """
     This view function handles requests to view the profile of a given 
     financial metric for a pre-specified stock.
     """
 
-    # retrieve the stock database object
-    stock = Stock.query.filter_by(symbol=symbol).first_or_404()
-
     # get request arguments
     payload_only = request.args.get('payload_only', 0, type=int)
     num_of_years = request.args.get('num_of_years', 20, type=int) 
 
-    # get all fundamental indicators filtered by dates, defaulted to 
-    # considering 20 years of financials history
+    symbols_to_compare = None
+
+    # initialize the form for comparing the values of the same metric of 
+    # different stocks, and if validated get stock symbols from the form data
+    compare_form = CompareForm()
+    if compare_form.validate_on_submit():
+        symbols_to_compare = [symbol.strip() for symbol in 
+                              compare_form.symbols.data.split(',')]
+        payload_only = 1
+
+    # derive a start date that'll give by default 20 years of 
+    # financials history
+    stock = Stock.query.filter_by(symbol=main_symbol).first_or_404()
     start_date = get_fundamental_start_date(
         num_of_years=num_of_years, 
         last_report_date=stock.get_last_financials_report_date())
-    indicators_data = stock.get_fundamental_indicator_data(
-        start_date=start_date.strftime('%m-%d-%Y'), debug=True)
+
+
+    symbols = symbols_to_compare + [main_symbol] if symbols_to_compare \
+                                                 else [main_symbol]
+    symbols_valid = []
+    plot_dicts_valid = []
+
+    for symbol in symbols:
+        # retrieve the stock database object
+        stock = Stock.query.filter_by(symbol=symbol).first()
+
+        # fetch the stock info and add it to the app database if it has not been 
+        # added
+        if not stock:
+            profile_data = get_company_profile(symbol)
+            if not profile_data:
+                flash("The stock symbol {} does not exist..." 
+                        "Please double check.".format(symbol))
+                return redirect(url_for('main.index'))
+            else:
+                stock = Stock(symbol=symbol, name=profile_data['name'])
+                db.session.add(stock)
+                db.session.commit()
+
+        symbols_valid.append(symbol)        
+
+        # get all fundamental indicators filtered by dates
+        indicators_data = stock.get_fundamental_indicator_data(
+            start_date=start_date.strftime('%m-%d-%Y'), debug=True)
     
-    # get the payload of the pre-specified indicator
-    try:
-        indicator_data = [
-            indicators_data[section][name]
-            for section in indicators_data 
-            for name in indicators_data[section] 
-            if name==indicator_name
-        ][0]
-    except IndexError:
-        flash('Unable to find metric: {}.'.format(indicator_name))
-        return redirect(url_for('stocks.stock', symbol=stock.symbol))
+        # get the payload of the pre-specified indicator
+        try:
+            indicator_data = [
+                indicators_data[section][name]
+                for section in indicators_data 
+                for name in indicators_data[section] 
+                if name==indicator_name
+            ][0]
+        except IndexError:
+            flash('Unable to find metric: {}.'.format(indicator_name))
+            return redirect(url_for('stocks.stock', symbol=stock.symbol))
 
-    # initialize the form for comparing the values of the same metric of 
-    # different stocks
-    compare_form = CompareForm()
-    if compare_form.validate_on_submit():
-        sleep(5)
-        payload_only = 1
+        # get data of the underlying metric out of the indicator payload
+        metric = indicator_data['Object']
 
-    # get data of the underlying metric out of the indicator payload
-    metric = indicator_data['Object']
+        # prepare for plotting
+        plot_dicts_valid.append(dict(zip(metric.timestamps, metric.values)))
 
-    # get data of the metric used for 'rating" calculations, in case this 
-    # metric is different from the underlying metric
-    rated_metric = indicator_data['Rating']['object']
+        if symbol == main_symbol:
+            # get data of the metric used for 'rating" calculations, in case this 
+            # metric is different from the underlying metric
+            rated_metric = indicator_data['Rating']['object']
 
-    # get some basic statistics of the underlying metric
-    rated_metric.min_10y, rated_metric.max_10y, rated_metric.median_10y, \
-        rated_metric.pctrank_of_latest_10y = rated_metric.get_range_info()
+            # get some basic statistics of the underlying metric
+            rated_metric.min_10y, rated_metric.max_10y, \
+                rated_metric.median_10y, rated_metric.pctrank_of_latest_10y = \
+                rated_metric.get_range_info()
 
-    # prepare for plotting
-    plot_dict = dict(zip(metric.timestamps, metric.values))
+    # plot
     plot, table_data = timeseries_plot(
         name=metric.name, 
-        data_list=[plot_dict], 
-        symbols=[stock.symbol], 
+        data_list=plot_dicts_valid, 
+        symbols=symbols_valid, 
         start_date=start_date
     )
 
@@ -517,7 +549,7 @@ def metric_profile(symbol, indicator_name):
         return render_template(
             'stocks/metric.html', title=stock.symbol + ': '+ metric.name, 
             stock=stock, metric=metric, rated_metric=rated_metric, 
-            compare_form = compare_form,
+            compare_form=compare_form,
             indicator_data=indicator_data, indicator_name=indicator_name, 
             format_type=indicator_data['Type'], plot=plot, table_data=table_data
         )

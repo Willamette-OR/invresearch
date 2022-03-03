@@ -1,5 +1,6 @@
 import json
-from time import time, sleep
+import re
+from time import time
 from datetime import datetime
 from langdetect import detect, LangDetectException
 from flask import flash, redirect, url_for, render_template, request, \
@@ -458,14 +459,26 @@ def metric_profile(main_symbol, indicator_name):
     payload_only = request.args.get('payload_only', 0, type=int)
     num_of_years = request.args.get('num_of_years', 20, type=int) 
 
+    # default the symbols of stocks for metric comparison to None, unless some 
+    # form data including a list of stock symbols is posted via Ajax ;
+    # while None, only the stock associated with the main symbol will be 
+    # processed and plotted later
     symbols_to_compare = None
 
     # initialize the form for comparing the values of the same metric of 
     # different stocks, and if validated get stock symbols from the form data
     compare_form = CompareForm()
     if compare_form.validate_on_submit():
+
+        # extract a list of symbols from the form data posted via Ajax;
+        # the symbols included in the form posted string can be delimited by
+        # ",", ";", or "<space>"
         symbols_to_compare = [symbol.strip() for symbol in 
-                              compare_form.symbols.data.split(',')]
+                              re.split('[,; ]', compare_form.symbols.data) 
+                              if symbol]
+
+        # set this flag to 1 so that only a data payload will be returned to 
+        # the Ajax function later to dynamically update the plot
         payload_only = 1
 
     # derive a start date that'll give by default 20 years of 
@@ -475,13 +488,19 @@ def metric_profile(main_symbol, indicator_name):
         num_of_years=num_of_years, 
         last_report_date=stock.get_last_financials_report_date())
 
-
+    # form a list of symbols to loop through for processing and preparing for 
+    # metric time series plotting
     symbols = symbols_to_compare + [main_symbol] if symbols_to_compare \
                                                  else [main_symbol]
+
+    # initialize lists to separately hold valid stock symbols and associated 
+    # data (in the form of dictionaries) for plotting
     symbols_valid = []
     plot_dicts_valid = []
 
+    # loop through all input symbols
     for symbol in symbols:
+
         # retrieve the stock database object
         stock = Stock.query.filter_by(symbol=symbol).first()
 
@@ -490,14 +509,18 @@ def metric_profile(main_symbol, indicator_name):
         if not stock:
             profile_data = get_company_profile(symbol)
             if not profile_data:
-                flash("The stock symbol {} does not exist..." 
-                        "Please double check.".format(symbol))
-                return redirect(url_for('main.index'))
+                # skip to the next symbol on the list if stock not found
+                # TODO - additional logic here to add additional info to the 
+                # payload to notify the user
+                continue
             else:
                 stock = Stock(symbol=symbol, name=profile_data['name'])
                 db.session.add(stock)
                 db.session.commit()
 
+        # if a corresponding stock can be found, the symbol is appended to the 
+        # list of valid symbols; 
+        # this list will later be rendered as legends in the metric plot
         symbols_valid.append(symbol)        
 
         # get all fundamental indicators filtered by dates
@@ -522,7 +545,10 @@ def metric_profile(main_symbol, indicator_name):
         # prepare for plotting
         plot_dicts_valid.append(dict(zip(metric.timestamps, metric.values)))
 
+        # some additional derivations; only needed for the stock corresponding 
+        # to the main symbol passed as an argument in the url
         if symbol == main_symbol:
+
             # get data of the metric used for 'rating" calculations, in case this 
             # metric is different from the underlying metric
             rated_metric = indicator_data['Rating']['object']
@@ -532,7 +558,7 @@ def metric_profile(main_symbol, indicator_name):
                 rated_metric.median_10y, rated_metric.pctrank_of_latest_10y = \
                 rated_metric.get_range_info()
 
-    # plot
+    # plot the metric time series, for a valid list of stocks
     plot, table_data = timeseries_plot(
         name=metric.name, 
         data_list=plot_dicts_valid, 

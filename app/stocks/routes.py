@@ -496,6 +496,7 @@ def metric_profile(main_symbol, indicator_name):
     # initialize lists to separately hold valid stock symbols and associated 
     # data (in the form of dictionaries) for plotting
     symbols_valid = []
+    symbols_invalid = []
     plot_dicts_valid = []
 
     # loop through all input symbols
@@ -510,8 +511,7 @@ def metric_profile(main_symbol, indicator_name):
             profile_data = get_company_profile(symbol)
             if not profile_data:
                 # skip to the next symbol on the list if stock not found
-                # TODO - additional logic here to add additional info to the 
-                # payload to notify the user
+                symbols_invalid.append(symbol)
                 continue
             else:
                 stock = Stock(symbol=symbol, name=profile_data['name'])
@@ -569,7 +569,10 @@ def metric_profile(main_symbol, indicator_name):
     if payload_only:
         # TODO - add the table data to this payload, after converting the 
         # format of timestamps to strings
-        payload = {'plot': plot}
+        payload = {
+            'plot': plot,
+            'symbols_invalid': json.dumps(symbols_invalid)
+            }
         return jsonify(payload)
     else:
         return render_template(

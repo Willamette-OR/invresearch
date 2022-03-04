@@ -13,6 +13,11 @@
             $('.timeseries-plot').html(plot.div);
         };
 
+        function set_toasts(array) {
+            $("#symbolsInvalid").text(array.toString());
+            $("#symbolErrors").toast("show");
+        };
+
         $("#compare-symbols").submit(function(event) {
             // display spinner till response is received
             $(".timeseries-plot").html(
@@ -36,8 +41,13 @@
                 post_url, 
                 form_data
             ).done(function(response) {
-                console.log("success");
                 set_timeseries_plot(response.plot);
+
+                // display a toast for invalid symbols if any
+                let symbolsArray = response.symbols_invalid.replace("[", "").replace("]", "").split(",");
+                if (symbolsArray.length > 0 && symbolsArray.toString().length > 0){
+                    set_toasts(symbolsArray);
+                };
             }).fail(function() {
                 // pass
             });
@@ -59,6 +69,17 @@
 
 
 {% block app_content %}
+    <!-- toast for symbol errors -->
+    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+        <div class="toast" id="symbolErrors" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <strong class="me-auto">Symbols below cannot be found:</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body" id="symbolsInvalid"></div>
+        </div>
+    </div> 
+
     <div class="pt-5 rounded">
         <h2>
             <a href="{{ url_for('stocks.stock', symbol=stock.symbol) }}">

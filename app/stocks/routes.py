@@ -473,7 +473,7 @@ def metric_profile(main_symbol, indicator_name):
         # extract a list of symbols from the form data posted via Ajax;
         # the symbols included in the form posted string can be delimited by
         # ",", ";", or "<space>"
-        symbols_to_compare = [symbol.strip() for symbol in 
+        symbols_to_compare = [symbol.strip().upper() for symbol in 
                               re.split('[,; ]', compare_form.symbols.data) 
                               if symbol]
 

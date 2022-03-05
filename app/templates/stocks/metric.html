@@ -5,12 +5,55 @@
     {{ super() }}
 
     <script>
+        // helper function to set the time series plot given a payload created 
+        // specifically for plotting
         function set_timeseries_plot(plot) {
             $('.timeseries-plot').html(plot.resources);
             $('.timeseries-plot').html(plot.script);
             $('.timeseries-plot').html(plot.div);
-        }
+        };
 
+        function set_toasts(array) {
+            $("#symbolsInvalid").text(array.toString());
+            $("#symbolErrors").toast("show");
+        };
+
+        $("#compare-symbols").submit(function(event) {
+            // display spinner till response is received
+            $(".timeseries-plot").html(
+                '<div class="d-flex justify-content-center">' + 
+                    '<div class="spinner-border text-primary" style="width: 20rem; height: 20rem;" role="status">' + 
+                        '<span class="visually-hidden">Loading...</span>' + 
+                    '</div>' +
+                '</div>');
+
+            // prevent default action (?)
+            event.preventDefault();
+
+            // get form action url
+            let post_url = $(this).attr("action");
+
+            // encode form elements for submission
+            let form_data = $(this).serialize();
+
+            // post the form data via Ajax and update the plot dynamically
+            $.post(
+                post_url, 
+                form_data
+            ).done(function(response) {
+                set_timeseries_plot(response.plot);
+
+                // display a toast for invalid symbols if any
+                let symbolsArray = response.symbols_invalid.replace("[", "").replace("]", "").split(",");
+                if (symbolsArray.length > 0 && symbolsArray.toString().length > 0){
+                    set_toasts(symbolsArray);
+                };
+            }).fail(function() {
+                // pass
+            });
+        });
+
+        // function to update the metric time series plot via Ajax
         function update_page(symbol, name, num_of_years) {
             $.ajax(
                 '/stock/' + symbol + '/metric_profile/' + name + 
@@ -20,12 +63,25 @@
             }).fail(function() {
                 // pass
             })
-        }
+        };
     </script>
 {% endblock %}
 
 
 {% block app_content %}
+    <!-- toast for symbol errors -->
+    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+        <div class="toast" id="symbolErrors" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header text-white bg-primary">
+                <strong class="me-auto"><i class="bi bi-exclamation-circle"></i> Symbols below cannot be found:</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body bg-light">
+                <strong class="text-danger" id="symbolsInvalid"></strong>
+            </div>
+        </div>
+    </div> 
+
     <div class="pt-5 rounded">
         <h2>
             <a href="{{ url_for('stocks.stock', symbol=stock.symbol) }}">
@@ -43,8 +99,8 @@
 
     {# render the time series plot #}
     <div class="container">
-        <div class="p-1 rounded">
-            <div class="btn-group btn-group-sm">
+        <div class="row p-1 rounded">
+            <div class="col-sm-2 btn-group btn-group-sm">
                 {% for num_of_years in [5, 10, 15, 20] %}
                     <a href="javascript:update_page(
                                 '{{ stock.symbol }}',
@@ -55,6 +111,14 @@
                         {{ num_of_years }}Y
                     </a>
                 {% endfor %}
+            </div>
+            <div class="col-sm-4 ms-5">
+                <form action="" method="post" class="d-flex" id="compare-symbols">
+                    {{ compare_form.hidden_tag() }}
+
+                    {{ compare_form.symbols(class="form-control-sm me-2", placeholder="Enter stock symbols") }}
+                    {{ compare_form.submit(class="btn btn-primary btn-sm") }}
+                </form>
             </div>
         </div>
         <br>

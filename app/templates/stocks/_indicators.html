@@ -24,7 +24,7 @@
         {% for indicator in indicators if indicator != 'Average Rating' %}
             <tr>
                 <td>
-                    <a href="{{ url_for('stocks.metric_profile', symbol=stock.symbol, indicator_name=indicator) }}">
+                    <a href="{{ url_for('stocks.metric_profile', main_symbol=stock.symbol, indicator_name=indicator) }}">
                         {{ indicator }}
                     </a>
                 </td>

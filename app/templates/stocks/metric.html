@@ -22,7 +22,7 @@
             // display spinner till response is received
             $(".timeseries-plot").html(
                 '<div class="d-flex justify-content-center">' + 
-                    '<div class="spinner-border text-primary" style="width: 15rem; height: 15rem;" role="status">' + 
+                    '<div class="spinner-border text-primary" style="width: 20rem; height: 20rem;" role="status">' + 
                         '<span class="visually-hidden">Loading...</span>' + 
                     '</div>' +
                 '</div>');
@@ -72,11 +72,13 @@
     <!-- toast for symbol errors -->
     <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
         <div class="toast" id="symbolErrors" role="alert" aria-live="assertive" aria-atomic="true">
-            <div class="toast-header">
-                <strong class="me-auto">Symbols below cannot be found:</strong>
+            <div class="toast-header text-dark bg-info">
+                <strong class="me-auto"><i class="bi bi-exclamation-circle"></i> Symbols below cannot be found:</strong>
                 <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
             </div>
-            <div class="toast-body" id="symbolsInvalid"></div>
+            <div class="toast-body">
+                <strong class="text-danger" id="symbolsInvalid"></strong>
+            </div>
         </div>
     </div> 
 

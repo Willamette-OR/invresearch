@@ -19,7 +19,12 @@ section_lookup = {
     'Operating Margin %': 'common_size_ratios',
     'Net Margin %': 'common_size_ratios',
     'FCF Margin %': 'common_size_ratios',
-    'ROE %': 'common_size_ratios'
+    'ROE %': 'common_size_ratios',
+    'PE Ratio': 'valuation_ratios',
+    'PB Ratio': 'valuation_ratios',
+    'Price-to-Free-Cash-Flow': 'valuation_ratios',
+    'Price-to-Operating-Cash-Flow': 'valuation_ratios',
+    'PS Ratio': 'valuation_ratios',
 }
 
 
@@ -109,6 +114,8 @@ def get_metric(name, financials_history, start_date, convert_to_numeric=True,
     )
 
 
+# benchmark values and reverse indicators here are for financial strength 
+# metrics
 _financial_strength_metrics_inputs = [
     {
         'name': 'Debt-to-Cash',
@@ -199,6 +206,7 @@ _growth_metrics_inputs = [
 ]
 
 
+# benchmark values and reverse indicators here are for profitability metrics.
 _profitability_metrics_inputs = [
         {
             'name': 'Gross Margin %',
@@ -239,6 +247,51 @@ _profitability_metrics_inputs = [
             'benchmark': 0.196,
             'type': 'percent',
             'scale_factor': 1/100
+        },
+    ]
+
+
+# benchmark values and reverse indicators here are for valuation metrics.
+_valuation_metrics_inputs = [
+        {
+            'name': 'PE Ratio',
+            'reverse': True,
+            'derive': None,
+            'benchmark': 24.68,
+            'type': 'float',
+            'scale_factor': 1.0
+        },
+        {
+            'name': 'PB Ratio',
+            'reverse': True,
+            'derive': None,
+            'benchmark': 4.40,
+            'type': 'float',
+            'scale_factor': 1.0
+        },
+        {
+            'name': 'Price-to-Free-Cash-Flow',
+            'reverse': True,
+            'derive': None,
+            'benchmark': 10.63,
+            'type': 'float',
+            'scale_factor': 1.0
+        },
+        {
+            'name': 'Price-to-Operating-Cash-Flow',
+            'reverse': True,
+            'derive': None,
+            'benchmark': None,
+            'type': 'float',
+            'scale_factor': 1.0
+        },
+        {
+            'name': 'PS Ratio',
+            'reverse': True,
+            'derive': None,
+            'benchmark': 2.86,
+            'type': 'float',
+            'scale_factor': 1.0
         },
     ]
 
@@ -304,6 +357,7 @@ def get_fundamental_indicators(financials_history,
                                financial_strength_name='Financial Strength',
                                growth_name='Business Growth',
                                profitability_name='Profitability',
+                               valuation_name='Stock Valuation',
                                debug=False):
     """
     This function gets raw data from the input financials history data after a 
@@ -401,6 +455,34 @@ def get_fundamental_indicators(financials_history,
     data_indicators[profitability_name]['Average Rating'] = \
         _get_average_rating(
             data_indicators[profitability_name], debug=debug)
+
+
+    ################
+    #   Valuation  #
+    # ##############
+
+    data_indicators[valuation_name] = {}
+    for item in _valuation_metrics_inputs:
+        name = item['name']
+        metric = get_metric(name=name, 
+                            financials_history=financials_history, 
+                            start_date=start_date,
+                            scale_factor=item['scale_factor'],
+                            derive=item['derive'])
+        data_indicators[valuation_name][name] = \
+            {
+                'Object': metric,
+                'Current': metric.TTM_value,
+                'Type': item['type'],
+                'Rating': metric.rating(benchmark_value=item['benchmark'], 
+                                        reverse=item['reverse'],
+                                        debug=debug)
+            }
+    
+    # get the average rating
+    data_indicators[valuation_name]['Average Rating'] = \
+        _get_average_rating(
+            data_indicators[valuation_name], debug=debug) 
 
     # return the constructed dictionary
     return data_indicators

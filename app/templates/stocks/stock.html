@@ -229,7 +229,7 @@
             {% include 'stocks/_stock_tab_summary.html' %}
         </div>
 
-        {# The Fundamentals Tab #}
+        <!-- The Fundamentals Tab -->
         <div id="fundamentals" class="tab-pane container fade">
             <div class="row justify-content-around">
                 <div class="col-sm-5 shadow bg-light mt-3 mb-5 rounded">
@@ -243,10 +243,13 @@
             </div>
             <div class="row justify-content-around">
                 <div class="col-sm-5 shadow bg-light mt-3 mb-5 rounded">
+                    {% set table_header = "Stock Valuation" %}
+                    {% include 'stocks/_indicators.html' %}
+                </div>
+                <div class="col-sm-5 shadow bg-light mt-3 mb-5 rounded">
                     {% set table_header = "Business Growth" %}
                     {% include 'stocks/_indicators.html' %}
                 </div>
-                <div class="col-sm-5"></div>
             </div>
         </div>
 

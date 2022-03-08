@@ -71,6 +71,96 @@ def derive_debt_to_ebitda(name, financials_history, start_date):
     return debt_to_ebitda
 
 
+def get_valuation_ratios(quote_history_data, metric_per_share_data, 
+                         get_latest_ratios=False):
+    """
+    This function calculates and returns a dictionary of 
+    {<timestamp>: <price multiple} for all timestamps where possible based on 
+    the input quote history data and the input metric (per share) data.
+    
+    Input:
+        - "quote_history_data" - dictionary of "<timestamp>: <price>"
+        - "metric_per_share_data" - dictionary of "<timestamp>: <per share 
+                                    metric value>", with only one record per 
+                                    year
+        - "get_latest_ratios" - a boolean value, defaulted to be False. When 
+                                True, valuation ratios for quotes even 
+                                after the most recent month included in the 
+                                input financial history data will still be 
+                                calculated. 
+    """
+    
+    # get the ending month of fiscal years, usually either Sep or Dec
+    # this assumes the ending month is always the same across all fiscal years
+    # TODO - can insert code here to check the assumption and raise an exception
+    #        if the assumption does not hold for the input
+    metric_data_last_timestamp = list(metric_per_share_data.keys())[-1]
+    last_month_fiscal_years = metric_data_last_timestamp.month
+    
+    # create a new dictionary of <fiscal year>: <per share metric value> for 
+    # easy per share metric value look up by fiscal year
+    list_years = [timestamp.year for timestamp in metric_per_share_data]
+    dict_year_metric = dict(zip(list_years, metric_per_share_data.values()))
+
+    # form a new dict of "<timestamp>: {'quote': <quote>, 'metric': <metric>, 
+    # 'ratio': <ratio>}"
+    dict_timestamp_ratio = {}
+    for timestamp in quote_history_data:
+        
+        # get the annual values for the current year, the prev year and the 
+        # next year
+        metric_value = dict_year_metric.get(timestamp.year)
+        metric_value_prev_year = dict_year_metric.get(timestamp.year - 1)
+        metric_value_next_year = dict_year_metric.get(timestamp.year + 1)
+        
+        # initialize/reset the variable that holds the interpolated / 
+        # extrapolated value for the metric;
+        metric_value_derived = None
+        
+        # when the current month is ealier than or the same as the last month 
+        # of the fiscal year, use metric values of the current year and the 
+        # previous year for interpolation
+        if metric_value and metric_value_prev_year and \
+            timestamp.month <= last_month_fiscal_years:
+
+            # interpolate the monthly TTM value
+            metric_value_derived = \
+                metric_value_prev_year + \
+                (metric_value - metric_value_prev_year) * \
+                (timestamp.month + 12 - last_month_fiscal_years) / 12
+        
+        # when the current month is greater than the last month of the fiscal 
+        # year, use metric values of the current year and the next year for 
+        # interpolation
+        elif metric_value and metric_value_next_year and \
+            timestamp.month > last_month_fiscal_years:
+            
+            # interpolate the monthly TTM value
+            metric_value_derived = \
+                metric_value + \
+                (metric_value_next_year - metric_value) * \
+                (timestamp.month - last_month_fiscal_years) / 12
+
+        # when the current month is greater than the most recent month included 
+        # in the input financial history data, use just the metric value of the 
+        # current year
+        elif get_latest_ratios and timestamp > metric_data_last_timestamp:
+            metric_value_derived = metric_value if metric_value is not None \
+                                                else metric_value_prev_year
+            
+        # only keep records with positive interpolated/extrapolated metric 
+        # values at zero - investors don't really consider P/X ratios when they 
+        # are negative
+        if metric_value_derived is not None and metric_value_derived > 0:
+
+            dict_timestamp_ratio[timestamp] = {
+                'quote': quote_history_data[timestamp], 
+                'metric': metric_value_derived, 
+                'ratio': quote_history_data[timestamp] / metric_value_derived}
+
+    return dict_timestamp_ratio
+
+
 def get_metric(name, financials_history, start_date, convert_to_numeric=True, 
                scale_factor=1.0, derive=None):
     """

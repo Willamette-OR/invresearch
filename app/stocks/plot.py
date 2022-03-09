@@ -4,8 +4,9 @@ from bokeh.plotting import figure
 from bokeh.embed import components
 from bokeh.resources import CDN
 from bokeh.models import HoverTool
-from bokeh.palettes import Dark2_5 as palette, PaletteCollection
+from bokeh.palettes import Dark2_5 as palette
 from app.metrics import Metric, TotalMetric
+from app.fundamental_analysis import get_valuation_ratios
 
 def example_plot():
     """
@@ -49,68 +50,12 @@ def _get_average_price_multiple(quote_history_data, metric_per_share_data, \
                                 average valuation ratios, before removing 
                                 outliers
     """
-    
-    # get the ending month of fiscal years, usually either Sep or Dec
-    # this assumes the ending month is always the same across all fiscal years
-    # TODO - can insert code here to check the assumption and raise an exception
-    #        if the assumption does not hold for the input
-    last_month_fiscal_years = list(metric_per_share_data.keys())[-1].month
-    
-    # create a new dictionary of <fiscal year>: <per share metric value> for 
-    # easy per share metric value look up by fiscal year
-    list_years = [timestamp.year for timestamp in metric_per_share_data]
-    dict_year_metric = dict(zip(list_years, metric_per_share_data.values()))
 
-    # form a new dict of "<timestamp>: {'quote': <quote>, 'metric': <metric>, 
-    # 'ratio': <ratio>}"
-    dict_timestamp_ratio = {}
-    for timestamp in quote_history_data:
-        
-        # get the annual values for the current year, the prev year and the 
-        # next year
-        metric_value = dict_year_metric.get(timestamp.year)
-        metric_value_prev_year = dict_year_metric.get(timestamp.year - 1)
-        metric_value_next_year = dict_year_metric.get(timestamp.year + 1)
-        
-        # initialize the interpolation flag to be False;
-        interpolation_flag = False
-        
-        # when the current month is ealier than or the same as the last month 
-        # of the fiscal year, use metric values of the current year and the 
-        # previous year for interpolation
-        if metric_value and metric_value_prev_year and \
-            timestamp.month <= last_month_fiscal_years:
-
-            # interpolate the monthly TTM value
-            metric_value_interpolated = \
-                metric_value_prev_year + \
-                (metric_value - metric_value_prev_year) * \
-                (timestamp.month + 12 - last_month_fiscal_years) / 12
-            interpolation_flag = True
-        
-        # when the current month is greater than the last month of the fiscal 
-        # year, use metric values of the current year and the next year for 
-        # interpolation
-        elif metric_value and metric_value_next_year and \
-            timestamp.month > last_month_fiscal_years:
-            
-            # interpolate the monthly TTM value
-            metric_value_interpolated = \
-                metric_value + \
-                (metric_value_next_year - metric_value) * \
-                (timestamp.month - last_month_fiscal_years) / 12
-            interpolation_flag = True
-            
-        # Only include the month in the calculation of average valuation ratios 
-        # when the metric value of that month is positive - investors don't 
-        # really look at P/X ratios when they are negative
-        if interpolation_flag and metric_value_interpolated > 0:
-
-            dict_timestamp_ratio[timestamp] = {
-                'quote': quote_history_data[timestamp], 
-                'metric': metric_value_interpolated, 
-                'ratio': quote_history_data[timestamp] / \
-                    metric_value_interpolated}
+    # get a dictionary of { <timestamp>: {<"ratio">: <price multiple>, ...} }
+    dict_timestamp_ratio = get_valuation_ratios(
+        quote_history_data=quote_history_data, 
+        metric_per_share_data=metric_per_share_data
+        )
             
     # get all valuation ratios to a list, to prep for the calculation of the 
     # average ratio

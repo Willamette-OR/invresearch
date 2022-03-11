@@ -130,8 +130,17 @@ class Metric(object):
         self.data = {}
         for i in range(len(timestamps)):
             if timestamps[i] != 'TTM':
-                timestamp = datetime.strptime(timestamps[i], 
-                                              input_timestamps_format)
+                # if an input timestamp format is given, assume the input 
+                # "timestamps" are strings - convert them to python timestamps;
+                if input_timestamps_format is not None:
+                    timestamp = datetime.strptime(timestamps[i], 
+                                                  input_timestamps_format)
+                # otherwise assume the input "timestamps" are already python 
+                # timestamps, so get the value in the input timestamp list 
+                # directly in that case
+                else:
+                    timestamp = timestamps[i]
+
                 if timestamp > start_date:
                     self.data[timestamp] = _values[i]
             else:

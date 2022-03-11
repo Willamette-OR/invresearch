@@ -25,6 +25,7 @@ section_lookup = {
     'Price-to-Free-Cash-Flow': 'valuation_ratios',
     'Price-to-Operating-Cash-Flow': 'valuation_ratios',
     'PS Ratio': 'valuation_ratios',
+    'Earnings per Share (Diluted)': 'per_share_data_array',
 }
 
 
@@ -159,6 +160,54 @@ def get_valuation_ratios(quote_history_data, metric_per_share_data,
                 'ratio': quote_history_data[timestamp] / metric_value_derived}
 
     return dict_timestamp_ratio
+
+
+def derive_valuation_ratios(name, financials_history, quote_history_data, 
+                            underlying_metric_name, start_date):
+    """
+    This function returns a metric that captures the history of price multiple 
+    of a given underlying financial metric.
+
+    Inputs:
+        "name": a string value, name of the output metric object to be returned
+        "financials_history": the input data payload of financials history
+        "quote_history": the input data payload of quote history
+        "unerlying_metric_name": name of the underlying metric for the price 
+                                 multiple, which can be used to look up for the 
+                                 values in the input financials history payload
+        "start_date": a Python datetime object, the start date of a time window;
+                      only valuation ratios/price multiples for dates within 
+                      that time window will be included in the metric object to 
+                      be returned  
+    """
+
+    # get the underlying metric from the input financials history payload
+    underlying_metric = get_metric(
+        name=underlying_metric_name, 
+        financials_history=financials_history, 
+        start_date=start_date
+        )
+
+    # get the dictionary of <timestamp>: {<"ratio">: <price multiple>, ...}
+    dict_timestamp_ratio = get_valuation_ratios(
+        quote_history_data=quote_history_data, 
+        metric_per_share_data=underlying_metric.data,
+        get_latest_ratios=True
+        )
+
+    # create a new metric for this valuation ratio / price multiple data
+    ratios = [dict_timestamp_ratio[timestamp]['ratio'] 
+              for timestamp in dict_timestamp_ratio]
+    valuation_ratio = Metric(
+        name=name, 
+        timestamps=list(dict_timestamp_ratio.keys()), 
+        values=ratios, 
+        start_date=start_date, 
+        input_timestamps_format=None
+        )
+    valuation_ratio.TTM_value = valuation_ratio.values[-1]
+
+    return valuation_ratio
 
 
 def get_metric(name, financials_history, start_date, convert_to_numeric=True, 

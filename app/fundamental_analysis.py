@@ -27,6 +27,9 @@ section_lookup = {
     'PS Ratio': 'valuation_ratios',
     'Earnings per Share (Diluted)': 'per_share_data_array',
     'Book Value per Share': 'per_share_data_array',
+    'Free Cash Flow per Share': 'per_share_data_array',
+    'Operating Cash Flow per Share': 'per_share_data_array',
+    'Revenue per Share': 'per_share_data_array',
 }
 
 
@@ -401,9 +404,10 @@ _profitability_metrics_inputs = [
 _valuation_metrics_inputs = [
         {
             'name': 'PE Ratio',
+            'underlying-metric': 'Earnings per Share (Diluted)',
             'reverse': True,
-            'derive': None,
-            'benchmark': 24.68,
+            'derive': derive_valuation_ratios,
+            'benchmark': None,
             'type': 'float',
             'scale_factor': 1.0
         },
@@ -412,31 +416,34 @@ _valuation_metrics_inputs = [
             'underlying-metric': 'Book Value per Share',
             'reverse': True,
             'derive': derive_valuation_ratios,
-            'benchmark': 4.40,
+            'benchmark': None,
             'type': 'float',
             'scale_factor': 1.0
         },
         {
             'name': 'Price-to-Free-Cash-Flow',
+            'underlying-metric': 'Free Cash Flow per Share',
             'reverse': True,
-            'derive': None,
-            'benchmark': 10.63,
+            'derive': derive_valuation_ratios,
+            'benchmark': None,
             'type': 'float',
             'scale_factor': 1.0
         },
         {
             'name': 'Price-to-Operating-Cash-Flow',
+            'underlying-metric': 'Operating Cash Flow per Share',
             'reverse': True,
-            'derive': None,
+            'derive': derive_valuation_ratios,
             'benchmark': None,
             'type': 'float',
             'scale_factor': 1.0
         },
         {
             'name': 'PS Ratio',
+            'underlying-metric': 'Revenue per Share',
             'reverse': True,
-            'derive': None,
-            'benchmark': 2.86,
+            'derive': derive_valuation_ratios,
+            'benchmark': None,
             'type': 'float',
             'scale_factor': 1.0
         },

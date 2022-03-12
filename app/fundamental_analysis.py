@@ -26,6 +26,7 @@ section_lookup = {
     'Price-to-Operating-Cash-Flow': 'valuation_ratios',
     'PS Ratio': 'valuation_ratios',
     'Earnings per Share (Diluted)': 'per_share_data_array',
+    'Book Value per Share': 'per_share_data_array',
 }
 
 
@@ -162,19 +163,19 @@ def get_valuation_ratios(quote_history_data, metric_per_share_data,
     return dict_timestamp_ratio
 
 
-def derive_valuation_ratios(name, financials_history, quote_history_data, 
-                            underlying_metric_name, start_date):
+def derive_valuation_ratios(name, underlying_metric_name, financials_history, 
+                            quote_history_data, start_date):
     """
     This function returns a metric that captures the history of price multiple 
     of a given underlying financial metric.
 
     Inputs:
         "name": a string value, name of the output metric object to be returned
+        "underlying_metric_name": name of the underlying metric for the price
+                                  multiple, which can be used to look up for the
+                                  values in the input financials history payload
         "financials_history": the input data payload of financials history
         "quote_history": the input data payload of quote history
-        "unerlying_metric_name": name of the underlying metric for the price 
-                                 multiple, which can be used to look up for the 
-                                 values in the input financials history payload
         "start_date": a Python datetime object, the start date of a time window;
                       only valuation ratios/price multiples for dates within 
                       that time window will be included in the metric object to 
@@ -211,7 +212,8 @@ def derive_valuation_ratios(name, financials_history, quote_history_data,
 
 
 def get_metric(name, financials_history, start_date, convert_to_numeric=True, 
-               scale_factor=1.0, derive=None):
+               scale_factor=1.0, derive=None, quote_history_data=None, 
+               underlying_metric_name=None):
     """
     This helper function extracts a metric's data from the financials history 
     data, based on the given metric name and start date of the financials 
@@ -220,7 +222,11 @@ def get_metric(name, financials_history, start_date, convert_to_numeric=True,
 
     # if 'derive' function is given, derive the metric first
     if derive:
-        return derive(name, financials_history, start_date)
+        if not quote_history_data:
+            return derive(name, financials_history, start_date)
+        else:
+            return derive(name, underlying_metric_name, financials_history, 
+                          quote_history_data, start_date)
     else:
         # get timestamps from the financials history payload
         timestamps = financials_history['financials']['annuals']['Fiscal Year']
@@ -236,7 +242,8 @@ def get_metric(name, financials_history, start_date, convert_to_numeric=True,
             'Gross Margin %',
             'Operating Margin %'
         ]
-        if name == 'Cash, Cash Equivalents, Marketable Securities' and values is None:
+        if name == 'Cash, Cash Equivalents, Marketable Securities' \
+            and values is None:
             values = financials_history['financials']['annuals']\
                      [section_lookup[name]].get(
                      'Balance Statement Cash and cash equivalents')
@@ -402,8 +409,9 @@ _valuation_metrics_inputs = [
         },
         {
             'name': 'PB Ratio',
+            'underlying-metric': 'Book Value per Share',
             'reverse': True,
-            'derive': None,
+            'derive': derive_valuation_ratios,
             'benchmark': 4.40,
             'type': 'float',
             'scale_factor': 1.0
@@ -492,6 +500,7 @@ def _get_average_rating(data_indicators, debug=False):
 
 
 def get_fundamental_indicators(financials_history, 
+                               quote_history_data,
                                start_date=datetime(1900, 1, 1),
                                financial_strength_name='Financial Strength',
                                growth_name='Business Growth',
@@ -505,6 +514,7 @@ def get_fundamental_indicators(financials_history,
 
     Inputs:
         'financials_history': data of a stock's financials history
+        'quote_history_data': data of a stock's quote history
         'start_date': the early date since when data in the input financials
                       history will be considered - a Python's datetime object;
                       defaulted to be datetime(1900, 1, 1)
@@ -604,7 +614,9 @@ def get_fundamental_indicators(financials_history,
     for item in _valuation_metrics_inputs:
         name = item['name']
         metric = get_metric(name=name, 
+                            underlying_metric_name=item['underlying-metric'],
                             financials_history=financials_history, 
+                            quote_history_data=quote_history_data,
                             start_date=start_date,
                             scale_factor=item['scale_factor'],
                             derive=item['derive'])

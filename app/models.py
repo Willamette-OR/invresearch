@@ -309,6 +309,7 @@ class Stock(db.Model):
         
         return get_fundamental_indicators(
             financials_history=self.get_financials_history_data(), 
+            quote_history_data=self.get_quote_history_data(),
             start_date=datetime.strptime(start_date, '%m-%d-%Y'),
             debug=debug
         )

@@ -77,7 +77,7 @@ def derive_debt_to_ebitda(name, financials_history, start_date):
 
 
 def get_valuation_ratios(quote_history_data, metric_per_share_data, 
-                         get_latest_ratios=False):
+                         get_latest_ratios=False, only_positives=True):
     """
     This function calculates and returns a dictionary of 
     {<timestamp>: <price multiple} for all timestamps where possible based on 
@@ -93,6 +93,8 @@ def get_valuation_ratios(quote_history_data, metric_per_share_data,
                                 after the most recent month included in the 
                                 input financial history data will still be 
                                 calculated. 
+        - "only_positives" - a boolean value, defaulted to be True. If True, 
+                             only positive ratios will be kept. 
     """
     
     # get the ending month of fiscal years, usually either Sep or Dec
@@ -156,12 +158,22 @@ def get_valuation_ratios(quote_history_data, metric_per_share_data,
         # only keep records with positive interpolated/extrapolated metric 
         # values at zero - investors don't really consider P/X ratios when they 
         # are negative
-        if metric_value_derived is not None and metric_value_derived > 0:
+        if metric_value_derived is not None:
 
-            dict_timestamp_ratio[timestamp] = {
-                'quote': quote_history_data[timestamp], 
-                'metric': metric_value_derived, 
-                'ratio': quote_history_data[timestamp] / metric_value_derived}
+            if only_positives:
+                if metric_value_derived > 0:
+                    dict_timestamp_ratio[timestamp] = {
+                        'quote': quote_history_data[timestamp], 
+                        'metric': metric_value_derived, 
+                        'ratio': quote_history_data[timestamp] / 
+                                 metric_value_derived}
+            else:
+                dict_timestamp_ratio[timestamp] = {
+                        'quote': quote_history_data[timestamp], 
+                        'metric': metric_value_derived, 
+                        'ratio': quote_history_data[timestamp] / 
+                                 metric_value_derived 
+                                 if metric_value_derived != 0 else 0}
 
     return dict_timestamp_ratio
 
@@ -182,7 +194,7 @@ def derive_valuation_ratios(name, underlying_metric_name, financials_history,
         "start_date": a Python datetime object, the start date of a time window;
                       only valuation ratios/price multiples for dates within 
                       that time window will be included in the metric object to 
-                      be returned  
+                      be returned 
     """
 
     # get the underlying metric from the input financials history payload
@@ -196,12 +208,15 @@ def derive_valuation_ratios(name, underlying_metric_name, financials_history,
     dict_timestamp_ratio = get_valuation_ratios(
         quote_history_data=quote_history_data, 
         metric_per_share_data=underlying_metric.data,
-        get_latest_ratios=True
+        get_latest_ratios=True,
+        only_positives=False
         )
 
     # create a new metric for this valuation ratio / price multiple data
     ratios = [dict_timestamp_ratio[timestamp]['ratio'] 
               for timestamp in dict_timestamp_ratio]
+    
+    # save the valuation ratios in a Metric object
     valuation_ratio = Metric(
         name=name, 
         timestamps=list(dict_timestamp_ratio.keys()), 
@@ -210,7 +225,7 @@ def derive_valuation_ratios(name, underlying_metric_name, financials_history,
         input_timestamps_format=None
         )
     valuation_ratio.TTM_value = valuation_ratio.values[-1]
-
+    
     return valuation_ratio
 
 

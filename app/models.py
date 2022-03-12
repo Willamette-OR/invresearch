@@ -221,7 +221,7 @@ class Stock(db.Model):
 
         return json.loads(self.analyst_estimates_payload)
 
-    def get_quote_history_data(self, start_date, end_date, 
+    def get_quote_history_data(self, start_date='01-01-1900', end_date=None, 
                                interval='1mo', type='close', delay=24):
         """
         This method creates/refreshes the quote history payload if needed,
@@ -229,8 +229,10 @@ class Stock(db.Model):
             "<timestamp>: <price>"
 
         Inputs:
-            'start_date': '%m-%d-%Y'. 
-            'end_date': '%m-%d-%Y'. 
+            'start_date': a string of the format of'%m-%d-%Y'. Defaulted to be 
+                          '01-01-1900'. 
+            'end_date': a string of the format of '%m-%d-%Y'. Defaulted to be 
+                        None. When None, the end date is assumed to be "now".
             'type': the type of stock price. Default is 'close' (closing price)
             'delay': the minimal number of hours allowed between two refreshes;
                      Default is 24 hours.
@@ -263,7 +265,8 @@ class Stock(db.Model):
         raw_data = {datetime.strptime(key, '%m-%d-%Y %H:%M'): value for \
             (key, value) in json.loads(self.quote_history_payload).items()}
         timestamp_start_date = datetime.strptime(start_date, '%m-%d-%Y')
-        timestamp_end_date = datetime.strptime(end_date, '%m-%d-%Y')
+        timestamp_end_date = datetime.strptime(end_date, '%m-%d-%Y') \
+            if end_date else now
         return {key: value for (key, value) in raw_data.items() \
                 if timestamp_start_date <= key <= timestamp_end_date}
 

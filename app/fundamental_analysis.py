@@ -649,7 +649,8 @@ def get_fundamental_indicators(financials_history,
                 'Type': item['type'],
                 'Rating': metric.rating(benchmark_value=item['benchmark'], 
                                         reverse=item['reverse'],
-                                        debug=debug)
+                                        debug=debug,
+                                        trend_threshold_value=None)
             }
     
     # get the average rating

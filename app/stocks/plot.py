@@ -1,10 +1,12 @@
 import itertools
 from datetime import datetime
+from statistics import mean
 from bokeh.plotting import figure
 from bokeh.embed import components
 from bokeh.resources import CDN
-from bokeh.models import HoverTool
+from bokeh.models import HoverTool, CheckboxGroup, CustomJS, Span
 from bokeh.palettes import Dark2_5 as palette
+from bokeh.layouts import column
 from app.metrics import Metric, TotalMetric
 from app.fundamental_analysis import get_valuation_ratios
 
@@ -419,18 +421,41 @@ def timeseries_plot(name, data_list, symbols,
         # add markers on top of the line
         p.dot(list(data.keys()), list(data.values()), size=25, color=color)
 
+        # add a horizontal line for the average of y's
+        # TODO - clean up code; generalize for multiple stocks
+        l0 = p.line(
+            list(data.keys()), 
+            [mean(data.values())]*len(data.keys()),
+            color=color,
+            line_dash="dashed",
+            line_width=3)
+        l0.visible = False
+
     # customizations
     p.toolbar_location = None
     p.legend.location = 'top_left'
     p.sizing_mode = 'scale_width'
     p.plot_height = 200
 
+    # widgets
+    # TODO - clean up code
+    labels = ["Show Average"]
+    checkbox = CheckboxGroup(labels=labels, active=[])
+    callback = CustomJS(
+        args=dict(l0=l0, checkbox=checkbox),
+        code="""
+        l0.visible = 0 in checkbox.active;
+        """
+        )
+    checkbox.js_on_change('active', callback)
+    layout = column(p, checkbox, sizing_mode="scale_both")
+
     # get the javascript for loading BokehJS remotely from a CDN
     payload = {}
     payload['resources'] = CDN.render()
 
     # get the HTML components to be rendered by BokehJS
-    script, div = components(p)
+    script, div = components(layout)
     payload['script'] = script
     payload['div'] = div
 

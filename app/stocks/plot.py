@@ -400,6 +400,17 @@ def timeseries_plot(name, data_list, symbols,
     # creates a color iterator
     colors = itertools.cycle(palette)
 
+    # initialize a list to hold the line objects of different "average" lines
+    list_average_lines = []
+
+    # initialize the dictionary to hold the mapping between javascript variable 
+    # names and the associated names of line objects
+    dict_customjs = {}
+
+    # initialize a string to construct the javascript code for CustomJS to 
+    # toggle the visibility of "average" lines
+    code_customjs = ""
+
     # add a line for each set of data in the input list
     for i, color in zip(range(len(data_list)), colors):
         data = {
@@ -422,14 +433,22 @@ def timeseries_plot(name, data_list, symbols,
         p.dot(list(data.keys()), list(data.values()), size=25, color=color)
 
         # add a horizontal line for the average of y's
-        # TODO - clean up code; generalize for multiple stocks
-        l0 = p.line(
-            list(data.keys()), 
-            [mean(data.values())]*len(data.keys()),
-            color=color,
-            line_dash="dashed",
-            line_width=3)
-        l0.visible = False
+        list_average_lines.append(
+            p.line(
+                list(data.keys()), 
+                [mean(data.values())]*len(data.keys()),
+                color=color,
+                line_dash="dashed",
+                line_width=3
+                )
+            ) 
+        list_average_lines[i].visible = False
+
+        # update the needed dictionary and JS code (string) needed to enable 
+        # dynamic toggling the visibility of average lines, via CustomJS from 
+        # Bokeh
+        dict_customjs["l" + str(i)] = list_average_lines[i]
+        code_customjs += "l" + str(i) + ".visible = 0 in checkbox.active;"
 
     # customizations
     p.toolbar_location = None
@@ -437,17 +456,19 @@ def timeseries_plot(name, data_list, symbols,
     p.sizing_mode = 'scale_width'
     p.plot_height = 200
 
-    # widgets
-    # TODO - clean up code
-    labels = ["Show Average"]
+    # set up the widget (checkbox) needed to toggle the visibility of average 
+    # lines
+    labels = ["Show Historical Average"]
     checkbox = CheckboxGroup(labels=labels, active=[])
+    dict_customjs["checkbox"] = checkbox
     callback = CustomJS(
-        args=dict(l0=l0, checkbox=checkbox),
-        code="""
-        l0.visible = 0 in checkbox.active;
-        """
+        args=dict_customjs,
+        code=code_customjs
         )
     checkbox.js_on_change('active', callback)
+
+    # construct a layout object from Bokeh to display both the plot and needed 
+    # widgets
     layout = column(p, checkbox, sizing_mode="scale_both")
 
     # get the javascript for loading BokehJS remotely from a CDN

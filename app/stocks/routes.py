@@ -549,8 +549,8 @@ def metric_profile(main_symbol, indicator_name):
         # to the main symbol passed as an argument in the url
         if symbol == main_symbol:
 
-            # get data of the metric used for 'rating" calculations, in case this 
-            # metric is different from the underlying metric
+            # get data of the metric used for 'rating" calculations, in case 
+            # this metric is different from the underlying metric
             rated_metric = indicator_data['Rating']['object']
 
             # get some basic statistics of the underlying metric

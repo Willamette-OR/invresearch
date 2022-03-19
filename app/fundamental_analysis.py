@@ -19,7 +19,17 @@ section_lookup = {
     'Operating Margin %': 'common_size_ratios',
     'Net Margin %': 'common_size_ratios',
     'FCF Margin %': 'common_size_ratios',
-    'ROE %': 'common_size_ratios'
+    'ROE %': 'common_size_ratios',
+    'PE Ratio': 'valuation_ratios',
+    'PB Ratio': 'valuation_ratios',
+    'Price-to-Free-Cash-Flow': 'valuation_ratios',
+    'Price-to-Operating-Cash-Flow': 'valuation_ratios',
+    'PS Ratio': 'valuation_ratios',
+    'Earnings per Share (Diluted)': 'per_share_data_array',
+    'Book Value per Share': 'per_share_data_array',
+    'Free Cash Flow per Share': 'per_share_data_array',
+    'Operating Cash Flow per Share': 'per_share_data_array',
+    'Revenue per Share': 'per_share_data_array',
 }
 
 
@@ -66,8 +76,162 @@ def derive_debt_to_ebitda(name, financials_history, start_date):
     return debt_to_ebitda
 
 
+def get_valuation_ratios(quote_history_data, metric_per_share_data, 
+                         get_latest_ratios=False, only_positives=True):
+    """
+    This function calculates and returns a dictionary of 
+    {<timestamp>: <price multiple} for all timestamps where possible based on 
+    the input quote history data and the input metric (per share) data.
+    
+    Input:
+        - "quote_history_data" - dictionary of "<timestamp>: <price>"
+        - "metric_per_share_data" - dictionary of "<timestamp>: <per share 
+                                    metric value>", with only one record per 
+                                    year
+        - "get_latest_ratios" - a boolean value, defaulted to be False. When 
+                                True, valuation ratios for quotes even 
+                                after the most recent month included in the 
+                                input financial history data will still be 
+                                calculated. 
+        - "only_positives" - a boolean value, defaulted to be True. If True, 
+                             only positive ratios will be kept. 
+    """
+    
+    # get the ending month of fiscal years, usually either Sep or Dec
+    # this assumes the ending month is always the same across all fiscal years
+    # TODO - can insert code here to check the assumption and raise an exception
+    #        if the assumption does not hold for the input
+    metric_data_last_timestamp = list(metric_per_share_data.keys())[-1]
+    last_month_fiscal_years = metric_data_last_timestamp.month
+    
+    # create a new dictionary of <fiscal year>: <per share metric value> for 
+    # easy per share metric value look up by fiscal year
+    list_years = [timestamp.year for timestamp in metric_per_share_data]
+    dict_year_metric = dict(zip(list_years, metric_per_share_data.values()))
+
+    # form a new dict of "<timestamp>: {'quote': <quote>, 'metric': <metric>, 
+    # 'ratio': <ratio>}"
+    dict_timestamp_ratio = {}
+    for timestamp in quote_history_data:
+        
+        # get the annual values for the current year, the prev year and the 
+        # next year
+        metric_value = dict_year_metric.get(timestamp.year)
+        metric_value_prev_year = dict_year_metric.get(timestamp.year - 1)
+        metric_value_next_year = dict_year_metric.get(timestamp.year + 1)
+        
+        # initialize/reset the variable that holds the interpolated / 
+        # extrapolated value for the metric;
+        metric_value_derived = None
+        
+        # when the current month is ealier than or the same as the last month 
+        # of the fiscal year, use metric values of the current year and the 
+        # previous year for interpolation
+        if metric_value and metric_value_prev_year and \
+            timestamp.month <= last_month_fiscal_years:
+
+            # interpolate the monthly TTM value
+            metric_value_derived = \
+                metric_value_prev_year + \
+                (metric_value - metric_value_prev_year) * \
+                (timestamp.month + 12 - last_month_fiscal_years) / 12
+        
+        # when the current month is greater than the last month of the fiscal 
+        # year, use metric values of the current year and the next year for 
+        # interpolation
+        elif metric_value and metric_value_next_year and \
+            timestamp.month > last_month_fiscal_years:
+            
+            # interpolate the monthly TTM value
+            metric_value_derived = \
+                metric_value + \
+                (metric_value_next_year - metric_value) * \
+                (timestamp.month - last_month_fiscal_years) / 12
+
+        # when the current month is greater than the most recent month included 
+        # in the input financial history data, use just the metric value of the 
+        # current year
+        elif get_latest_ratios and timestamp > metric_data_last_timestamp:
+            metric_value_derived = metric_value if metric_value is not None \
+                                                else metric_value_prev_year
+            
+        # only keep records with positive interpolated/extrapolated metric 
+        # values at zero - investors don't really consider P/X ratios when they 
+        # are negative
+        if metric_value_derived is not None:
+
+            if only_positives:
+                if metric_value_derived > 0:
+                    dict_timestamp_ratio[timestamp] = {
+                        'quote': quote_history_data[timestamp], 
+                        'metric': metric_value_derived, 
+                        'ratio': quote_history_data[timestamp] / 
+                                 metric_value_derived}
+            else:
+                dict_timestamp_ratio[timestamp] = {
+                        'quote': quote_history_data[timestamp], 
+                        'metric': metric_value_derived, 
+                        'ratio': quote_history_data[timestamp] / 
+                                 metric_value_derived 
+                                 if metric_value_derived != 0 else 0}
+
+    return dict_timestamp_ratio
+
+
+def derive_valuation_ratios(name, underlying_metric_name, financials_history, 
+                            quote_history_data, start_date):
+    """
+    This function returns a metric that captures the history of price multiple 
+    of a given underlying financial metric.
+
+    Inputs:
+        "name": a string value, name of the output metric object to be returned
+        "underlying_metric_name": name of the underlying metric for the price
+                                  multiple, which can be used to look up for the
+                                  values in the input financials history payload
+        "financials_history": the input data payload of financials history
+        "quote_history": the input data payload of quote history
+        "start_date": a Python datetime object, the start date of a time window;
+                      only valuation ratios/price multiples for dates within 
+                      that time window will be included in the metric object to 
+                      be returned 
+    """
+
+    # get the underlying metric from the input financials history payload
+    underlying_metric = get_metric(
+        name=underlying_metric_name, 
+        financials_history=financials_history, 
+        start_date=start_date
+        )
+
+    # get the dictionary of <timestamp>: {<"ratio">: <price multiple>, ...}
+    dict_timestamp_ratio = get_valuation_ratios(
+        quote_history_data=quote_history_data, 
+        metric_per_share_data=underlying_metric.data,
+        get_latest_ratios=True,
+        only_positives=False
+        )
+
+    # create a new metric for this valuation ratio / price multiple data
+    ratios = [dict_timestamp_ratio[timestamp]['ratio'] 
+              for timestamp in dict_timestamp_ratio]
+    
+    # save the valuation ratios in a Metric object
+    valuation_ratio = Metric(
+        name=name, 
+        timestamps=list(dict_timestamp_ratio.keys()), 
+        values=ratios, 
+        start_date=start_date, 
+        input_timestamps_format=None
+        )
+    valuation_ratio.TTM_value = valuation_ratio.values[-1]
+    
+    return valuation_ratio
+
+
 def get_metric(name, financials_history, start_date, convert_to_numeric=True, 
-               scale_factor=1.0, derive=None):
+               scale_factor=1.0, derive=None, quote_history_data=None, 
+               underlying_metric_name=None):
     """
     This helper function extracts a metric's data from the financials history 
     data, based on the given metric name and start date of the financials 
@@ -76,7 +240,11 @@ def get_metric(name, financials_history, start_date, convert_to_numeric=True,
 
     # if 'derive' function is given, derive the metric first
     if derive:
-        return derive(name, financials_history, start_date)
+        if not quote_history_data:
+            return derive(name, financials_history, start_date)
+        else:
+            return derive(name, underlying_metric_name, financials_history, 
+                          quote_history_data, start_date)
     else:
         # get timestamps from the financials history payload
         timestamps = financials_history['financials']['annuals']['Fiscal Year']
@@ -92,7 +260,8 @@ def get_metric(name, financials_history, start_date, convert_to_numeric=True,
             'Gross Margin %',
             'Operating Margin %'
         ]
-        if name == 'Cash, Cash Equivalents, Marketable Securities' and values is None:
+        if name == 'Cash, Cash Equivalents, Marketable Securities' \
+            and values is None:
             values = financials_history['financials']['annuals']\
                      [section_lookup[name]].get(
                      'Balance Statement Cash and cash equivalents')
@@ -109,6 +278,8 @@ def get_metric(name, financials_history, start_date, convert_to_numeric=True,
     )
 
 
+# benchmark values and reverse indicators here are for financial strength 
+# metrics
 _financial_strength_metrics_inputs = [
     {
         'name': 'Debt-to-Cash',
@@ -199,6 +370,7 @@ _growth_metrics_inputs = [
 ]
 
 
+# benchmark values and reverse indicators here are for profitability metrics.
 _profitability_metrics_inputs = [
         {
             'name': 'Gross Margin %',
@@ -239,6 +411,56 @@ _profitability_metrics_inputs = [
             'benchmark': 0.196,
             'type': 'percent',
             'scale_factor': 1/100
+        },
+    ]
+
+
+# benchmark values and reverse indicators here are for valuation metrics.
+_valuation_metrics_inputs = [
+        {
+            'name': 'PE Ratio',
+            'underlying-metric': 'Earnings per Share (Diluted)',
+            'reverse': True,
+            'derive': derive_valuation_ratios,
+            'benchmark': None,
+            'type': 'float',
+            'scale_factor': 1.0
+        },
+        {
+            'name': 'PB Ratio',
+            'underlying-metric': 'Book Value per Share',
+            'reverse': True,
+            'derive': derive_valuation_ratios,
+            'benchmark': None,
+            'type': 'float',
+            'scale_factor': 1.0
+        },
+        {
+            'name': 'Price-to-Free-Cash-Flow',
+            'underlying-metric': 'Free Cash Flow per Share',
+            'reverse': True,
+            'derive': derive_valuation_ratios,
+            'benchmark': None,
+            'type': 'float',
+            'scale_factor': 1.0
+        },
+        {
+            'name': 'Price-to-Operating-Cash-Flow',
+            'underlying-metric': 'Operating Cash Flow per Share',
+            'reverse': True,
+            'derive': derive_valuation_ratios,
+            'benchmark': None,
+            'type': 'float',
+            'scale_factor': 1.0
+        },
+        {
+            'name': 'PS Ratio',
+            'underlying-metric': 'Revenue per Share',
+            'reverse': True,
+            'derive': derive_valuation_ratios,
+            'benchmark': None,
+            'type': 'float',
+            'scale_factor': 1.0
         },
     ]
 
@@ -300,10 +522,12 @@ def _get_average_rating(data_indicators, debug=False):
 
 
 def get_fundamental_indicators(financials_history, 
+                               quote_history_data,
                                start_date=datetime(1900, 1, 1),
                                financial_strength_name='Financial Strength',
                                growth_name='Business Growth',
                                profitability_name='Profitability',
+                               valuation_name='Stock Valuation',
                                debug=False):
     """
     This function gets raw data from the input financials history data after a 
@@ -312,6 +536,7 @@ def get_fundamental_indicators(financials_history,
 
     Inputs:
         'financials_history': data of a stock's financials history
+        'quote_history_data': data of a stock's quote history
         'start_date': the early date since when data in the input financials
                       history will be considered - a Python's datetime object;
                       defaulted to be datetime(1900, 1, 1)
@@ -401,6 +626,37 @@ def get_fundamental_indicators(financials_history,
     data_indicators[profitability_name]['Average Rating'] = \
         _get_average_rating(
             data_indicators[profitability_name], debug=debug)
+
+
+    ################
+    #   Valuation  #
+    # ##############
+
+    data_indicators[valuation_name] = {}
+    for item in _valuation_metrics_inputs:
+        name = item['name']
+        metric = get_metric(name=name, 
+                            underlying_metric_name=item['underlying-metric'],
+                            financials_history=financials_history, 
+                            quote_history_data=quote_history_data,
+                            start_date=start_date,
+                            scale_factor=item['scale_factor'],
+                            derive=item['derive'])
+        data_indicators[valuation_name][name] = \
+            {
+                'Object': metric,
+                'Current': metric.TTM_value,
+                'Type': item['type'],
+                'Rating': metric.rating(benchmark_value=item['benchmark'], 
+                                        reverse=item['reverse'],
+                                        debug=debug,
+                                        trend_threshold_value=None)
+            }
+    
+    # get the average rating
+    data_indicators[valuation_name]['Average Rating'] = \
+        _get_average_rating(
+            data_indicators[valuation_name], debug=debug) 
 
     # return the constructed dictionary
     return data_indicators

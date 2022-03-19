@@ -130,8 +130,17 @@ class Metric(object):
         self.data = {}
         for i in range(len(timestamps)):
             if timestamps[i] != 'TTM':
-                timestamp = datetime.strptime(timestamps[i], 
-                                              input_timestamps_format)
+                # if an input timestamp format is given, assume the input 
+                # "timestamps" are strings - convert them to python timestamps;
+                if input_timestamps_format is not None:
+                    timestamp = datetime.strptime(timestamps[i], 
+                                                  input_timestamps_format)
+                # otherwise assume the input "timestamps" are already python 
+                # timestamps, so get the value in the input timestamp list 
+                # directly in that case
+                else:
+                    timestamp = timestamps[i]
+
                 if timestamp > start_date:
                     self.data[timestamp] = _values[i]
             else:
@@ -381,7 +390,7 @@ class Metric(object):
 
     def rating(self, benchmark_value=None, trend_interval=3, reverse=False, 
                latest='TTM', debug=False, wgt_benchmark=1/3, wgt_pctrank=1/3,
-               wgt_trend=1/3):
+               wgt_trend=1/3, trend_threshold_value=0):
         """
         This helper function calculates the rating for the given metric, based 
         on a benchmark value if pre-specified, whether the metric has been 
@@ -400,6 +409,16 @@ class Metric(object):
                       value of the metric will be used to calculate the 
                       percentile rank. Otherwise, the latest value in the 
                       values sequence of the metric will be used.
+            'trend_threshold_value': a numeric value or a None value, defaulted 
+                                     to be 0. 
+                                     When None, weight assigned to the 
+                                     trend score will be zero, or in other 
+                                     words, the trend will not be considered in 
+                                     rating.
+                                     When numeric, the trend score will be 
+                                     assigned 1.0 if the trend value is greater 
+                                     than this threshold value, otherwise the 
+                                     trend score will be assigned 0.0
         """
 
         # get the percentile rank based rating of the latest value, a value 
@@ -410,12 +429,18 @@ class Metric(object):
             percentile_rank_pct if not reverse else (1 - percentile_rank_pct)
 
         # get the trend of recent values and the related rating, either 0 or 1
-        trend = self.growth_rate(num_of_years=trend_interval, log_scale=False)
-        trend_values = trend > 0
-        if not trend_values and reverse:
-            rating_per_trend_values = 1
+        trend = self.growth_rate(num_of_years=trend_interval, 
+                                 log_scale=False)
+        if trend_threshold_value is not None:
+            wgt_trend_final = wgt_trend
+            trend_values = trend > trend_threshold_value
+            if not trend_values and reverse:
+                rating_per_trend_values = 1
+            else:
+                rating_per_trend_values = trend_values * (not reverse)
         else:
-            rating_per_trend_values = trend_values * (not reverse)
+            wgt_trend_final = 0
+            rating_per_trend_values = 0
 
         # get the benchmark value based rating, a value between 0 and 1
         if benchmark_value is not None:
@@ -432,9 +457,9 @@ class Metric(object):
 
         # calculate and return the weighted average rating
         average_rating = (wgt_pctrank * rating_per_percentile_rank + 
-                          wgt_trend * rating_per_trend_values + 
+                          wgt_trend_final * rating_per_trend_values + 
                           wgt_bmnew * rating_per_benchmark_value) / \
-                          (wgt_pctrank + wgt_trend + wgt_bmnew)
+                          (wgt_pctrank + wgt_trend_final + wgt_bmnew)
 
         if debug:
             return {
@@ -449,8 +474,8 @@ class Metric(object):
                 'wgt_pctrank': wgt_pctrank,
                 'trend': trend,
                 'rating_per_trend_values': rating_per_trend_values,
-                'wgt_trend': wgt_trend,
-                'wgt_total': wgt_bmnew + wgt_pctrank + wgt_trend,
+                'wgt_trend': wgt_trend_final,
+                'wgt_total': wgt_bmnew + wgt_pctrank + wgt_trend_final,
                 'rating': average_rating
             }
         else:

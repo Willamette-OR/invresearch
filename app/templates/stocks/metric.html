@@ -130,52 +130,50 @@
             </span>
         </div>
         <br>
-        <div class="row">
-            {# render the time series data table #}
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead>
-                        <tr>
-                            <td>Date</td>
-                            {% for timestamp in table_data.keys() %}
-                                <td>{{ timestamp.strftime('%Y') }}</td>
-                            {% endfor %}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>{{ metric.name }}</td>
-                            {% for value in table_data.values() %}
-                                <td>
-                                    {% include 'stocks/_float.html' %}
-                                </td>
-                            {% endfor %}
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+        {# render the time series data table #}
+        <div class="my-4 p-3 bg-body rounded shadow table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <td>Date</td>
+                        {% for timestamp in table_data.keys() %}
+                            <td>{{ timestamp.strftime('%m-%Y') }}</td>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>{{ metric.name }}</td>
+                        {% for value in table_data.values() %}
+                            <td>
+                                {% include 'stocks/_float.html' %}
+                            </td>
+                        {% endfor %}
+                    </tr>
+                </tbody>
+            </table>
         </div>
-        <br>
-        <div class="row well">
-            <p>
-                The latest value of {{ stock.name }}'s {{ rated_metric.name }} was 
-                {% set value = indicator_data['Current'] %} {% include 'stocks/_autofmt.html' %}, 
-                higher than 
-                {% set value = rated_metric.pctrank_of_latest_10y[0] %} {% include 'stocks/_percent.html' %}
-                of the values during the past 10 years.
-            </p>
-            <p>
-                During the last 10 years, the the highest {{ rated_metric.name }} 
-                of {{ stock.name }} was 
-                {% set value = rated_metric.max_10y %} {% include 'stocks/_autofmt.html' %}.
-                The lowest was
-                {% set value = rated_metric.min_10y %} {% include 'stocks/_autofmt.html' %}.
-                And the median was
-                {% set value = rated_metric.median_10y %} {% include 'stocks/_autofmt.html' %}.                
-            </p>
+        <div class="my-4 p-3 bg-body rounded shadow">
+            <ul class="list-unstyled">
+                <li>
+                    The latest value of {{ stock.name }}'s {{ rated_metric.name }} was 
+                    {% set value = indicator_data['Current'] %} {% include 'stocks/_autofmt.html' %}, 
+                    higher than 
+                    {% set value = rated_metric.pctrank_of_latest_10y[0] %} {% include 'stocks/_percent.html' %}
+                    of the values during the past 10 years.
+                </li>
+                <li>
+                    During the last 10 years, the the highest {{ rated_metric.name }} 
+                    of {{ stock.name }} was 
+                    {% set value = rated_metric.max_10y %} {% include 'stocks/_autofmt.html' %}.
+                    The lowest was
+                    {% set value = rated_metric.min_10y %} {% include 'stocks/_autofmt.html' %}.
+                    And the median was
+                    {% set value = rated_metric.median_10y %} {% include 'stocks/_autofmt.html' %}. 
+                </li>
+            </ul>
         </div>
-        <br>
-        <div class="row well table-responsive">
+        <div class="mt-4 p-3 bg-body rounded shadow table-responsive">
             {% set rating_data = indicator_data['Rating'] %}
             <h4>Rating {{ stock.name }}'s {{ indicator_name }}:</h6>
             <table class="table">

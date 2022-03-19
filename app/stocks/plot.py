@@ -1,11 +1,14 @@
 import itertools
 from datetime import datetime
+from statistics import mean
 from bokeh.plotting import figure
 from bokeh.embed import components
 from bokeh.resources import CDN
-from bokeh.models import HoverTool
-from bokeh.palettes import Dark2_5 as palette, PaletteCollection
+from bokeh.models import HoverTool, CheckboxGroup, CustomJS, Span
+from bokeh.palettes import Dark2_5 as palette
+from bokeh.layouts import column
 from app.metrics import Metric, TotalMetric
+from app.fundamental_analysis import get_valuation_ratios
 
 def example_plot():
     """
@@ -49,68 +52,12 @@ def _get_average_price_multiple(quote_history_data, metric_per_share_data, \
                                 average valuation ratios, before removing 
                                 outliers
     """
-    
-    # get the ending month of fiscal years, usually either Sep or Dec
-    # this assumes the ending month is always the same across all fiscal years
-    # TODO - can insert code here to check the assumption and raise an exception
-    #        if the assumption does not hold for the input
-    last_month_fiscal_years = list(metric_per_share_data.keys())[-1].month
-    
-    # create a new dictionary of <fiscal year>: <per share metric value> for 
-    # easy per share metric value look up by fiscal year
-    list_years = [timestamp.year for timestamp in metric_per_share_data]
-    dict_year_metric = dict(zip(list_years, metric_per_share_data.values()))
 
-    # form a new dict of "<timestamp>: {'quote': <quote>, 'metric': <metric>, 
-    # 'ratio': <ratio>}"
-    dict_timestamp_ratio = {}
-    for timestamp in quote_history_data:
-        
-        # get the annual values for the current year, the prev year and the 
-        # next year
-        metric_value = dict_year_metric.get(timestamp.year)
-        metric_value_prev_year = dict_year_metric.get(timestamp.year - 1)
-        metric_value_next_year = dict_year_metric.get(timestamp.year + 1)
-        
-        # initialize the interpolation flag to be False;
-        interpolation_flag = False
-        
-        # when the current month is ealier than or the same as the last month 
-        # of the fiscal year, use metric values of the current year and the 
-        # previous year for interpolation
-        if metric_value and metric_value_prev_year and \
-            timestamp.month <= last_month_fiscal_years:
-
-            # interpolate the monthly TTM value
-            metric_value_interpolated = \
-                metric_value_prev_year + \
-                (metric_value - metric_value_prev_year) * \
-                (timestamp.month + 12 - last_month_fiscal_years) / 12
-            interpolation_flag = True
-        
-        # when the current month is greater than the last month of the fiscal 
-        # year, use metric values of the current year and the next year for 
-        # interpolation
-        elif metric_value and metric_value_next_year and \
-            timestamp.month > last_month_fiscal_years:
-            
-            # interpolate the monthly TTM value
-            metric_value_interpolated = \
-                metric_value + \
-                (metric_value_next_year - metric_value) * \
-                (timestamp.month - last_month_fiscal_years) / 12
-            interpolation_flag = True
-            
-        # Only include the month in the calculation of average valuation ratios 
-        # when the metric value of that month is positive - investors don't 
-        # really look at P/X ratios when they are negative
-        if interpolation_flag and metric_value_interpolated > 0:
-
-            dict_timestamp_ratio[timestamp] = {
-                'quote': quote_history_data[timestamp], 
-                'metric': metric_value_interpolated, 
-                'ratio': quote_history_data[timestamp] / \
-                    metric_value_interpolated}
+    # get a dictionary of { <timestamp>: {<"ratio">: <price multiple>, ...} }
+    dict_timestamp_ratio = get_valuation_ratios(
+        quote_history_data=quote_history_data, 
+        metric_per_share_data=metric_per_share_data
+        )
             
     # get all valuation ratios to a list, to prep for the calculation of the 
     # average ratio
@@ -453,6 +400,17 @@ def timeseries_plot(name, data_list, symbols,
     # creates a color iterator
     colors = itertools.cycle(palette)
 
+    # initialize a list to hold the line objects of different "average" lines
+    list_average_lines = []
+
+    # initialize the dictionary to hold the mapping between javascript variable 
+    # names and the associated names of line objects
+    dict_customjs = {}
+
+    # initialize a string to construct the javascript code for CustomJS to 
+    # toggle the visibility of "average" lines
+    code_customjs = ""
+
     # add a line for each set of data in the input list
     for i, color in zip(range(len(data_list)), colors):
         data = {
@@ -474,18 +432,51 @@ def timeseries_plot(name, data_list, symbols,
         # add markers on top of the line
         p.dot(list(data.keys()), list(data.values()), size=25, color=color)
 
+        # add a horizontal line for the average of y's
+        list_average_lines.append(
+            p.line(
+                list(data.keys()), 
+                [mean(data.values())]*len(data.keys()),
+                color=color,
+                line_dash="dashed",
+                line_width=3
+                )
+            ) 
+        list_average_lines[i].visible = False
+
+        # update the needed dictionary and JS code (string) needed to enable 
+        # dynamic toggling the visibility of average lines, via CustomJS from 
+        # Bokeh
+        dict_customjs["l" + str(i)] = list_average_lines[i]
+        code_customjs += "l" + str(i) + ".visible = 0 in checkbox.active;"
+
     # customizations
     p.toolbar_location = None
     p.legend.location = 'top_left'
     p.sizing_mode = 'scale_width'
     p.plot_height = 200
 
+    # set up the widget (checkbox) needed to toggle the visibility of average 
+    # lines
+    labels = ["Show Historical Average"]
+    checkbox = CheckboxGroup(labels=labels, active=[])
+    dict_customjs["checkbox"] = checkbox
+    callback = CustomJS(
+        args=dict_customjs,
+        code=code_customjs
+        )
+    checkbox.js_on_change('active', callback)
+
+    # construct a layout object from Bokeh to display both the plot and needed 
+    # widgets
+    layout = column(p, checkbox, sizing_mode="scale_both")
+
     # get the javascript for loading BokehJS remotely from a CDN
     payload = {}
     payload['resources'] = CDN.render()
 
     # get the HTML components to be rendered by BokehJS
-    script, div = components(p)
+    script, div = components(layout)
     payload['script'] = script
     payload['div'] = div
 

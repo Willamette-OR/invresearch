@@ -118,7 +118,8 @@ def get_guru_data(symbol, data_type):
 section_lookup_by_metric = {
         'EBITDA': 'income_statement',
         'EBIT': 'income_statement',
-        'Net Income': 'income_statement'
+        'Net Income': 'income_statement',
+        'Revenue': 'income_statement'
     }
 
 

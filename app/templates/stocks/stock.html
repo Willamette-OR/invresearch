@@ -75,7 +75,7 @@
 
         // function to set the estimated return value on the page
         function set_estimated_return(r) {
-            $('#estimated_return').text(r);
+            r != null ? $('#estimated_return').text(r + '%') : $('#estimated_return').text('N/A');
             $('#estimated_return').css('color', r>=15 ? 'green' : r>=0 ? 'black' : 'red')
         };
 

@@ -185,6 +185,15 @@ def stock(symbol):
     # return if not enough data was available to calculate the average 
     # historical price multiple
     if not average_price_multiple:
+
+        if payload_only:
+            # return an otherwise empty payload, except for a flag indicating 
+            # no valid plot in the paylod 
+            plot = {}
+            plot['valid_plot'] = 0
+
+            return jsonify(plot)
+
         return render_template(
             'stocks/stock.html', title="Stock - {}".format(stock.symbol), 
             stock=stock, quote=json.loads(stock.quote_payload), 
@@ -200,6 +209,9 @@ def stock(symbol):
     plot = stock_valuation_plot(quote_history_data=quote_history_valplotting,
                                 normal_price_data=normal_price_data,
                                 average_price_multiple=average_price_multiple)
+
+    # add a flag to the paylod indicating a valid plot
+    plot['valid_plot'] = 1
 
     # add to the paylod the updated estimated return, specific to the updated 
     # valuation plot 

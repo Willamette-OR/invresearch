@@ -26,7 +26,7 @@ class Config:
     REDIS_URL = os.environ.get('REDIS_URL') or 'redis://'
     FINNHUB_API_KEY = os.environ.get('FINNHUB_API_KEY')
     GURU_API_KEY = os.environ.get('GURU_API_KEY')
-    STOCK_VALUATION_METRIC_DEFAULT = 'EBITDA'
+    STOCK_VALUATION_METRIC_DEFAULT = 'Revenue'
     EMAIL_LOGGING = os.environ.get('EMAIL_LOGGING') or False
     UPLOAD_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif']
     MAX_UPLOAD_SIZE = 1024 * 1024

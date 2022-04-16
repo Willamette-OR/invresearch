@@ -47,7 +47,7 @@
                     <!-- Intrinsic Value Correlations -->
                     <li>
                         <h5 class="dropdown-header">
-                            Intrinsic Value Correlations
+                            Other Metrics
                         </h5>
                     </li>
                     <li>
@@ -68,6 +68,16 @@
                                     '.valuation-plot'
                                 )" class="dropdown-item">
                             EBIT
+                        </a>
+                    </li>
+                    <li>
+                        <a href="javascript:plot_valuation(
+                                    '{{ stock.symbol }}',
+                                    null,
+                                    'Revenue',
+                                    '.valuation-plot'
+                                )" class="dropdown-item">
+                            Revenue
                         </a>
                     </li>
                 </ul>
@@ -149,8 +159,8 @@
                                               {% elif estimated_return>=0 %}black
                                               {% else %}red
                                               {% endif %};">
-                                {{ estimated_return }}
-                            </span>%
+                                {{ estimated_return }}%
+                            </span>
                         </td>
                     {% else %}
                         <td id="estimated_return" 

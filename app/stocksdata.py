@@ -118,7 +118,8 @@ def get_guru_data(symbol, data_type):
 section_lookup_by_metric = {
         'EBITDA': 'income_statement',
         'EBIT': 'income_statement',
-        'Net Income': 'income_statement'
+        'Net Income': 'income_statement',
+        'Revenue': 'income_statement'
     }
 
 
@@ -211,11 +212,17 @@ def get_quote_details(symbol):
         if isinstance(data_downloaded, dict):
             # standardize the downloaded data - this is API specific
             data = {}
-            data['Market Cap'] = data_downloaded['Market Cap']
+            data['Market Cap'] = '$' + data_downloaded['Market Cap']
             data['Beta (5Y Monthly)'] = data_downloaded['Beta (5Y Monthly)']
-            data['52 Week Range'] = data_downloaded['52 Week Range']
-            data['Earnings Date'] = data_downloaded['Earnings Date']
-            data['Ex-Dividend Date'] = data_downloaded['Ex-Dividend Date']
+            # add dollar sign
+            _low, _high = \
+                [s.strip() for s in data_downloaded['52 Week Range'].split('-')]
+            data['52 Week Range'] = '$' + _low + ' - ' + '$' + _high
+            data['Earnings Date'] = data_downloaded['Earnings Date'] 
+            # when the date is nan save the value as 'N/A'
+            data['Ex-Dividend Date'] = data_downloaded['Ex-Dividend Date'] \
+                if data_downloaded['Ex-Dividend Date'] == \
+                    data_downloaded['Ex-Dividend Date'] else 'N/A'
             data['Forward Dividend & Yield'] = \
                 data_downloaded['Forward Dividend & Yield']
 

@@ -75,7 +75,7 @@
 
         // function to set the estimated return value on the page
         function set_estimated_return(r) {
-            $('#estimated_return').text(r);
+            r != null ? $('#estimated_return').text(r + '%') : $('#estimated_return').text('N/A');
             $('#estimated_return').css('color', r>=15 ? 'green' : r>=0 ? 'black' : 'red')
         };
 
@@ -95,10 +95,20 @@
                 '&num_of_years=' + num_of_years + '&valuation_metric=' + 
                 current_metric
             ).done(function(plot) {
-                // render the valuation plot
-                $(dest_elem).html(plot.resources);
-                $(dest_elem).html(plot.script);
-                $(dest_elem).html(plot.div);
+                if (plot.valid_plot == 1) {
+                    // render the valuation plot if a valid plot exists
+                    $(dest_elem).html(plot.resources);
+                    $(dest_elem).html(plot.script);
+                    $(dest_elem).html(plot.div);
+                } else {
+                    // display some useful message if a valid plot does not 
+                    // exist
+                    $(dest_elem).html(
+                        '<h3><span style="color: red;">' + 
+                        '(The stock valuation plot is not available for ' + 
+                        '<mark>' + current_metric + '</mark>, due to lack ' + 
+                        'of historical data)</span></h3>')
+                };
 
                 // update the name of the underlying metric for the valuation 
                 // plot

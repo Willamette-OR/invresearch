@@ -130,7 +130,11 @@ def get_normal_price(metric_name, section_name, start_date, quote_history_data,
         'Net Income': {
             'field_name': 'per_share_eps_estimate',
             'per_share': True
-        }
+        },
+        'Revenue': {
+            'field_name': 'revenue_estimate',
+            'per_share': False
+        } 
     }
 
     if field_lookup[metric_name]['per_share']:

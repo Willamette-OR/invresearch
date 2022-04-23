@@ -30,6 +30,7 @@ section_lookup = {
     'Free Cash Flow per Share': 'per_share_data_array',
     'Operating Cash Flow per Share': 'per_share_data_array',
     'Revenue per Share': 'per_share_data_array',
+    'Shares Outstanding (Diluted Average)': 'income_statement'
 }
 
 
@@ -326,6 +327,14 @@ _financial_strength_metrics_inputs = [
         'reverse': False,
         'derive': None,
         'benchmark': 3.0,
+        'type': 'float',
+        'scale_factor': 1.0
+    },
+    {
+        'name': 'Shares Outstanding (Diluted Average)',
+        'reverse': True,
+        'derive': None,
+        'benchmark': None,
         'type': 'float',
         'scale_factor': 1.0
     }

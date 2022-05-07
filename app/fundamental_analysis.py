@@ -30,7 +30,9 @@ section_lookup = {
     'Free Cash Flow per Share': 'per_share_data_array',
     'Operating Cash Flow per Share': 'per_share_data_array',
     'Revenue per Share': 'per_share_data_array',
-    'Shares Outstanding (Diluted Average)': 'income_statement'
+    'Shares Outstanding (Diluted Average)': 'income_statement',
+    'Dividends per Share': 'per_share_data_array',
+    'Dividend Payout Ratio': 'common_size_ratios',
 }
 
 
@@ -473,6 +475,26 @@ _valuation_metrics_inputs = [
         },
     ]
 
+# benchmark values and reverse indicators here are for valuation metrics.
+_dividend_metrics_inputs = [
+        {
+            'name': 'Dividends per Share',
+            'reverse': False,
+            'derive': None,
+            'benchmark': None,
+            'type': 'float',
+            'scale_factor': 1.0
+        },
+        {
+            'name': 'Dividend Payout Ratio',
+            'reverse': True,
+            'derive': None,
+            'benchmark': None,
+            'type': 'float',
+            'scale_factor': 1.0
+        }
+    ]   
+
 
 def get_fundamental_start_date(num_of_years=20, last_report_date=None):
     """
@@ -537,6 +559,7 @@ def get_fundamental_indicators(financials_history,
                                growth_name='Business Growth',
                                profitability_name='Profitability',
                                valuation_name='Stock Valuation',
+                               dividend_name='Dividend Growth',
                                debug=False):
     """
     This function gets raw data from the input financials history data after a 
@@ -636,7 +659,6 @@ def get_fundamental_indicators(financials_history,
         _get_average_rating(
             data_indicators[profitability_name], debug=debug)
 
-
     ################
     #   Valuation  #
     # ##############
@@ -666,6 +688,32 @@ def get_fundamental_indicators(financials_history,
     data_indicators[valuation_name]['Average Rating'] = \
         _get_average_rating(
             data_indicators[valuation_name], debug=debug) 
+
+    ###################
+    # Dividend Growth #
+    ###################
+
+    data_indicators[dividend_name] = {}
+    for item in _dividend_metrics_inputs:
+        name = item['name']
+        metric = get_metric(name=name, 
+                            financials_history=financials_history, 
+                            start_date=start_date,
+                            scale_factor=item['scale_factor'],
+                            derive=item['derive'])
+        data_indicators[dividend_name][name] = \
+            {
+                'Object': metric,
+                'Current': float("{:.2f}".format(metric.TTM_value)),
+                'Type': item['type'],
+                'Rating': metric.rating(benchmark_value=item['benchmark'], 
+                                        reverse=item['reverse'],
+                                        debug=debug)
+            }
+    # get the average rating
+    data_indicators[dividend_name]['Average Rating'] = \
+        _get_average_rating(
+            data_indicators[dividend_name], debug=debug)
 
     # return the constructed dictionary
     return data_indicators
